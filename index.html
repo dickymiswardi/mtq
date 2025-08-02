@@ -177,26 +177,27 @@ async function loadSantriData() {
     const res = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
     const absensiData = await res.json();
 
-    santriTableBody.innerHTML = "";
-    absensiData.forEach((s, i) => {
-      const row = document.createElement("tr");
-      row.dataset.id = s.id;
-      row.innerHTML = `
-        <td>${i + 1}</td>
-        <td>${s.nama}</td>
-        <td>
-          <select>
-            <option value="Hadir" ${s.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
-            <option value="Sakit" ${s.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
-            <option value="Izin" ${s.absensi === "Izin" ? "selected" : ""}>Izin</option>
-          </select>
-        </td>
-        <td><input type="text" value="${s.dari}"></td>
-        <td><input type="text" value="${s.sampai}"></td>
-        <td>${s.totalJuz}</td>
-      `;
-      santriTableBody.appendChild(row);
-    });
+    // Render tabel
+santriTableBody.innerHTML = "";
+absensiData.forEach((s, i) => {
+  const row = document.createElement("tr");
+  row.dataset.id = s.id;
+  row.innerHTML = `
+    <td>${i + 1}</td>
+    <td>${s.nama}</td>
+    <td>
+      <select>
+        <option value="Hadir" ${s.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
+        <option value="Sakit" ${s.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
+        <option value="Izin" ${s.absensi === "Izin" ? "selected" : ""}>Izin</option>
+      </select>
+    </td>
+    <td><input type="text" value="${s.dari}"></td>
+    <td><input type="text" value="${s.sampai}"></td>
+    <td>${s.totalJuz}</td>
+  `;
+  santriTableBody.appendChild(row);
+});
   } catch (err) {
   overlay.style.display = "none";
   console.error("❌ Error loadSantriData:", err);
