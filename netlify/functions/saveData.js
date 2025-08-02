@@ -1,61 +1,47 @@
-import fetch from "node-fetch";
+import { Octokit } from "@octokit/rest";
 
 export async function handler(event) {
+  const token = process.env.MTQ_TOKEN;
+  const octokit = new Octokit({ auth: token });
+
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method not allowed" };
+    return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const token = process.env.MTQ_TOKEN;
-  const owner = "dickymiswardi";
-  const repo = "usermtq";
-
   try {
-    const body = JSON.parse(event.body);
-    const { tanggal, kelas, data } = body;
+    const { kelas, tanggal, data } = JSON.parse(event.body);
 
-    const filename = `absensi/${kelas}_${tanggal}.json`;
-
-    // Ambil SHA file jika sudah ada (update), kalau tidak ada berarti create
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filename}`;
-
-    let sha = null;
-    const checkRes = await fetch(apiUrl, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    if (checkRes.ok) {
-      const existing = await checkRes.json();
-      sha = existing.sha;
+    if (!kelas || !tanggal || !Array.isArray(data)) {
+      return { statusCode: 400, body: "Data tidak valid" };
     }
 
-    const message = sha ? `update data absensi ${kelas} ${tanggal}` : `create data absensi ${kelas} ${tanggal}`;
+    const path = `absensi/${kelas}_${tanggal}.json`;
 
-    const res = await fetch(apiUrl, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message,
-        content: Buffer.from(JSON.stringify(data, null, 2)).toString("base64"),
-        sha
-      })
-    });
-
-    if (!res.ok) {
-      const error = await res.text();
-      throw new Error(error);
+    // Ambil konten lama (jika ada)
+    let sha;
+    try {
+      const { data: oldFile } = await octokit.repos.getContent({
+        owner: "dickymiswardi",
+        repo: "usermtq",
+        path,
+      });
+      sha = oldFile.sha;
+    } catch (err) {
+      sha = null; // file baru
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ success: true })
-    };
-  } catch (error) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, error: error.message })
-    };
+    // Simpan ke GitHub
+    await octokit.repos.createOrUpdateFileContents({
+      owner: "dickymiswardi",
+      repo: "usermtq",
+      path,
+      message: `Update absensi ${kelas} ${tanggal}`,
+      content: Buffer.from(JSON.stringify(data, null, 2)).toString("base64"),
+      sha,
+    });
+
+    return { statusCode: 200, body: JSON.stringify({ success: true }) };
+  } catch (err) {
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 }
