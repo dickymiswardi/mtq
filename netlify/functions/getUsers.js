@@ -1,9 +1,10 @@
-export async function handler(event) {
-  const token = process.env.MTQ_TOKEN; // token dari Netlify ENV
+// Netlify Functions: getUsers.js
+export async function handler() {
+  const token = process.env.MTQ_TOKEN; // Token GitHub dari Environment Variable
   const githubUrl = "https://raw.githubusercontent.com/dickymiswardi/usermtq/main/user.json";
 
   try {
-    // Fetch file dari GitHub pakai token
+    // Fetch dari repo privat GitHub pakai token
     const response = await fetch(githubUrl, {
       headers: {
         Authorization: `Bearer ${token}`
