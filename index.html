@@ -41,9 +41,16 @@
       background: #1e88e5;
       color: white;
       cursor: pointer;
+      margin: 2px;
     }
     button:hover {
       background: #1565c0;
+    }
+    .logout-btn {
+      background: #e53935;
+    }
+    .logout-btn:hover {
+      background: #b71c1c;
     }
     table {
       width: 100%;
@@ -60,11 +67,9 @@
       background: #1e88e5;
       color: white;
     }
-    .logout-btn {
-      position: absolute;
-      top: 15px;
-      right: 20px;
-      background: #e53935;
+    .actions {
+      text-align: center;
+      margin-top: 20px;
     }
     @media (max-width: 768px) {
       .dashboard-header {
@@ -75,6 +80,11 @@
         display: block;
         overflow-x: auto;
         white-space: nowrap;
+      }
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
       }
     }
   </style>
@@ -94,7 +104,6 @@
 
     <!-- Dashboard -->
     <div id="dashboard-card" class="card" style="display: none;">
-      <button class="logout-btn" id="logout-btn">Logout</button>
       <h1>Absensi & Hafalan Santri</h1>
       <h2>Dashboard</h2>
 
@@ -125,8 +134,9 @@
         </thead>
         <tbody></tbody>
       </table>
-      <div style="text-align: center; margin-top: 20px;">
+      <div class="actions">
         <button id="save-btn">Simpan</button>
+        <button class="logout-btn" id="logout-btn">Logout</button>
       </div>
     </div>
   </div>
