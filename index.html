@@ -228,7 +228,7 @@
       loginCard.style.display = "none";
       dashboardCard.style.display = "block";
       tanggalInput.valueAsDate = new Date();
-      loadAbsensi();
+      loadData();
     }
 
     logoutBtn.addEventListener("click", () => {
@@ -241,19 +241,37 @@
       }, 500);
     });
 
-    kelasSelect.addEventListener("change", loadAbsensi);
-    tanggalInput.addEventListener("change", loadAbsensi);
+    kelasSelect.addEventListener("change", loadData);
+    tanggalInput.addEventListener("change", loadData);
 
-    async function loadAbsensi() {
+    async function loadData() {
       overlay.style.display = "flex";
       const kelas = kelasSelect.value;
       const tanggal = tanggalInput.value;
 
       try {
-        // Langsung ambil file absensi sesuai kelas & tanggal
-        const res = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-        const absensiData = await res.json();
+        // Ambil absensi jika ada
+        let absensiData = [];
+        let absensiRes = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+        if (absensiRes.ok) {
+          absensiData = await absensiRes.json();
+        }
 
+        // Jika absensi kosong, ambil default dari data santri
+        if (absensiData.length === 0) {
+          const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+          const santriData = await resSantri.json();
+          absensiData = santriData.map(s => ({
+            id: s.id,
+            nama: s.nama,
+            absensi: "Hadir",
+            dari: "",
+            sampai: "",
+            totalJuz: "0"
+          }));
+        }
+
+        // Tampilkan di tabel
         santriTableBody.innerHTML = "";
         absensiData.forEach((s, i) => {
           const row = document.createElement("tr");
@@ -275,7 +293,7 @@
           santriTableBody.appendChild(row);
         });
       } catch {
-        alert("Gagal memuat absensi!");
+        alert("Gagal memuat data!");
       }
       overlay.style.display = "none";
     }
@@ -304,7 +322,7 @@
         const result = await res.json();
         if (result.success) {
           alert("✅ Data berhasil disimpan!");
-          loadAbsensi();
+          loadData();
         } else {
           alert("❌ Gagal menyimpan data!");
         }
