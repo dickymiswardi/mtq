@@ -1,28 +1,36 @@
+// netlify/functions/getAbsensi.js
+import fetch from "node-fetch";
+
 export async function handler(event) {
   const token = process.env.MTQ_TOKEN;
-  const kelas = event.queryStringParameters.kelas;
-  const tanggal = event.queryStringParameters.tanggal;
+  const { kelas, tanggal } = event.queryStringParameters;
 
   if (!kelas || !tanggal) {
-    return { statusCode: 400, body: "kelas dan tanggal wajib diisi" };
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "Parameter 'kelas' dan 'tanggal' wajib diisi" }),
+    };
   }
 
-  const url = `https://github.com/dickymiswardi/usermtq/raw/refs/heads/main/absensi/${kelas}_${tanggal}.json`;
+  const fileName = `${kelas}_${tanggal}.json`;
+  const url = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/absensi/${fileName}`;
 
   try {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` }
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (res.status === 404) {
-      return { statusCode: 200, body: JSON.stringify([]) }; // data kosong jika belum ada
+    if (response.status === 404) {
+      return { statusCode: 200, body: JSON.stringify([]) }; // Jika belum ada data
     }
 
-    if (!res.ok) throw new Error(`Gagal fetch absensi: ${res.status}`);
+    if (!response.ok) {
+      throw new Error(`Gagal mengambil data: ${response.status}`);
+    }
 
-    const data = await res.text();
+    const data = await response.text();
     return { statusCode: 200, body: data };
-  } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  } catch (error) {
+    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
   }
 }
