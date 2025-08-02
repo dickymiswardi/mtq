@@ -5,123 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Absensi & Hafalan Santri</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f4f6f8;
-    }
-    .container {
-      max-width: 1000px;
-      margin: auto;
-      padding: 20px;
-    }
-    .card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      margin-top: 40px;
-    }
-    h1, h2 {
-      text-align: center;
-    }
-    form, .dashboard-header {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      align-items: center;
-    }
-    input, select, button {
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 16px;
-    }
-    button {
-      background: #1e88e5;
-      color: white;
-      cursor: pointer;
-      margin: 2px;
-    }
-    button:hover {
-      background: #1565c0;
-    }
-    .logout-btn {
-      background: #e53935;
-    }
-    .logout-btn:hover {
-      background: #b71c1c;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      font-size: 15px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background: #1e88e5;
-      color: white;
-    }
-    .actions {
-      text-align: center;
-      margin-top: 20px;
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-    .password-group {
-      display: flex;
-      gap: 5px;
-      align-items: center;
-    }
-    .toggle-btn {
-      background: #6c757d;
-      font-size: 13px;
-      padding: 10px 14px;
-    }
-    .toggle-btn:hover {
-      background: #495057;
-    }
+    body {font-family: Arial, sans-serif;margin: 0;background: #f4f6f8;}
+    .container {max-width: 1000px;margin: auto;padding: 20px;}
+    .card {background: #fff;border-radius: 8px;padding: 20px;box-shadow: 0 4px 10px rgba(0,0,0,0.1);margin-top: 40px;}
+    h1, h2 {text-align: center;}
+    form, .dashboard-header {display: flex;flex-direction: column;gap: 12px;align-items: center;}
+    input, select, button {padding: 10px;border: 1px solid #ccc;border-radius: 6px;font-size: 16px;}
+    button {background: #1e88e5;color: white;cursor: pointer;margin: 2px;}
+    button:hover {background: #1565c0;}
+    .logout-btn {background: #e53935;}
+    .logout-btn:hover {background: #b71c1c;}
+    table {width: 100%;border-collapse: collapse;margin-top: 20px;font-size: 15px;}
+    th, td {border: 1px solid #ddd;padding: 8px;text-align: center;}
+    th {background: #1e88e5;color: white;}
+    .actions {text-align: center;margin-top: 20px;display: flex;justify-content: center;gap: 10px;}
+    .password-group {display: flex;gap: 5px;align-items: center;}
+    .toggle-btn {background: #6c757d;font-size: 13px;padding: 10px 14px;}
+    .toggle-btn:hover {background: #495057;}
     /* Overlay Loading */
-    #overlay {
-      position: fixed;
-      display: none;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.4);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-    }
-    #overlay span {
-      background: #fff;
-      padding: 15px 25px;
-      border-radius: 8px;
-      font-size: 18px;
-      color: #333;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
+    #overlay {position: fixed;display: none;top: 0;left: 0;width: 100%;height: 100%;
+      background: rgba(0,0,0,0.4);z-index: 1000;align-items: center;justify-content: center;}
+    #overlay span {background: #fff;padding: 15px 25px;border-radius: 8px;font-size: 18px;
+      color: #333;box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
     @media (max-width: 768px) {
-      .dashboard-header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-      }
-      .actions {
-        flex-direction: column;
-      }
-      .password-group {
-        flex-direction: row;
-      }
+      .dashboard-header {flex-direction: column;align-items: stretch;}
+      table {display: block;overflow-x: auto;white-space: nowrap;}
+      .actions {flex-direction: column;}
+      .password-group {flex-direction: row;}
     }
   </style>
 </head>
@@ -146,7 +56,6 @@
     <div id="dashboard-card" class="card" style="display: none;">
       <h1>Absensi & Hafalan Santri</h1>
       <h2>Dashboard</h2>
-
       <div class="dashboard-header">
         <div>
           <label for="kelas">Pilih Kelas:</label>
@@ -160,7 +69,6 @@
           <input type="date" id="tanggal" />
         </div>
       </div>
-
       <table id="santri-table">
         <thead>
           <tr>
@@ -181,49 +89,94 @@
     </div>
   </div>
 
-  <script>
-    const loginCard = document.getElementById("login-card");
-    const dashboardCard = document.getElementById("dashboard-card");
-    const loginForm = document.getElementById("login-form");
-    const loginError = document.getElementById("login-error");
-    const logoutBtn = document.getElementById("logout-btn");
-    const togglePasswordBtn = document.getElementById("toggle-password");
-    const passwordInput = document.getElementById("password");
-    const overlay = document.getElementById("overlay");
+<script>
+const loginCard = document.getElementById("login-card");
+const dashboardCard = document.getElementById("dashboard-card");
+const loginForm = document.getElementById("login-form");
+const loginError = document.getElementById("login-error");
+const logoutBtn = document.getElementById("logout-btn");
+const togglePasswordBtn = document.getElementById("toggle-password");
+const passwordInput = document.getElementById("password");
+const overlay = document.getElementById("overlay");
 
-    const kelasSelect = document.getElementById("kelas");
-    const tanggalInput = document.getElementById("tanggal");
-    const santriTableBody = document.querySelector("#santri-table tbody");
+const kelasSelect = document.getElementById("kelas");
+const tanggalInput = document.getElementById("tanggal");
+const santriTableBody = document.querySelector("#santri-table tbody");
 
-    // Cek login dari localStorage
-    window.addEventListener("DOMContentLoaded", () => {
+// Check login
+window.addEventListener("DOMContentLoaded", () => {
   const isLoggedIn = localStorage.getItem("isLoggedIn");
   if (isLoggedIn) {
     showDashboard();
-    // Setelah dashboard muncul, download data JSON untuk mengisi tabel
     loadSantriData();
   }
+});
+
+// Toggle password visibility
+togglePasswordBtn.addEventListener("click", () => {
+  const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+  passwordInput.setAttribute("type", type);
+  togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
+});
+
+// Login submit
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  overlay.style.display = "flex";
+  try {
+    const username = document.getElementById("username").value;
+    const password = passwordInput.value;
+
+    const res = await fetch("/.netlify/functions/getUsers");
+    const users = await res.json();
+    const user = users.find(u => u.username === username && u.password === password);
+
+    if (user) {
+      localStorage.setItem("isLoggedIn", true);
+      localStorage.setItem("username", username);
+      showDashboard();
+      loadSantriData();
+    } else {
+      loginError.style.display = "block";
+    }
+  } catch {
+    loginError.textContent = "Gagal memuat data user!";
+    loginError.style.display = "block";
+  }
+  overlay.style.display = "none";
 });
 
 function showDashboard() {
   loginCard.style.display = "none";
   dashboardCard.style.display = "block";
-  tanggalInput.valueAsDate = new Date(); // set default tanggal hari ini
+  tanggalInput.valueAsDate = new Date();
 }
 
+// Logout
+logoutBtn.addEventListener("click", () => {
+  overlay.style.display = "flex";
+  setTimeout(() => {
+    localStorage.removeItem("isLoggedIn");
+    loginCard.style.display = "block";
+    dashboardCard.style.display = "none";
+    overlay.style.display = "none";
+  }, 500);
+});
+
+kelasSelect.addEventListener("change", loadSantriData);
+tanggalInput.addEventListener("change", loadSantriData);
+
+// Load data JSON (download)
 async function loadSantriData() {
   const kelas = kelasSelect.value;
   const tanggal = tanggalInput.value;
+  if (!tanggal) return;
   overlay.style.display = "flex";
 
   try {
-    // Ambil absensi data langsung dari JSON kelas_tanggal.json
-    const resAbsensi = await fetch(
-      `/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`
-    );
-    const absensiData = await resAbsensi.json();
+    const res = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+    const absensiData = await res.json();
 
-    // Render tabel berdasarkan data JSON
     santriTableBody.innerHTML = "";
     absensiData.forEach((s, i) => {
       const row = document.createElement("tr");
@@ -248,172 +201,43 @@ async function loadSantriData() {
     alert("⚠️ Gagal memuat data santri!");
     console.error(err);
   }
-
   overlay.style.display = "none";
 }
 
-// Setelah Save → langsung reload tabel
+// Save data
 document.getElementById("save-btn").addEventListener("click", async () => {
   const kelas = kelasSelect.value;
   const tanggal = tanggalInput.value;
 
   const rows = santriTableBody.querySelectorAll("tr");
-  const data = Array.from(rows).map((row) => ({
+  const data = Array.from(rows).map(row => ({
     id: row.dataset.id,
     nama: row.children[1].textContent,
     absensi: row.querySelector("select").value,
     dari: row.children[3].querySelector("input").value,
     sampai: row.children[4].querySelector("input").value,
-    totalJuz: row.children[5].textContent,
+    totalJuz: row.children[5].textContent
   }));
 
   overlay.style.display = "flex";
-
   try {
     const res = await fetch("/.netlify/functions/saveData", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tanggal, kelas, data }),
+      body: JSON.stringify({ tanggal, kelas, data })
     });
-
     const result = await res.json();
     if (result.success) {
-      await loadSantriData(); // reload data terbaru setelah save
+      await loadSantriData();
+      alert("✅ Data berhasil disimpan!");
     } else {
       alert("❌ Gagal menyimpan data!");
     }
   } catch (err) {
     alert("⚠️ Error menyimpan data!");
-    console.error(err);
   }
-
   overlay.style.display = "none";
 });
-
-
-    // Tampilkan dashboard
-    function showDashboard() {
-      loginCard.style.display = "none";
-      dashboardCard.style.display = "block";
-      tanggalInput.valueAsDate = new Date();
-      loadSantriData();
-    }
-
-    // Logout
-    logoutBtn.addEventListener("click", () => {
-      overlay.style.display = "flex";
-      setTimeout(() => {
-        localStorage.removeItem("isLoggedIn");
-        localStorage.removeItem("username");
-        loginCard.style.display = "block";
-        dashboardCard.style.display = "none";
-        overlay.style.display = "none";
-      }, 500);
-    });
-
-    // Event perubahan kelas / tanggal
-    kelasSelect.addEventListener("change", loadSantriData);
-    tanggalInput.addEventListener("change", loadSantriData);
-
-    // Load Data
-    async function loadSantriData() {
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
-      overlay.style.display = "flex";
-
-      try {
-        // Ambil absensi jika ada, jika tidak gunakan data santri
-        const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-        const absensiData = await resAbsensi.json();
-
-        // Jika data absensi kosong, ambil list santri default
-        let dataToUse = absensiData;
-        if (!absensiData || absensiData.length === 0) {
-          const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-          const santriData = await resSantri.json();
-          dataToUse = santriData.map(s => ({
-            id: s.id,
-            nama: s.nama,
-            absensi: "Hadir",
-            dari: "",
-            sampai: "",
-            totalJuz: "0"
-          }));
-        }
-
-        // Render tabel
-        santriTableBody.innerHTML = "";
-        dataToUse.forEach((s, i) => {
-          const row = document.createElement("tr");
-          row.dataset.id = s.id;
-          row.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${s.nama}</td>
-            <td>
-              <select>
-                <option value="Hadir">Hadir</option>
-                <option value="Sakit">Sakit</option>
-                <option value="Izin">Izin</option>
-              </select>
-            </td>
-            <td><input type="text" value="${s.dari}"></td>
-            <td><input type="text" value="${s.sampai}"></td>
-            <td>${s.totalJuz}</td>
-          `;
-          const select = row.querySelector("select");
-          // Fix: pastikan jika value tidak ada, default "Hadir"
-          if (["Hadir", "Sakit", "Izin"].includes(s.absensi)) {
-            select.value = s.absensi;
-          } else {
-            select.value = "Hadir";
-          }
-          santriTableBody.appendChild(row);
-        });
-      } catch (err) {
-        alert("⚠️ Gagal memuat data santri!");
-        console.error(err);
-      }
-      overlay.style.display = "none";
-    }
-
-    // Tombol Simpan
-    document.getElementById("save-btn").addEventListener("click", async () => {
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
-
-      const rows = santriTableBody.querySelectorAll("tr");
-      const data = [];
-      rows.forEach((row) => {
-        const id = row.dataset.id;
-        const nama = row.children[1].textContent;
-        const absensi = row.querySelector("select").value;
-        const dari = row.children[3].querySelector("input").value;
-        const sampai = row.children[4].querySelector("input").value;
-        const totalJuz = row.children[5].textContent;
-
-        data.push({ id, nama, absensi, dari, sampai, totalJuz });
-      });
-
-      overlay.style.display = "flex";
-      try {
-        const res = await fetch("/.netlify/functions/saveData", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tanggal, kelas, data })
-        });
-        const result = await res.json();
-        if (result.success) {
-          alert("✅ Data berhasil disimpan!");
-          await loadSantriData(); // reload data terbaru setelah simpan
-        } else {
-          alert("❌ Gagal menyimpan data!");
-        }
-      } catch (err) {
-        alert("⚠️ Error menyimpan data!");
-        console.error(err);
-      }
-      overlay.style.display = "none";
-    });
-  </script>
+</script>
 </body>
 </html>
