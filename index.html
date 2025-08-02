@@ -361,34 +361,46 @@
       overlay.style.display = "none";
     });
 
-    // Tombol Download PDF
-    document.getElementById("pdf-btn").addEventListener("click", () => {
+    // Tombol Download PDF langsung dari JSON
+    document.getElementById("pdf-btn").addEventListener("click", async () => {
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+      const kelas = kelasSelect.value;
+      const tanggal = tanggalInput.value;
 
-      doc.setFontSize(16);
-      doc.text(`Laporan Absensi & Hafalan Santri`, 14, 15);
-      doc.setFontSize(12);
-      doc.text(`Kelas: ${kelasSelect.value} | Tanggal: ${tanggalInput.value}`, 14, 23);
+      overlay.style.display = "flex";
+      try {
+        // Ambil data dari json absensi
+        const res = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+        const data = await res.json();
 
-      const tableData = [];
-      const rows = santriTableBody.querySelectorAll("tr");
-      rows.forEach((row, i) => {
-        const nama = row.children[1].textContent;
-        const absensi = row.querySelector("select").value;
-        const dari = row.children[3].querySelector("input").value;
-        const sampai = row.children[4].querySelector("input").value;
-        const totalJuz = row.children[5].textContent;
-        tableData.push([i + 1, nama, absensi, dari, sampai, totalJuz]);
-      });
+        if (!data || data.length === 0) {
+          alert("Data absensi kosong!");
+          overlay.style.display = "none";
+          return;
+        }
 
-      doc.autoTable({
-        startY: 30,
-        head: [["No", "Nama Santri", "Absensi", "Dari", "Sampai", "Total Juz"]],
-        body: tableData
-      });
+        const doc = new jsPDF();
+        doc.setFontSize(16);
+        doc.text(`Laporan Absensi & Hafalan Santri`, 14, 15);
+        doc.setFontSize(12);
+        doc.text(`Kelas: ${kelas} | Tanggal: ${tanggal}`, 14, 23);
 
-      doc.save(`Laporan_${kelasSelect.value}_${tanggalInput.value}.pdf`);
+        const tableData = data.map((s, i) => [
+          i + 1, s.nama, s.absensi, s.dari, s.sampai, s.totalJuz
+        ]);
+
+        doc.autoTable({
+          startY: 30,
+          head: [["No", "Nama Santri", "Absensi", "Dari", "Sampai", "Total Juz"]],
+          body: tableData
+        });
+
+        doc.save(`Laporan_${kelas}_${tanggal}.pdf`);
+      } catch (err) {
+        alert("⚠️ Gagal mendownload laporan!");
+        console.error(err);
+      }
+      overlay.style.display = "none";
     });
   </script>
 </body>
