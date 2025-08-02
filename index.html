@@ -78,27 +78,5 @@
       <button onclick="logout()">Logout</button>
     </div>
   </div>
-
-  <script>
-    function login() {
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-
-      if (username && password) {
-        document.getElementById('login-container').classList.add('hidden');
-        document.getElementById('dashboard-container').classList.remove('hidden');
-        document.getElementById('user-name').innerText = username;
-      } else {
-        alert('Username dan password wajib diisi!');
-      }
-    }
-
-    function logout() {
-      document.getElementById('login-container').classList.remove('hidden');
-      document.getElementById('dashboard-container').classList.add('hidden');
-      document.getElementById('username').value = '';
-      document.getElementById('password').value = '';
-    }
-  </script>
 </body>
 </html>
