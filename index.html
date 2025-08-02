@@ -177,10 +177,12 @@
         <tbody></tbody>
       </table>
       <div class="actions">
-        <button id="save-btn">Simpan</button>
-        <button id="download-btn">Download PDF</button>
-        <button class="logout-btn" id="logout-btn">Logout</button>
-      </div>
+      <button id="save-btn">Simpan</button>
+      <button id="download-pdf-btn" style="display:none;">Download PDF</button>
+      <button class="logout-btn" id="logout-btn">Logout</button>
+
+        
+    </div>
     </div>
   </div>
 
@@ -196,10 +198,53 @@
     const kelasSelect = document.getElementById("kelas");
     const tanggalInput = document.getElementById("tanggal");
     const santriTableBody = document.querySelector("#santri-table tbody");
-    const saveBtn = document.getElementById("save-btn");
+    document.getElementById("save-btn").addEventListener("click", async () => {
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
+
+  const rows = santriTableBody.querySelectorAll("tr");
+  const data = [];
+  rows.forEach((row, i) => {
+    const id = i + 1;
+    const nama = row.children[1].textContent;
+    const absensi = row.querySelector("select").value;
+    const dari = row.children[3].querySelector("input").value;
+    const sampai = row.children[4].querySelector("input").value;
+    const totalJuz = row.children[5].textContent;
+
+    data.push({ id, nama, absensi, dari, sampai, totalJuz });
+  });
+
+  overlay.style.display = "flex";
+  try {
+    const res = await fetch("/.netlify/functions/saveData", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tanggal, kelas, data })
+    });
+    const result = await res.json();
+    if (result.success) {
+      alert("✅ Data berhasil disimpan!");
+      resetDownloadPdfButton(); // Sembunyikan & tunggu 30 detik
+    } else {
+      alert("❌ Gagal menyimpan data!");
+    }
+  } catch (err) {
+    alert("⚠️ Error menyimpan data!");
+    console.error(err);
+  }
+  overlay.style.display = "none";
+});
     const downloadBtn = document.getElementById("download-btn");
 
     // Cek login dari localStorage
+    window.addEventListener("DOMContentLoaded", () => {
+  const isLoggedIn = localStorage.getItem("isLoggedIn");
+  if (isLoggedIn) {
+    showDashboard();
+  }
+  resetDownloadPdfButton(); // langsung sembunyikan dan timer
+});
     window.addEventListener("DOMContentLoaded", () => {
       const isLoggedIn = localStorage.getItem("isLoggedIn");
       if (isLoggedIn) {
@@ -425,6 +470,16 @@ tanggalInput.addEventListener("change", () => {
   localStorage.setItem("tanggalTerpilih", tanggalInput.value);
   loadSantriData();
 });
+
+    const downloadPdfBtn = document.getElementById("download-pdf-btn");
+
+// Fungsi untuk sembunyikan tombol PDF selama 30 detik
+function resetDownloadPdfButton() {
+  downloadPdfBtn.style.display = "none";
+  setTimeout(() => {
+    downloadPdfBtn.style.display = "inline-block";
+  }, 30000); // 30 detik
+}
   </script>
 </body>
 </html>
