@@ -11,11 +11,11 @@ export async function handler(event) {
 
   try {
     const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     if (res.status === 404) {
-      return { statusCode: 200, body: JSON.stringify([]) };
+      return { statusCode: 200, body: JSON.stringify([]) }; // data kosong jika belum ada
     }
 
     if (!res.ok) throw new Error(`Gagal fetch absensi: ${res.status}`);
