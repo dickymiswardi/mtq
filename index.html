@@ -87,7 +87,6 @@
     .toggle-btn:hover {
       background: #495057;
     }
-    /* Overlay Loading */
     #overlay {
       position: fixed;
       display: none;
@@ -118,9 +117,6 @@
       }
       .actions {
         flex-direction: column;
-      }
-      .password-group {
-        flex-direction: row;
       }
     }
   </style>
@@ -195,132 +191,108 @@
     const tanggalInput = document.getElementById("tanggal");
     const santriTableBody = document.querySelector("#santri-table tbody");
 
-    // Cek login dari localStorage
     window.addEventListener("DOMContentLoaded", () => {
-      const isLoggedIn = localStorage.getItem("isLoggedIn");
-      if (isLoggedIn) {
-        showDashboard();
-      }
+      if (localStorage.getItem("isLoggedIn")) showDashboard();
     });
 
-    // Toggle password
     togglePasswordBtn.addEventListener("click", () => {
-      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
-      passwordInput.setAttribute("type", type);
+      const type = passwordInput.type === "password" ? "text" : "password";
+      passwordInput.type = type;
       togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
     });
 
-    // Login submit
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      overlay.style.display = "flex";
       const username = document.getElementById("username").value;
       const password = passwordInput.value;
-
-      overlay.style.display = "flex";
 
       try {
         const res = await fetch("/.netlify/functions/getUsers");
         const users = await res.json();
         const user = users.find(u => u.username === username && u.password === password);
-
         if (user) {
           localStorage.setItem("isLoggedIn", true);
-          localStorage.setItem("username", username);
           showDashboard();
         } else {
           loginError.style.display = "block";
         }
-      } catch (err) {
+      } catch {
         loginError.textContent = "Gagal memuat data user!";
         loginError.style.display = "block";
       }
       overlay.style.display = "none";
     });
 
-    // Tampilkan dashboard
     function showDashboard() {
       loginCard.style.display = "none";
       dashboardCard.style.display = "block";
       tanggalInput.valueAsDate = new Date();
-      loadSantriData();
+      loadAbsensi();
     }
 
-    // Logout
     logoutBtn.addEventListener("click", () => {
       overlay.style.display = "flex";
       setTimeout(() => {
         localStorage.removeItem("isLoggedIn");
-        localStorage.removeItem("username");
         loginCard.style.display = "block";
         dashboardCard.style.display = "none";
         overlay.style.display = "none";
       }, 500);
     });
 
-    // Event perubahan kelas / tanggal
-    kelasSelect.addEventListener("change", loadSantriData);
-    tanggalInput.addEventListener("change", loadSantriData);
+    kelasSelect.addEventListener("change", loadAbsensi);
+    tanggalInput.addEventListener("change", loadAbsensi);
 
-    // Muat data santri + absensi
-    async function loadSantriData() {
+    async function loadAbsensi() {
+      overlay.style.display = "flex";
       const kelas = kelasSelect.value;
       const tanggal = tanggalInput.value;
-      overlay.style.display = "flex";
 
       try {
-        // Ambil list santri
-        const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-        const santriData = await resSantri.json();
-
-        // Ambil absensi tersimpan
-        const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-        const absensiData = await resAbsensi.json();
+        // Langsung ambil file absensi sesuai kelas & tanggal
+        const res = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+        const absensiData = await res.json();
 
         santriTableBody.innerHTML = "";
-        santriData.forEach((santri, i) => {
-          const existing = absensiData.find(a => String(a.id) === String(santri.id));
+        absensiData.forEach((s, i) => {
           const row = document.createElement("tr");
-          row.dataset.id = santri.id;
-
+          row.dataset.id = s.id;
           row.innerHTML = `
             <td>${i + 1}</td>
-            <td>${santri.nama}</td>
+            <td>${s.nama}</td>
             <td>
               <select>
-                <option value="Hadir" ${existing?.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
-                <option value="Sakit" ${existing?.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
-                <option value="Izin" ${existing?.absensi === "Izin" ? "selected" : ""}>Izin</option>
+                <option value="Hadir" ${s.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
+                <option value="Sakit" ${s.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
+                <option value="Izin" ${s.absensi === "Izin" ? "selected" : ""}>Izin</option>
               </select>
             </td>
-            <td><input type="text" placeholder="dari ayat" value="${existing ? existing.dari : ""}"></td>
-            <td><input type="text" placeholder="sampai ayat" value="${existing ? existing.sampai : ""}"></td>
-            <td>${existing ? existing.totalJuz : 0}</td>
+            <td><input type="text" value="${s.dari}"></td>
+            <td><input type="text" value="${s.sampai}"></td>
+            <td>${s.totalJuz}</td>
           `;
           santriTableBody.appendChild(row);
         });
-      } catch (err) {
-        alert("Gagal memuat data santri!");
+      } catch {
+        alert("Gagal memuat absensi!");
       }
       overlay.style.display = "none";
     }
 
-    // Tombol Simpan
     document.getElementById("save-btn").addEventListener("click", async () => {
       const kelas = kelasSelect.value;
       const tanggal = tanggalInput.value;
 
       const rows = santriTableBody.querySelectorAll("tr");
-      const data = [];
-      rows.forEach((row) => {
-        const id = row.dataset.id;
-        const nama = row.children[1].textContent;
-        const absensi = row.querySelector("select").value;
-        const dari = row.children[3].querySelector("input").value;
-        const sampai = row.children[4].querySelector("input").value;
-        const totalJuz = row.children[5].textContent;
-
-        data.push({ id, nama, absensi, dari, sampai, totalJuz });
-      });
+      const data = [...rows].map(row => ({
+        id: row.dataset.id,
+        nama: row.children[1].textContent,
+        absensi: row.querySelector("select").value,
+        dari: row.children[3].querySelector("input").value,
+        sampai: row.children[4].querySelector("input").value,
+        totalJuz: row.children[5].textContent
+      }));
 
       overlay.style.display = "flex";
       try {
@@ -332,13 +304,12 @@
         const result = await res.json();
         if (result.success) {
           alert("✅ Data berhasil disimpan!");
-          loadSantriData(); // reload data setelah simpan
+          loadAbsensi();
         } else {
           alert("❌ Gagal menyimpan data!");
         }
-      } catch (err) {
+      } catch {
         alert("⚠️ Error menyimpan data!");
-        console.error(err);
       }
       overlay.style.display = "none";
     });
