@@ -278,7 +278,7 @@
     santriTableBody.innerHTML = "";
     santriData.forEach((santri, i) => {
       // Cari data absensi tersimpan
-      const existing = absensiData.find(a => a.id === santri.id);
+      const existing = absensiData.find(a => Number(a.id) === Number(santri.id));
 
       const row = document.createElement("tr");
       row.innerHTML = `
@@ -302,6 +302,7 @@
   }
   overlay.style.display = "none";
 }
+
 
     // Tombol Simpan
     document.getElementById("save-btn").addEventListener("click", async () => {
