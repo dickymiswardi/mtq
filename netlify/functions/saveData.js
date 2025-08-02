@@ -1,47 +1,41 @@
-import { Octokit } from "@octokit/rest";
+// netlify/functions/saveData.js
+const fs = require("fs");
+const path = require("path");
 
-export async function handler(event) {
-  const token = process.env.MTQ_TOKEN;
-  const octokit = new Octokit({ auth: token });
-
+exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+    return { statusCode: 405, body: "Metode tidak diizinkan" };
   }
 
   try {
-    const { kelas, tanggal, data } = JSON.parse(event.body);
+    const { tanggal, kelas, data } = JSON.parse(event.body);
 
-    if (!kelas || !tanggal || !Array.isArray(data)) {
-      return { statusCode: 400, body: "Data tidak valid" };
+    if (!tanggal || !kelas || !data) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ success: false, message: "Data tidak lengkap" }),
+      };
     }
 
-    const path = `absensi/${kelas}_${tanggal}.json`;
-
-    // Ambil konten lama (jika ada)
-    let sha;
-    try {
-      const { data: oldFile } = await octokit.repos.getContent({
-        owner: "dickymiswardi",
-        repo: "usermtq",
-        path,
-      });
-      sha = oldFile.sha;
-    } catch (err) {
-      sha = null; // file baru
+    const folderPath = path.join(__dirname, "../../absensi");
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath, { recursive: true });
     }
 
-    // Simpan ke GitHub
-    await octokit.repos.createOrUpdateFileContents({
-      owner: "dickymiswardi",
-      repo: "usermtq",
-      path,
-      message: `Update absensi ${kelas} ${tanggal}`,
-      content: Buffer.from(JSON.stringify(data, null, 2)).toString("base64"),
-      sha,
-    });
+    const fileName = `${kelas}_${tanggal}.json`;
+    const filePath = path.join(folderPath, fileName);
 
-    return { statusCode: 200, body: JSON.stringify({ success: true }) };
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true, message: "Data berhasil disimpan" }),
+    };
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+    console.error("Error saveData.js:", err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ success: false, message: "Gagal menyimpan data" }),
+    };
   }
-}
+};
