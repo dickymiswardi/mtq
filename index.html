@@ -305,43 +305,54 @@
     tanggalInput.addEventListener("change", loadSantriData);
 
     // Simpan data absensi
-    saveBtn.addEventListener("click", async () => {
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
+    // Tombol Simpan
+saveBtn.addEventListener("click", async () => {
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
 
-      const rows = santriTableBody.querySelectorAll("tr");
-      const data = [];
-      rows.forEach((row, i) => {
-        const id = i + 1;
-        const nama = row.children[1].textContent;
-        const absensi = row.querySelector("select").value;
-        const dari = row.children[3].querySelector("input").value;
-        const sampai = row.children[4].querySelector("input").value;
-        const totalJuz = row.children[5].textContent;
+  const rows = santriTableBody.querySelectorAll("tr");
+  const data = [];
+  rows.forEach((row, i) => {
+    const id = i + 1;
+    const nama = row.children[1].textContent;
+    const absensi = row.querySelector("select").value;
+    const dari = row.children[3].querySelector("input").value;
+    const sampai = row.children[4].querySelector("input").value;
+    const totalJuz = row.children[5].textContent;
 
-        data.push({ id, nama, absensi, dari, sampai, totalJuz });
-      });
+    data.push({ id, nama, absensi, dari, sampai, totalJuz });
+  });
 
-      overlay.style.display = "flex";
-      try {
-        const res = await fetch("/.netlify/functions/saveData", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tanggal, kelas, data })
-        });
-        const result = await res.json();
-        if (result.success) {
-          alert("✅ Data berhasil disimpan!");
-        } else {
-          alert("❌ Gagal menyimpan data!");
-        }
-      } catch (err) {
-        alert("⚠️ Error menyimpan data!");
-        console.error(err);
-      }
-      overlay.style.display = "none";
+  // Ubah tombol jadi loading
+  saveBtn.disabled = true;
+  saveBtn.textContent = "⏳ Menyimpan...";
+
+  try {
+    const res = await fetch("/.netlify/functions/saveData", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tanggal, kelas, data })
     });
-
+    const result = await res.json();
+    if (result.success) {
+      // Tampilkan centang hijau
+      saveBtn.textContent = "✅ Tersimpan";
+      setTimeout(() => {
+        saveBtn.textContent = "Simpan";
+        saveBtn.disabled = false;
+      }, 2000);
+    } else {
+      alert("❌ Gagal menyimpan data!");
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Simpan";
+    }
+  } catch (err) {
+    alert("⚠️ Error menyimpan data!");
+    console.error(err);
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Simpan";
+  }
+});
     // Download PDF
     downloadBtn.addEventListener("click", async () => {
       const kelas = kelasSelect.value;
