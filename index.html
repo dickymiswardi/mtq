@@ -84,7 +84,7 @@
   <script>
     let users = [];
 
-    // Ambil data user via Netlify Function
+    // Ambil data user dari Netlify Functions (getUsers.js)
     fetch('/.netlify/functions/getUsers')
       .then(res => res.json())
       .then(data => {
