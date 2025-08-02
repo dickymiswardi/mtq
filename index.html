@@ -194,7 +194,11 @@
 
         santriTableBody.innerHTML = "";
         santriData.forEach((santri, i) => {
-          const existing = absensiData.find(a => Number(a.id) === Number(santri.id));
+          const existing = absensiData.find(a => String(a.id) === String(santri.id));
+
+          if (result.success) {
+   alert("✅ Data berhasil disimpan!");
+   loadSantriData(); // refresh data biar sinkron
 
           const tr = document.createElement("tr");
           tr.dataset.id = santri.id;
@@ -203,7 +207,7 @@
             <td>${santri.nama}</td>
             <td>
               <select>
-                <option value="Hadir" ${existing?.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
+                <<option value="Hadir" ${existing?.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
                 <option value="Sakit" ${existing?.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
                 <option value="Izin" ${existing?.absensi === "Izin" ? "selected" : ""}>Izin</option>
               </select>
@@ -220,6 +224,14 @@
       overlay.style.display = "none";
     }
 
+
+const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+if (!resAbsensi.ok) {
+   console.warn("Gagal load absensi, status:", resAbsensi.status);
+}
+const absensiData = await resAbsensi.json();
+console.log("absensiData:", absensiData);
+    
     // Simpan data
     document.getElementById("save-btn").addEventListener("click", async () => {
       const kelas = kelasSelect.value;
