@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Absensi & Hafalan Santri</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -52,6 +54,12 @@
     .logout-btn:hover {
       background: #b71c1c;
     }
+    .pdf-btn {
+      background: #43a047;
+    }
+    .pdf-btn:hover {
+      background: #2e7d32;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -73,6 +81,7 @@
       display: flex;
       justify-content: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
     .password-group {
       display: flex;
@@ -176,6 +185,7 @@
       </table>
       <div class="actions">
         <button id="save-btn">Simpan</button>
+        <button id="pdf-btn" class="pdf-btn">Download PDF</button>
         <button class="logout-btn" id="logout-btn">Logout</button>
       </div>
     </div>
@@ -268,15 +278,12 @@
       overlay.style.display = "flex";
 
       try {
-        // Ambil master santri
         const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
         const santriData = await resSantri.json();
 
-        // Ambil data absensi
         const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
         const absensiData = await resAbsensi.json();
 
-        // Render tabel
         santriTableBody.innerHTML = "";
         santriData.forEach((santri, i) => {
           const s = absensiData.find(a => Number(a.id) === Number(santri.id)) || {
@@ -352,6 +359,36 @@
         console.error(err);
       }
       overlay.style.display = "none";
+    });
+
+    // Tombol Download PDF
+    document.getElementById("pdf-btn").addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text(`Laporan Absensi & Hafalan Santri`, 14, 15);
+      doc.setFontSize(12);
+      doc.text(`Kelas: ${kelasSelect.value} | Tanggal: ${tanggalInput.value}`, 14, 23);
+
+      const tableData = [];
+      const rows = santriTableBody.querySelectorAll("tr");
+      rows.forEach((row, i) => {
+        const nama = row.children[1].textContent;
+        const absensi = row.querySelector("select").value;
+        const dari = row.children[3].querySelector("input").value;
+        const sampai = row.children[4].querySelector("input").value;
+        const totalJuz = row.children[5].textContent;
+        tableData.push([i + 1, nama, absensi, dari, sampai, totalJuz]);
+      });
+
+      doc.autoTable({
+        startY: 30,
+        head: [["No", "Nama Santri", "Absensi", "Dari", "Sampai", "Total Juz"]],
+        body: tableData
+      });
+
+      doc.save(`Laporan_${kelasSelect.value}_${tanggalInput.value}.pdf`);
     });
   </script>
 </body>
