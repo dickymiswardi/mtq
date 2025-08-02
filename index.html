@@ -243,11 +243,23 @@
 
     // Tampilkan dashboard
     function showDashboard() {
-      loginCard.style.display = "none";
-      dashboardCard.style.display = "block";
-      tanggalInput.valueAsDate = new Date();
-      loadSantriData();
-    }
+  loginCard.style.display = "none";
+  dashboardCard.style.display = "block";
+
+  // Ambil kelas & tanggal terakhir dari localStorage
+  const kelasTerpilih = localStorage.getItem("kelasTerpilih");
+  const tanggalTerpilih = localStorage.getItem("tanggalTerpilih");
+
+  if (kelasTerpilih) kelasSelect.value = kelasTerpilih;
+  if (tanggalTerpilih) {
+    tanggalInput.value = tanggalTerpilih;
+  } else {
+    tanggalInput.valueAsDate = new Date(); // default hari ini
+    localStorage.setItem("tanggalTerpilih", tanggalInput.value);
+  }
+
+  loadSantriData();
+}
 
     // Logout
     logoutBtn.addEventListener("click", () => {
@@ -395,6 +407,17 @@ saveBtn.addEventListener("click", async () => {
 
       overlay.style.display = "none";
     });
+
+    // Event perubahan kelas / tanggal
+kelasSelect.addEventListener("change", () => {
+  localStorage.setItem("kelasTerpilih", kelasSelect.value);
+  loadSantriData();
+});
+
+tanggalInput.addEventListener("change", () => {
+  localStorage.setItem("tanggalTerpilih", tanggalInput.value);
+  loadSantriData();
+});
   </script>
 </body>
 </html>
