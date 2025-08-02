@@ -371,13 +371,13 @@
     const res = await fetch(`/.netlify/functions/downloadAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
     const data = await res.json();
 
-    if (!data || data.length === 0) {
+    if (!Array.isArray(data) || data.length === 0) {
       alert("⚠️ Data absensi kosong!");
       overlay.style.display = "none";
       return;
     }
 
-    // Konversi data ke PDF (gunakan jsPDF)
+    // Buat PDF dari data JSON (sinkron dengan file repo)
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     doc.setFontSize(14);
@@ -385,7 +385,11 @@
 
     let y = 20;
     data.forEach((s, i) => {
-      doc.text(`${i + 1}. ${s.nama} - Absensi: ${s.absensi} - Dari: ${s.dari} - Sampai: ${s.sampai} - Total Juz: ${s.totalJuz}`, 10, y);
+      doc.text(
+        `${i + 1}. ${s.nama} - Absensi: ${s.absensi} - Dari: ${s.dari} - Sampai: ${s.sampai} - Total Juz: ${s.totalJuz}`,
+        10,
+        y
+      );
       y += 10;
     });
 
@@ -396,6 +400,7 @@
   }
   overlay.style.display = "none";
 });
+
   </script>
 </body>
 </html>
