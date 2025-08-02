@@ -198,9 +198,10 @@ async function loadSantriData() {
       santriTableBody.appendChild(row);
     });
   } catch (err) {
-    alert("⚠️ Gagal memuat data santri!");
-    console.error(err);
-  }
+  overlay.style.display = "none";
+  console.error("❌ Error loadSantriData:", err);
+  alert(`⚠️ Gagal memuat data santri! \n\nDetail: ${err.message}`);
+}
   overlay.style.display = "none";
 }
 
