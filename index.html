@@ -252,13 +252,13 @@
       try {
         // Ambil absensi jika ada
         let absensiData = [];
-        let absensiRes = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+        const absensiRes = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
         if (absensiRes.ok) {
           absensiData = await absensiRes.json();
         }
 
-        // Jika absensi kosong, ambil default dari data santri
-        if (absensiData.length === 0) {
+        // Jika absensi kosong atau file tidak ada, fallback ke data santri
+        if (!absensiData || absensiData.length === 0) {
           const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
           const santriData = await resSantri.json();
           absensiData = santriData.map(s => ({
@@ -271,7 +271,7 @@
           }));
         }
 
-        // Tampilkan di tabel
+        // Render tabel
         santriTableBody.innerHTML = "";
         absensiData.forEach((s, i) => {
           const row = document.createElement("tr");
@@ -292,8 +292,9 @@
           `;
           santriTableBody.appendChild(row);
         });
-      } catch {
-        alert("Gagal memuat data!");
+      } catch (err) {
+        alert("⚠️ Gagal memuat data santri!");
+        console.error(err);
       }
       overlay.style.display = "none";
     }
