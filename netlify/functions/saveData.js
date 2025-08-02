@@ -1,61 +1,59 @@
+// netlify/functions/saveData.js
 import fetch from "node-fetch";
 
 export async function handler(event) {
+  const token = process.env.MTQ_TOKEN;
+
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method not allowed" };
+    return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const token = process.env.MTQ_TOKEN;
-  const owner = "dickymiswardi";
-  const repo = "usermtq";
-
   try {
-    const body = JSON.parse(event.body);
-    const { tanggal, kelas, data } = body;
+    const { tanggal, kelas, data } = JSON.parse(event.body);
 
-    const filename = `absensi/${kelas}_${tanggal}.json`;
-
-    // Ambil SHA file jika sudah ada (update), kalau tidak ada berarti create
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filename}`;
-
-    let sha = null;
-    const checkRes = await fetch(apiUrl, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    if (checkRes.ok) {
-      const existing = await checkRes.json();
-      sha = existing.sha;
+    if (!tanggal || !kelas || !data) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Data tidak lengkap" }),
+      };
     }
 
-    const message = sha ? `update data absensi ${kelas} ${tanggal}` : `create data absensi ${kelas} ${tanggal}`;
+    // Nama file unik berdasarkan kelas dan tanggal
+    const fileName = `${kelas}_${tanggal}.json`;
+    const url = `https://api.github.com/repos/dickymiswardi/usermtq/contents/absensi/${fileName}`;
 
-    const res = await fetch(apiUrl, {
+    // Cek apakah file sudah ada di repo
+    const existing = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github.v3+json" }
+    });
+
+    let sha = null;
+    if (existing.status === 200) {
+      const json = await existing.json();
+      sha = json.sha;
+    }
+
+    // Simpan data ke GitHub repo privat
+    const res = await fetch(url, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        Accept: "application/vnd.github.v3+json",
       },
       body: JSON.stringify({
-        message,
+        message: `Update data absensi ${kelas} tanggal ${tanggal}`,
         content: Buffer.from(JSON.stringify(data, null, 2)).toString("base64"),
-        sha
-      })
+        sha: sha || undefined,
+      }),
     });
 
     if (!res.ok) {
-      const error = await res.text();
-      throw new Error(error);
+      throw new Error(`Gagal menyimpan data: ${res.status}`);
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ success: true })
-    };
+    return { statusCode: 200, body: JSON.stringify({ success: true }) };
   } catch (error) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, error: error.message })
-    };
+    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
   }
 }
