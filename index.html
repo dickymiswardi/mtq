@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Absensi & Hafalan</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      width: 90%;
+      max-width: 500px;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .hidden {
+      display: none;
+    }
+    .dashboard {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="login-container">
+    <h2>Login Pengajar</h2>
+    <label for="username">Username</label>
+    <input type="text" id="username" placeholder="Masukkan username">
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="Masukkan password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div class="container hidden" id="dashboard-container">
+    <div class="dashboard">
+      <h2>Dashboard</h2>
+      <p>Selamat datang, <span id="user-name"></span>!</p>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <script>
+    function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      if (username && password) {
+        document.getElementById('login-container').classList.add('hidden');
+        document.getElementById('dashboard-container').classList.remove('hidden');
+        document.getElementById('user-name').innerText = username;
+      } else {
+        alert('Username dan password wajib diisi!');
+      }
+    }
+
+    function logout() {
+      document.getElementById('login-container').classList.remove('hidden');
+      document.getElementById('dashboard-container').classList.add('hidden');
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    }
+  </script>
+</body>
+</html>
