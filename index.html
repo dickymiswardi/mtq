@@ -11,42 +11,6 @@
       margin: 0;
       background: #f4f6f8;
     }
-
-/* Overlay Loading */
-#overlay {
-  position: fixed;
-  display: none;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.4);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-}
-.spinner {
-  border: 6px solid #f3f3f3;
-  border-top: 6px solid #1e88e5;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 15px;
-}
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-#overlay span {
-  background: #fff;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 18px;
-  color: #333;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-
-    
     .container {
       max-width: 1000px;
       margin: auto;
@@ -164,10 +128,7 @@
   </style>
 </head>
 <body>
-  <div id="overlay">
-  <div class="spinner"></div>
-  <span>⏳ Menyimpan data...</span>
-</div>
+  <div id="overlay"><span>⏳ Loading...</span></div>
   <div class="container">
     <!-- Halaman Login -->
     <div id="login-card" class="card">
@@ -364,7 +325,7 @@
 
     // Simpan data absensi
     // Tombol Simpan
-document.getElementById("save-btn").addEventListener("click", async () => {
+saveBtn.addEventListener("click", async () => {
   const kelas = kelasSelect.value;
   const tanggal = tanggalInput.value;
 
@@ -381,8 +342,9 @@ document.getElementById("save-btn").addEventListener("click", async () => {
     data.push({ id, nama, absensi, dari, sampai, totalJuz });
   });
 
-  // Tampilkan overlay spinner
-  overlay.style.display = "flex";
+  // Ubah tombol jadi loading
+  saveBtn.disabled = true;
+  saveBtn.textContent = "⏳ Menyimpan...";
 
   try {
     const res = await fetch("/.netlify/functions/saveData", {
@@ -392,19 +354,22 @@ document.getElementById("save-btn").addEventListener("click", async () => {
     });
     const result = await res.json();
     if (result.success) {
-      // Tetap tampilkan overlay selama 15 detik
+      // Tampilkan centang hijau
+      saveBtn.textContent = "✅ Tersimpan";
       setTimeout(() => {
-        overlay.style.display = "none";
-        alert("✅ Data berhasil disimpan!");
-      }, 15000);
+        saveBtn.textContent = "Simpan";
+        saveBtn.disabled = false;
+      }, 2000);
     } else {
-      overlay.style.display = "none";
       alert("❌ Gagal menyimpan data!");
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Simpan";
     }
   } catch (err) {
-    overlay.style.display = "none";
     alert("⚠️ Error menyimpan data!");
     console.error(err);
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Simpan";
   }
 });
     // Download PDF
