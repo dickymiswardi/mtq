@@ -3,48 +3,116 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard MTQ</title>
+  <title>Absensi & Hafalan Santri</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
-    .container { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; }
-    h1, h2 { text-align: center; }
-    .hidden { display: none; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    table th, table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-    select, input[type="date"] { padding: 5px; }
-    button { padding: 8px 15px; margin-top: 10px; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f6f8;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-top: 40px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    form, .dashboard-header {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+    input, select, button {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    button {
+      background: #1e88e5;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1565c0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 15px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background: #1e88e5;
+      color: white;
+    }
+    .logout-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      background: #e53935;
+    }
+    @media (max-width: 768px) {
+      .dashboard-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Absensi & Hafalan Santri</h1>
-
-    <!-- LOGIN -->
-    <div id="login-section">
-      <h2>Login</h2>
-      <input type="text" id="username" placeholder="Username" />
-      <input type="password" id="password" placeholder="Password" />
-      <br><br>
-      <button onclick="login()">Login</button>
-      <p id="login-error" style="color: red;"></p>
+    <!-- Halaman Login -->
+    <div id="login-card" class="card">
+      <h1>Login Pengajar</h1>
+      <form id="login-form">
+        <input type="text" id="username" placeholder="Username" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+      </form>
+      <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
     </div>
 
-    <!-- DASHBOARD -->
-    <div id="dashboard-section" class="hidden">
+    <!-- Dashboard -->
+    <div id="dashboard-card" class="card" style="display: none;">
+      <button class="logout-btn" id="logout-btn">Logout</button>
+      <h1>Absensi & Hafalan Santri</h1>
       <h2>Dashboard</h2>
-      <div>
-        <label>Pilih Kelas:</label>
-        <select id="kelasSelect">
-          <option value="">--Pilih--</option>
-          <option value="kelas_1">Kelas 1</option>
-          <option value="kelas_2">Kelas 2</option>
-        </select>
-        &nbsp;&nbsp;
-        <label>Tanggal:</label>
-        <input type="date" id="tanggal">
+
+      <div class="dashboard-header">
+        <div>
+          <label for="kelas">Pilih Kelas:</label>
+          <select id="kelas">
+            <option value="kelas_1">Kelas 1</option>
+            <option value="kelas_2">Kelas 2</option>
+          </select>
+        </div>
+        <div>
+          <label for="tanggal">Tanggal:</label>
+          <input type="date" id="tanggal" />
+        </div>
       </div>
 
-      <table>
+      <table id="santri-table">
         <thead>
           <tr>
             <th>No</th>
@@ -55,89 +123,106 @@
             <th>Total Juz</th>
           </tr>
         </thead>
-        <tbody id="santriBody">
-          <tr><td colspan="6">Pilih kelas untuk memuat data...</td></tr>
-        </tbody>
+        <tbody></tbody>
       </table>
+      <div style="text-align: center; margin-top: 20px;">
+        <button id="save-btn">Simpan</button>
+      </div>
     </div>
   </div>
 
   <script>
-    let users = [];
-    let santri = [];
+    const loginCard = document.getElementById("login-card");
+    const dashboardCard = document.getElementById("dashboard-card");
+    const loginForm = document.getElementById("login-form");
+    const loginError = document.getElementById("login-error");
+    const logoutBtn = document.getElementById("logout-btn");
 
-    // Load users (untuk login)
-    async function loadUsers() {
-      const res = await fetch("/.netlify/functions/getUsers");
-      if (!res.ok) {
-        alert("Gagal memuat users!");
-        return;
+    const kelasSelect = document.getElementById("kelas");
+    const tanggalInput = document.getElementById("tanggal");
+    const santriTableBody = document.querySelector("#santri-table tbody");
+
+    // Cek login dari localStorage
+    window.addEventListener("DOMContentLoaded", () => {
+      const isLoggedIn = localStorage.getItem("isLoggedIn");
+      if (isLoggedIn) {
+        showDashboard();
       }
-      users = await res.json();
-      console.log("Users loaded:", users);
-    }
-
-    function login() {
-      const u = document.getElementById("username").value.trim();
-      const p = document.getElementById("password").value.trim();
-      const error = document.getElementById("login-error");
-
-      const user = users.find(x => x.username === u && x.password === p);
-      if (!user) {
-        error.textContent = "Username atau password salah!";
-        return;
-      }
-
-      document.getElementById("login-section").classList.add("hidden");
-      document.getElementById("dashboard-section").classList.remove("hidden");
-    }
-
-    // Load santri ketika kelas dipilih
-    async function loadSantri(kelas) {
-      const tbody = document.getElementById("santriBody");
-      tbody.innerHTML = `<tr><td colspan="6">Memuat data...</td></tr>`;
-
-      const res = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-      if (!res.ok) {
-        tbody.innerHTML = `<tr><td colspan="6">Gagal memuat data santri!</td></tr>`;
-        return;
-      }
-      santri = await res.json();
-
-      if (santri.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6">Tidak ada data santri</td></tr>`;
-        return;
-      }
-
-      // Render tabel
-      tbody.innerHTML = "";
-      santri.forEach((s, i) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${i + 1}</td>
-          <td>${s.nama}</td>
-          <td>
-            <select>
-              <option>Hadir</option>
-              <option>Sakit</option>
-              <option>Izin</option>
-            </select>
-          </td>
-          <td><input placeholder="dari ayat"></td>
-          <td><input placeholder="sampai ayat"></td>
-          <td>0</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // Event listener kelas
-    document.getElementById("kelasSelect").addEventListener("change", (e) => {
-      if (e.target.value) loadSantri(e.target.value);
     });
 
-    // Jalankan saat awal
-    loadUsers();
+    // Login submit
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("/.netlify/functions/getUsers");
+        const users = await res.json();
+        const user = users.find(u => u.username === username && u.password === password);
+
+        if (user) {
+          localStorage.setItem("isLoggedIn", true);
+          localStorage.setItem("username", username);
+          showDashboard();
+        } else {
+          loginError.style.display = "block";
+        }
+      } catch (err) {
+        loginError.textContent = "Gagal memuat data user!";
+        loginError.style.display = "block";
+      }
+    });
+
+    // Tampilkan dashboard
+    function showDashboard() {
+      loginCard.style.display = "none";
+      dashboardCard.style.display = "block";
+      tanggalInput.valueAsDate = new Date();
+      loadSantriData();
+    }
+
+    // Logout
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("username");
+      loginCard.style.display = "block";
+      dashboardCard.style.display = "none";
+    });
+
+    // Event perubahan kelas / tanggal
+    kelasSelect.addEventListener("change", loadSantriData);
+    tanggalInput.addEventListener("change", loadSantriData);
+
+    async function loadSantriData() {
+      const kelas = kelasSelect.value;
+      try {
+        const res = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+        const data = await res.json();
+
+        santriTableBody.innerHTML = "";
+        data.forEach((santri, i) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${santri.nama}</td>
+            <td>
+              <select>
+                <option value="Hadir">Hadir</option>
+                <option value="Sakit">Sakit</option>
+                <option value="Izin">Izin</option>
+              </select>
+            </td>
+            <td><input type="text" placeholder="dari ayat"></td>
+            <td><input type="text" placeholder="sampai ayat"></td>
+            <td>0</td>
+          `;
+          santriTableBody.appendChild(row);
+        });
+      } catch (err) {
+        alert("Gagal memuat data santri!");
+      }
+    }
   </script>
 </body>
 </html>
