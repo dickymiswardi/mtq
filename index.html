@@ -12,21 +12,19 @@
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     table th, table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
     select, input[type="date"] { padding: 5px; }
-    .actions { margin-top: 20px; text-align: center; }
     button { padding: 8px 15px; margin-top: 10px; cursor: pointer; }
-    .total { font-weight: bold; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Absensi & Hafalan Santri</h1>
 
-    <!-- FORM LOGIN -->
+    <!-- LOGIN -->
     <div id="login-section">
       <h2>Login</h2>
       <input type="text" id="username" placeholder="Username" />
       <input type="password" id="password" placeholder="Password" />
-      <br /><br />
+      <br><br>
       <button onclick="login()">Login</button>
       <p id="login-error" style="color: red;"></p>
     </div>
@@ -35,71 +33,56 @@
     <div id="dashboard-section" class="hidden">
       <h2>Dashboard</h2>
       <div>
-        <label for="kelasSelect">Pilih Kelas:</label>
+        <label>Pilih Kelas:</label>
         <select id="kelasSelect">
           <option value="">--Pilih--</option>
           <option value="kelas_1">Kelas 1</option>
           <option value="kelas_2">Kelas 2</option>
         </select>
         &nbsp;&nbsp;
-        <label for="tanggal">Tanggal:</label>
-        <input type="date" id="tanggal" />
+        <label>Tanggal:</label>
+        <input type="date" id="tanggal">
       </div>
 
-      <table id="santriTable">
+      <table>
         <thead>
           <tr>
             <th>No</th>
             <th>Nama Santri</th>
             <th>Absensi</th>
-            <th>Setoran: Dari (surah:ayat)</th>
-            <th>Setoran: Sampai (surah:ayat)</th>
+            <th>Setoran Dari</th>
+            <th>Setoran Sampai</th>
             <th>Total Juz</th>
           </tr>
         </thead>
-        <tbody id="santriBody"></tbody>
+        <tbody id="santriBody">
+          <tr><td colspan="6">Pilih kelas untuk memuat data...</td></tr>
+        </tbody>
       </table>
-
-      <div class="actions">
-        <button onclick="simpan()">Simpan</button>
-      </div>
     </div>
   </div>
 
   <script>
     let users = [];
     let santri = [];
-    let ayatData = [];
-    let pagesMap = {};
 
-    // Fetch all required data
-    async function initData() {
-      try {
-        const [usersRes, ayatRes, pagesRes] = await Promise.all([
-          fetch("/.netlify/functions/getUsers"),
-          fetch("/.netlify/functions/getAyat"),
-          fetch("/.netlify/functions/getPagesMap")
-        ]);
-
-        if (!usersRes.ok || !ayatRes.ok || !pagesRes.ok) {
-          throw new Error("Gagal memuat data awal!");
-        }
-
-        users = await usersRes.json();
-        ayatData = await ayatRes.json();
-        pagesMap = await pagesRes.json();
-      } catch (err) {
-        alert("Error: " + err.message);
+    // Load users (untuk login)
+    async function loadUsers() {
+      const res = await fetch("/.netlify/functions/getUsers");
+      if (!res.ok) {
+        alert("Gagal memuat users!");
+        return;
       }
+      users = await res.json();
+      console.log("Users loaded:", users);
     }
 
     function login() {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
+      const u = document.getElementById("username").value.trim();
+      const p = document.getElementById("password").value.trim();
       const error = document.getElementById("login-error");
 
-      const user = users.find(u => u.username === username && u.password === password);
-
+      const user = users.find(x => x.username === u && x.password === p);
       if (!user) {
         error.textContent = "Username atau password salah!";
         return;
@@ -109,106 +92,52 @@
       document.getElementById("dashboard-section").classList.remove("hidden");
     }
 
+    // Load santri ketika kelas dipilih
     async function loadSantri(kelas) {
-      try {
-        const res = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-        if (!res.ok) throw new Error("Gagal memuat data santri!");
-        santri = await res.json();
-        renderTable();
-      } catch (err) {
-        alert(err.message);
-      }
-    }
-
-    function renderTable() {
       const tbody = document.getElementById("santriBody");
-      tbody.innerHTML = "";
+      tbody.innerHTML = `<tr><td colspan="6">Memuat data...</td></tr>`;
 
-      if (!santri.length) {
+      const res = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+      if (!res.ok) {
+        tbody.innerHTML = `<tr><td colspan="6">Gagal memuat data santri!</td></tr>`;
+        return;
+      }
+      santri = await res.json();
+
+      if (santri.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6">Tidak ada data santri</td></tr>`;
         return;
       }
 
-      santri.forEach((s, idx) => {
+      // Render tabel
+      tbody.innerHTML = "";
+      santri.forEach((s, i) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${idx + 1}</td>
+          <td>${i + 1}</td>
           <td>${s.nama}</td>
           <td>
-            <select id="absensi-${s.id}">
-              <option value="hadir">Hadir</option>
-              <option value="sakit">Sakit</option>
-              <option value="izin">Izin</option>
+            <select>
+              <option>Hadir</option>
+              <option>Sakit</option>
+              <option>Izin</option>
             </select>
           </td>
-          <td>${renderSurahAyatDropdown(`from-${s.id}`)}</td>
-          <td>${renderSurahAyatDropdown(`to-${s.id}`)}</td>
-          <td class="total" id="total-${s.id}">0</td>
+          <td><input placeholder="dari ayat"></td>
+          <td><input placeholder="sampai ayat"></td>
+          <td>0</td>
         `;
         tbody.appendChild(tr);
-
-        document.getElementById(`from-${s.id}`).addEventListener("change", () => updateTotal(s.id));
-        document.getElementById(`to-${s.id}`).addEventListener("change", () => updateTotal(s.id));
       });
     }
 
-    function renderSurahAyatDropdown(id) {
-      let options = '<option value="">--pilih--</option>';
-      ayatData.forEach(surah => {
-        for (let ayat = 1; ayat <= surah.jumlah_ayat; ayat++) {
-          options += `<option value="${surah.id}:${ayat}">${surah.nama} : ${ayat}</option>`;
-        }
-      });
-      return `<select id="${id}">${options}</select>`;
-    }
-
-    function updateTotal(santriId) {
-      const fromVal = document.getElementById(`from-${santriId}`).value;
-      const toVal = document.getElementById(`to-${santriId}`).value;
-      if (!fromVal || !toVal) return;
-
-      const halamanAwal = pagesMap[fromVal];
-      const halamanAkhir = pagesMap[toVal];
-
-      if (!halamanAwal || !halamanAkhir) {
-        document.getElementById(`total-${santriId}`).textContent = "0";
-        return;
-      }
-
-      const totalHalaman = halamanAkhir - halamanAwal + 1;
-      const totalJuz = (totalHalaman * 0.05).toFixed(2);
-      document.getElementById(`total-${santriId}`).textContent = totalJuz;
-    }
-
-    function simpan() {
-      const tanggal = document.getElementById("tanggal").value;
-      if (!tanggal) {
-        alert("Pilih tanggal terlebih dahulu!");
-        return;
-      }
-
-      const data = santri.map(s => ({
-        id: s.id,
-        nama: s.nama,
-        absensi: document.getElementById(`absensi-${s.id}`).value,
-        from: document.getElementById(`from-${s.id}`).value,
-        to: document.getElementById(`to-${s.id}`).value,
-        totalJuz: document.getElementById(`total-${s.id}`).textContent
-      }));
-
-      console.log("Data disimpan:", { tanggal, data });
-      alert("Data berhasil disimpan (lihat console untuk detail)");
-    }
-
-    // Init saat halaman dibuka
-    initData();
-
-    // Event listener dropdown kelas
+    // Event listener kelas
     document.getElementById("kelasSelect").addEventListener("change", (e) => {
-      if (e.target.value) {
-        loadSantri(e.target.value);
-      }
+      if (e.target.value) loadSantri(e.target.value);
     });
+
+    // Jalankan saat awal
+    loadUsers();
   </script>
 </body>
 </html>
