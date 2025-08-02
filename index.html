@@ -1,123 +1,199 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Absensi & Hafalan</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard MTQ</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f7fa;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .container {
-      background: white;
-      width: 90%;
-      max-width: 500px;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #2c3e50;
-    }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: bold;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      background: #3498db;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    button:hover {
-      background: #2980b9;
-    }
-    .hidden {
-      display: none;
-    }
-    .dashboard {
-      text-align: center;
-    }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; }
+    h1, h2 { text-align: center; }
+    .hidden { display: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    table th, table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    select, input[type="date"] { padding: 5px; }
+    .actions { margin-top: 20px; text-align: center; }
+    button { padding: 8px 15px; margin-top: 10px; cursor: pointer; }
+    .total { font-weight: bold; }
   </style>
 </head>
 <body>
-  <!-- Login -->
-  <div class="container" id="login-container">
-    <h2>Login Pengajar</h2>
-    <label for="username">Username</label>
-    <input type="text" id="username" placeholder="Masukkan username">
-    <label for="password">Password</label>
-    <input type="password" id="password" placeholder="Masukkan password">
-    <button onclick="login()">Login</button>
-  </div>
+  <div class="container">
+    <h1>Absensi & Hafalan Santri</h1>
 
-  <!-- Dashboard -->
-  <div class="container hidden" id="dashboard-container">
-    <div class="dashboard">
+    <!-- FORM LOGIN -->
+    <div id="login-section">
+      <h2>Login</h2>
+      <input type="text" id="username" placeholder="Username" />
+      <input type="password" id="password" placeholder="Password" />
+      <br /><br />
+      <button onclick="login()">Login</button>
+      <p id="login-error" style="color: red;"></p>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard-section" class="hidden">
       <h2>Dashboard</h2>
-      <p>Selamat datang, <span id="user-name"></span>!</p>
-      <button onclick="logout()">Logout</button>
+      <div>
+        <label for="kelasSelect">Pilih Kelas:</label>
+        <select id="kelasSelect" onchange="loadSantri()">
+          <option value="">--Pilih--</option>
+          <option value="kelas_1">Kelas 1</option>
+          <option value="kelas_2">Kelas 2</option>
+        </select>
+        &nbsp;&nbsp;
+        <label for="tanggal">Tanggal:</label>
+        <input type="date" id="tanggal" />
+      </div>
+
+      <table id="santriTable">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Nama Santri</th>
+            <th>Absensi</th>
+            <th>Setoran: Dari (surah:ayat)</th>
+            <th>Setoran: Sampai (surah:ayat)</th>
+            <th>Total Juz</th>
+          </tr>
+        </thead>
+        <tbody id="santriBody"></tbody>
+      </table>
+
+      <div class="actions">
+        <button onclick="simpan()">Simpan</button>
+      </div>
     </div>
   </div>
 
   <script>
     let users = [];
+    let santri = [];
+    let ayatData = [];
+    let pagesMap = {};
 
-    // Ambil data user dari Netlify Functions (getUsers.js)
-    fetch('/.netlify/functions/getUsers')
-      .then(res => res.json())
-      .then(data => {
-        users = data;
-      })
-      .catch(err => console.error('Gagal ambil user.json:', err));
+    async function fetchUsers() {
+      const res = await fetch("/.netlify/functions/getUsers");
+      users = await res.json();
+    }
+
+    async function fetchAyat() {
+      const res = await fetch("/.netlify/functions/getAyat");
+      ayatData = await res.json();
+    }
+
+    async function fetchPagesMap() {
+      const res = await fetch("/.netlify/functions/getPagesMap");
+      pagesMap = await res.json();
+    }
 
     function login() {
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
-
-      if (!users || users.length === 0) {
-        alert('Data akun belum tersedia. Coba refresh halaman.');
-        return;
-      }
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const error = document.getElementById("login-error");
 
       const user = users.find(u => u.username === username && u.password === password);
 
-      if (user) {
-        document.getElementById('login-container').classList.add('hidden');
-        document.getElementById('dashboard-container').classList.remove('hidden');
-        document.getElementById('user-name').innerText = username;
-      } else {
-        alert('Username atau password salah!');
+      if (!user) {
+        error.textContent = "Username atau password salah!";
+        return;
       }
+
+      document.getElementById("login-section").classList.add("hidden");
+      document.getElementById("dashboard-section").classList.remove("hidden");
     }
 
-    function logout() {
-      document.getElementById('login-container').classList.remove('hidden');
-      document.getElementById('dashboard-container').classList.add('hidden');
-      document.getElementById('username').value = '';
-      document.getElementById('password').value = '';
+    async function loadSantri() {
+      const kelas = document.getElementById("kelasSelect").value;
+      if (!kelas) return;
+
+      const res = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+      santri = await res.json();
+      renderTable();
     }
+
+    function renderTable() {
+      const tbody = document.getElementById("santriBody");
+      tbody.innerHTML = "";
+
+      santri.forEach((s, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${s.nama}</td>
+          <td>
+            <select id="absensi-${s.id}">
+              <option value="hadir">Hadir</option>
+              <option value="sakit">Sakit</option>
+              <option value="izin">Izin</option>
+            </select>
+          </td>
+          <td>${renderSurahAyatDropdown(`from-${s.id}`)}</td>
+          <td>${renderSurahAyatDropdown(`to-${s.id}`)}</td>
+          <td class="total" id="total-${s.id}">0</td>
+        `;
+        tbody.appendChild(tr);
+
+        document.getElementById(`from-${s.id}`).addEventListener("change", () => updateTotal(s.id));
+        document.getElementById(`to-${s.id}`).addEventListener("change", () => updateTotal(s.id));
+      });
+    }
+
+    function renderSurahAyatDropdown(id) {
+      // Buat dropdown berdasarkan getAyat.json
+      let options = '<option value="">--pilih--</option>';
+      ayatData.forEach(surah => {
+        for (let ayat = 1; ayat <= surah.jumlah_ayat; ayat++) {
+          options += `<option value="${surah.id}:${ayat}">${surah.nama} : ${ayat}</option>`;
+        }
+      });
+      return `<select id="${id}">${options}</select>`;
+    }
+
+    function updateTotal(santriId) {
+      const fromVal = document.getElementById(`from-${santriId}`).value;
+      const toVal = document.getElementById(`to-${santriId}`).value;
+      if (!fromVal || !toVal) return;
+
+      const halamanAwal = pagesMap[fromVal];
+      const halamanAkhir = pagesMap[toVal];
+
+      if (!halamanAwal || !halamanAkhir) {
+        document.getElementById(`total-${santriId}`).textContent = "0";
+        return;
+      }
+
+      const totalHalaman = halamanAkhir - halamanAwal + 1;
+      const totalJuz = (totalHalaman * 0.05).toFixed(2);
+      document.getElementById(`total-${santriId}`).textContent = totalJuz;
+    }
+
+    function simpan() {
+      const tanggal = document.getElementById("tanggal").value;
+      if (!tanggal) {
+        alert("Pilih tanggal terlebih dahulu!");
+        return;
+      }
+
+      const data = santri.map(s => ({
+        id: s.id,
+        nama: s.nama,
+        absensi: document.getElementById(`absensi-${s.id}`).value,
+        from: document.getElementById(`from-${s.id}`).value,
+        to: document.getElementById(`to-${s.id}`).value,
+        totalJuz: document.getElementById(`total-${s.id}`).textContent
+      }));
+
+      console.log("Data disimpan:", { tanggal, data });
+      alert("Data berhasil disimpan (lihat console untuk detail)");
+    }
+
+    // Load data awal
+    (async () => {
+      await fetchUsers();
+      await fetchAyat();
+      await fetchPagesMap();
+    })();
   </script>
 </body>
 </html>
