@@ -306,10 +306,13 @@
             <td><input type="text" value="${s.sampai}"></td>
             <td>${s.totalJuz}</td>
           `;
-          // Set value dropdown sesuai data absensi
           const select = row.querySelector("select");
-          select.value = s.absensi;
-
+          // Fix: pastikan jika value tidak ada, default "Hadir"
+          if (["Hadir", "Sakit", "Izin"].includes(s.absensi)) {
+            select.value = s.absensi;
+          } else {
+            select.value = "Hadir";
+          }
           santriTableBody.appendChild(row);
         });
       } catch (err) {
@@ -347,7 +350,7 @@
         const result = await res.json();
         if (result.success) {
           alert("✅ Data berhasil disimpan!");
-          loadSantriData(); // reload data terbaru setelah simpan
+          await loadSantriData(); // reload data terbaru setelah simpan
         } else {
           alert("❌ Gagal menyimpan data!");
         }
