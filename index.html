@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Absensi & Hafalan Santri</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -54,12 +52,6 @@
     .logout-btn:hover {
       background: #b71c1c;
     }
-    .pdf-btn {
-      background: #43a047;
-    }
-    .pdf-btn:hover {
-      background: #2e7d32;
-    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -81,7 +73,6 @@
       display: flex;
       justify-content: center;
       gap: 10px;
-      flex-wrap: wrap;
     }
     .password-group {
       display: flex;
@@ -185,7 +176,6 @@
       </table>
       <div class="actions">
         <button id="save-btn">Simpan</button>
-        <button id="pdf-btn" class="pdf-btn">Download PDF</button>
         <button class="logout-btn" id="logout-btn">Logout</button>
       </div>
     </div>
@@ -271,130 +261,114 @@
     kelasSelect.addEventListener("change", loadSantriData);
     tanggalInput.addEventListener("change", loadSantriData);
 
-    // Load data santri + absensi
+    // Load Data
     async function loadSantriData() {
-  const kelas = kelasSelect.value;
-  const tanggal = tanggalInput.value;
-  overlay.style.display = "flex";
+      const kelas = kelasSelect.value;
+      const tanggal = tanggalInput.value;
+      overlay.style.display = "flex";
 
-  try {
-    const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-    const absensiData = await resAbsensi.json();
+      try {
+        // Ambil absensi jika ada, jika tidak gunakan data santri
+        const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+        const absensiData = await resAbsensi.json();
 
-    if (!Array.isArray(absensiData) || absensiData.length === 0) {
-      alert("⚠️ Data absensi kosong!");
-      santriTableBody.innerHTML = "";
+        // Jika data absensi kosong, ambil list santri default
+        let dataToUse = absensiData;
+        if (!absensiData || absensiData.length === 0) {
+          const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+          const santriData = await resSantri.json();
+          dataToUse = santriData.map(s => ({
+            id: s.id,
+            nama: s.nama,
+            absensi: "Hadir",
+            dari: "",
+            sampai: "",
+            totalJuz: "0"
+          }));
+        }
+
+        // Render tabel
+        santriTableBody.innerHTML = "";
+        dataToUse.forEach((s, i) => {
+          const row = document.createElement("tr");
+          row.dataset.id = s.id;
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${s.nama}</td>
+            <td>
+              <select>
+                <option value="Hadir">Hadir</option>
+                <option value="Sakit">Sakit</option>
+                <option value="Izin">Izin</option>
+              </select>
+            </td>
+            <td><input type="text" value="${s.dari}"></td>
+            <td><input type="text" value="${s.sampai}"></td>
+            <td>${s.totalJuz}</td>
+          `;
+          const select = row.querySelector("select");
+          // Fix: pastikan jika value tidak ada, default "Hadir"
+          if (["Hadir", "Sakit", "Izin"].includes(s.absensi)) {
+            select.value = s.absensi;
+          } else {
+            select.value = "Hadir";
+          }
+          santriTableBody.appendChild(row);
+        });
+      } catch (err) {
+        alert("⚠️ Gagal memuat data santri!");
+        console.error(err);
+      }
       overlay.style.display = "none";
-      return;
     }
-
-    // Render tabel
-    santriTableBody.innerHTML = "";
-    absensiData.forEach((s, i) => {
-      const row = document.createElement("tr");
-      row.dataset.id = s.id;
-      row.innerHTML = `
-        <td>${i + 1}</td>
-        <td>${s.nama}</td>
-        <td>
-          <select>
-            <option value="Hadir" ${s.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
-            <option value="Sakit" ${s.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
-            <option value="Izin" ${s.absensi === "Izin" ? "selected" : ""}>Izin</option>
-          </select>
-        </td>
-        <td><input type="text" value="${s.dari}"></td>
-        <td><input type="text" value="${s.sampai}"></td>
-        <td>${s.totalJuz}</td>
-      `;
-      santriTableBody.appendChild(row);
-    });
-  } catch (err) {
-    alert("⚠️ Gagal memuat data absensi!");
-    console.error(err);
-  }
-  overlay.style.display = "none";
-}
-
 
     // Tombol Simpan
     document.getElementById("save-btn").addEventListener("click", async () => {
-  const kelas = kelasSelect.value;
-  const tanggal = tanggalInput.value;
+      const kelas = kelasSelect.value;
+      const tanggal = tanggalInput.value;
 
-  const rows = santriTableBody.querySelectorAll("tr");
-  const data = [];
-  rows.forEach(row => {
-    const id = row.dataset.id;
-    const nama = row.children[1].textContent;
-    const absensi = row.querySelector("select").value;
-    const dari = row.children[3].querySelector("input").value;
-    const sampai = row.children[4].querySelector("input").value;
-    const totalJuz = row.children[5].textContent;
-    data.push({ id, nama, absensi, dari, sampai, totalJuz });
-  });
+      const rows = santriTableBody.querySelectorAll("tr");
+      const data = [];
+      rows.forEach((row) => {
+        const id = row.dataset.id;
+        const nama = row.children[1].textContent;
+        const absensi = row.querySelector("select").value;
+        const dari = row.children[3].querySelector("input").value;
+        const sampai = row.children[4].querySelector("input").value;
+        const totalJuz = row.children[5].textContent;
 
-  overlay.style.display = "flex";
-  try {
-    const res = await fetch("/.netlify/functions/saveData", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tanggal, kelas, data })
-    });
-    const result = await res.json();
-    if (result.success) {
-      alert("✅ Data berhasil disimpan!");
-      await loadSantriData(); // reload data dari file
-    } else {
-      alert("❌ Gagal menyimpan data!");
-    }
-  } catch (err) {
-    alert("⚠️ Error menyimpan data!");
-    console.error(err);
-  }
-  overlay.style.display = "none";
-});
+        data.push({ id, nama, absensi, dari, sampai, totalJuz });
+      });
 
-
-    // Tombol Download PDF langsung dari JSON
-document.getElementById("pdf-btn").addEventListener("click", async () => {
-  const kelas = kelasSelect.value;
-  const tanggal = tanggalInput.value;
-
-  overlay.style.display = "flex";
-  try {
-    const res = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-    const data = await res.json();
-
-    if (!Array.isArray(data) || data.length === 0) {
-      alert("⚠️ Data absensi kosong!");
+      overlay.style.display = "flex";
+      try {
+        const res = await fetch("/.netlify/functions/saveData", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tanggal, kelas, data })
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert("✅ Data berhasil disimpan!");
+          await loadSantriData(); // reload data terbaru setelah simpan
+        } else {
+          alert("❌ Gagal menyimpan data!");
+        }
+      } catch (err) {
+        alert("⚠️ Error menyimpan data!");
+        console.error(err);
+      }
       overlay.style.display = "none";
-      return;
-    }
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text(`Laporan Absensi Kelas ${kelas} (${tanggal})`, 10, 10);
-
-    let y = 20;
-    data.forEach((s, i) => {
-      doc.text(
-        `${i + 1}. ${s.nama} - ${s.absensi} - Dari: ${s.dari} - Sampai: ${s.sampai} - Juz: ${s.totalJuz}`,
-        10,
-        y
-      );
-      y += 10;
     });
-
-    doc.save(`Absensi_${kelas}_${tanggal}.pdf`);
-  } catch (err) {
-    alert("⚠️ Gagal mendownload data!");
-    console.error(err);
-  }
-  overlay.style.display = "none";
-});
+    const reloadBtn = document.getElementById("reload-btn");
+reloadBtn.addEventListener("click", loadSantriData);
 
   </script>
+
+  <div class="actions">
+  <button id="save-btn">Simpan</button>
+  <button id="reload-btn">Reload Data</button>
+  <button class="logout-btn" id="logout-btn">Logout</button>
+</div>
 </body>
 </html>
