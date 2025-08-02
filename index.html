@@ -70,6 +70,9 @@
     .actions {
       text-align: center;
       margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
     }
     .password-group {
       display: flex;
@@ -84,6 +87,25 @@
     .toggle-btn:hover {
       background: #495057;
     }
+    /* Overlay Loading */
+    #overlay {
+      position: fixed;
+      display: none;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    #overlay span {
+      background: #fff;
+      padding: 15px 25px;
+      border-radius: 8px;
+      font-size: 18px;
+      color: #333;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
     @media (max-width: 768px) {
       .dashboard-header {
         flex-direction: column;
@@ -95,9 +117,7 @@
         white-space: nowrap;
       }
       .actions {
-        display: flex;
         flex-direction: column;
-        gap: 10px;
       }
       .password-group {
         flex-direction: row;
@@ -106,6 +126,7 @@
   </style>
 </head>
 <body>
+  <div id="overlay"><span>⏳ Loading...</span></div>
   <div class="container">
     <!-- Halaman Login -->
     <div id="login-card" class="card">
@@ -168,6 +189,7 @@
     const logoutBtn = document.getElementById("logout-btn");
     const togglePasswordBtn = document.getElementById("toggle-password");
     const passwordInput = document.getElementById("password");
+    const overlay = document.getElementById("overlay");
 
     const kelasSelect = document.getElementById("kelas");
     const tanggalInput = document.getElementById("tanggal");
@@ -194,6 +216,8 @@
       const username = document.getElementById("username").value;
       const password = passwordInput.value;
 
+      overlay.style.display = "flex";
+
       try {
         const res = await fetch("/.netlify/functions/getUsers");
         const users = await res.json();
@@ -210,6 +234,7 @@
         loginError.textContent = "Gagal memuat data user!";
         loginError.style.display = "block";
       }
+      overlay.style.display = "none";
     });
 
     // Tampilkan dashboard
@@ -222,10 +247,14 @@
 
     // Logout
     logoutBtn.addEventListener("click", () => {
-      localStorage.removeItem("isLoggedIn");
-      localStorage.removeItem("username");
-      loginCard.style.display = "block";
-      dashboardCard.style.display = "none";
+      overlay.style.display = "flex";
+      setTimeout(() => {
+        localStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("username");
+        loginCard.style.display = "block";
+        dashboardCard.style.display = "none";
+        overlay.style.display = "none";
+      }, 500);
     });
 
     // Event perubahan kelas / tanggal
@@ -234,6 +263,7 @@
 
     async function loadSantriData() {
       const kelas = kelasSelect.value;
+      overlay.style.display = "flex";
       try {
         const res = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
         const data = await res.json();
@@ -260,7 +290,46 @@
       } catch (err) {
         alert("Gagal memuat data santri!");
       }
+      overlay.style.display = "none";
     }
+
+    // Tombol Simpan
+    document.getElementById("save-btn").addEventListener("click", async () => {
+      const kelas = kelasSelect.value;
+      const tanggal = tanggalInput.value;
+
+      const rows = santriTableBody.querySelectorAll("tr");
+      const data = [];
+      rows.forEach((row, i) => {
+        const id = i + 1;
+        const nama = row.children[1].textContent;
+        const absensi = row.querySelector("select").value;
+        const dari = row.children[3].querySelector("input").value;
+        const sampai = row.children[4].querySelector("input").value;
+        const totalJuz = row.children[5].textContent;
+
+        data.push({ id, nama, absensi, dari, sampai, totalJuz });
+      });
+
+      overlay.style.display = "flex";
+      try {
+        const res = await fetch("/.netlify/functions/saveData", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tanggal, kelas, data })
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert("✅ Data berhasil disimpan!");
+        } else {
+          alert("❌ Gagal menyimpan data!");
+        }
+      } catch (err) {
+        alert("⚠️ Error menyimpan data!");
+        console.error(err);
+      }
+      overlay.style.display = "none";
+    });
   </script>
 </body>
 </html>
