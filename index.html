@@ -306,13 +306,10 @@
             <td><input type="text" value="${s.sampai}"></td>
             <td>${s.totalJuz}</td>
           `;
+          // Set value dropdown sesuai data absensi
           const select = row.querySelector("select");
-          // Fix: pastikan jika value tidak ada, default "Hadir"
-          if (["Hadir", "Sakit", "Izin"].includes(s.absensi)) {
-            select.value = s.absensi;
-          } else {
-            select.value = "Hadir";
-          }
+          select.value = s.absensi;
+
           santriTableBody.appendChild(row);
         });
       } catch (err) {
@@ -350,7 +347,7 @@
         const result = await res.json();
         if (result.success) {
           alert("✅ Data berhasil disimpan!");
-          await loadSantriData(); // reload data terbaru setelah simpan
+          loadSantriData(); // reload data terbaru setelah simpan
         } else {
           alert("❌ Gagal menyimpan data!");
         }
@@ -360,15 +357,6 @@
       }
       overlay.style.display = "none";
     });
-    const reloadBtn = document.getElementById("reload-btn");
-reloadBtn.addEventListener("click", loadSantriData);
-
   </script>
-
-  <div class="actions">
-  <button id="save-btn">Simpan</button>
-  <button id="reload-btn">Reload Data</button>
-  <button class="logout-btn" id="logout-btn">Logout</button>
-</div>
 </body>
 </html>
