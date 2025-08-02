@@ -261,63 +261,48 @@
     kelasSelect.addEventListener("change", loadSantriData);
     tanggalInput.addEventListener("change", loadSantriData);
 
-    // Load Data
     async function loadSantriData() {
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
-      overlay.style.display = "flex";
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
+  overlay.style.display = "flex";
 
-      try {
-        // Ambil absensi jika ada, jika tidak gunakan data santri
-        const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-        const absensiData = await resAbsensi.json();
+  try {
+    // Ambil list santri
+    const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+    const santriData = await resSantri.json();
 
-        // Jika data absensi kosong, ambil list santri default
-        let dataToUse = absensiData;
-        if (!absensiData || absensiData.length === 0) {
-          const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-          const santriData = await resSantri.json();
-          dataToUse = santriData.map(s => ({
-            id: s.id,
-            nama: s.nama,
-            absensi: "Hadir",
-            dari: "",
-            sampai: "",
-            totalJuz: "0"
-          }));
-        }
+    // Ambil absensi tersimpan
+    const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+    const absensiData = await resAbsensi.json();
 
-        // Render tabel
-        santriTableBody.innerHTML = "";
-        dataToUse.forEach((s, i) => {
-          const row = document.createElement("tr");
-          row.dataset.id = s.id;
-          row.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${s.nama}</td>
-            <td>
-              <select>
-                <option value="Hadir">Hadir</option>
-                <option value="Sakit">Sakit</option>
-                <option value="Izin">Izin</option>
-              </select>
-            </td>
-            <td><input type="text" value="${s.dari}"></td>
-            <td><input type="text" value="${s.sampai}"></td>
-            <td>${s.totalJuz}</td>
-          `;
-          // Set value dropdown sesuai data absensi
-          const select = row.querySelector("select");
-          select.value = s.absensi;
+    santriTableBody.innerHTML = "";
+    santriData.forEach((santri, i) => {
+      // Cari data absensi tersimpan
+      const existing = absensiData.find(a => a.id === santri.id);
 
-          santriTableBody.appendChild(row);
-        });
-      } catch (err) {
-        alert("⚠️ Gagal memuat data santri!");
-        console.error(err);
-      }
-      overlay.style.display = "none";
-    }
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${santri.nama}</td>
+        <td>
+          <select>
+            <option value="Hadir" ${existing && existing.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
+            <option value="Sakit" ${existing && existing.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
+            <option value="Izin" ${existing && existing.absensi === "Izin" ? "selected" : ""}>Izin</option>
+          </select>
+        </td>
+        <td><input type="text" placeholder="dari ayat" value="${existing ? existing.dari : ""}"></td>
+        <td><input type="text" placeholder="sampai ayat" value="${existing ? existing.sampai : ""}"></td>
+        <td>${existing ? existing.totalJuz : 0}</td>
+      `;
+      santriTableBody.appendChild(row);
+    });
+  } catch (err) {
+    alert("Gagal memuat data santri!");
+  }
+  overlay.style.display = "none";
+}
+
 
     // Tombol Simpan
     document.getElementById("save-btn").addEventListener("click", async () => {
@@ -326,8 +311,8 @@
 
       const rows = santriTableBody.querySelectorAll("tr");
       const data = [];
-      rows.forEach((row) => {
-        const id = row.dataset.id;
+      rows.forEach((row, i) => {
+        const id = i + 1;
         const nama = row.children[1].textContent;
         const absensi = row.querySelector("select").value;
         const dari = row.children[3].querySelector("input").value;
@@ -347,7 +332,6 @@
         const result = await res.json();
         if (result.success) {
           alert("✅ Data berhasil disimpan!");
-          loadSantriData(); // reload data terbaru setelah simpan
         } else {
           alert("❌ Gagal menyimpan data!");
         }
