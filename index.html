@@ -319,42 +319,42 @@
 
     // Tombol Simpan
     document.getElementById("save-btn").addEventListener("click", async () => {
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
 
-      const rows = santriTableBody.querySelectorAll("tr");
-      const data = [];
-      rows.forEach(row => {
-        const id = Number(row.dataset.id);
-        const nama = row.children[1].textContent;
-        const absensi = row.querySelector("select").value;
-        const dari = row.children[3].querySelector("input").value;
-        const sampai = row.children[4].querySelector("input").value;
-        const totalJuz = row.children[5].textContent;
+  const rows = santriTableBody.querySelectorAll("tr");
+  const data = [];
+  rows.forEach(row => {
+    const id = row.dataset.id;
+    const nama = row.children[1].textContent;
+    const absensi = row.querySelector("select").value;
+    const dari = row.children[3].querySelector("input").value;
+    const sampai = row.children[4].querySelector("input").value;
+    const totalJuz = row.children[5].textContent;
+    data.push({ id, nama, absensi, dari, sampai, totalJuz });
+  });
 
-        data.push({ id, nama, absensi, dari, sampai, totalJuz });
-      });
-
-      overlay.style.display = "flex";
-      try {
-        const res = await fetch("/.netlify/functions/saveData", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tanggal, kelas, data })
-        });
-        const result = await res.json();
-        if (result.success) {
-          alert("✅ Data berhasil disimpan!");
-          loadSantriData(); // reload otomatis
-        } else {
-          alert("❌ Gagal menyimpan data!");
-        }
-      } catch (err) {
-        alert("⚠️ Error menyimpan data!");
-        console.error(err);
-      }
-      overlay.style.display = "none";
+  overlay.style.display = "flex";
+  try {
+    const res = await fetch("/.netlify/functions/saveData", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tanggal, kelas, data })
     });
+    const result = await res.json();
+    if (result.success) {
+      alert("✅ Data berhasil disimpan!");
+      await loadSantriData(); // reload data dari file
+    } else {
+      alert("❌ Gagal menyimpan data!");
+    }
+  } catch (err) {
+    alert("⚠️ Error menyimpan data!");
+    console.error(err);
+  }
+  overlay.style.display = "none";
+});
+
 
     // Tombol Download PDF langsung dari JSON
 document.getElementById("pdf-btn").addEventListener("click", async () => {
