@@ -3,220 +3,121 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Absensi & Hafalan Santri</title>
+  <title>MTQ Dashboard</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f4f6f8;
-    }
-    .container {
-      max-width: 1000px;
-      margin: auto;
-      padding: 20px;
-    }
-    .card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      margin-top: 40px;
-    }
-    h1, h2 {
-      text-align: center;
-    }
-    form, .dashboard-header {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      align-items: center;
-    }
-    input, select, button {
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 16px;
-    }
-    button {
-      background: #1e88e5;
-      color: white;
-      cursor: pointer;
-      margin: 2px;
-    }
-    button:hover {
-      background: #1565c0;
-    }
-    .logout-btn {
-      background: #e53935;
-    }
-    .logout-btn:hover {
-      background: #b71c1c;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      font-size: 15px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background: #1e88e5;
-      color: white;
-    }
-    .actions {
-      text-align: center;
-      margin-top: 20px;
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-    .password-group {
-      display: flex;
-      gap: 5px;
-      align-items: center;
-    }
-    .toggle-btn {
-      background: #6c757d;
-      font-size: 13px;
-      padding: 10px 14px;
-    }
-    .toggle-btn:hover {
-      background: #495057;
-    }
-    /* Overlay Loading */
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .container { padding: 20px; }
+    .login-container, .dashboard-container { max-width: 600px; margin: auto; }
+    .hidden { display: none; }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 10px; }
+    input, select, button { padding: 8px; margin-top: 5px; width: 100%; box-sizing: border-box; }
+    .password-container { display: flex; }
+    .password-container input { flex: 1; }
+    .password-container button { width: 60px; margin-left: 5px; }
+    .button-container { display: flex; gap: 5px; margin-top: 15px; flex-wrap: wrap; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    table th, table td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    table th { background: #f5f5f5; }
+    .table-wrapper { overflow-x: auto; }
     #overlay {
-      position: fixed;
       display: none;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.4);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-    }
-    #overlay span {
-      background: #fff;
-      padding: 15px 25px;
-      border-radius: 8px;
-      font-size: 18px;
-      color: #333;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-    @media (max-width: 768px) {
-      .dashboard-header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-      }
-      .actions {
-        flex-direction: column;
-      }
-      .password-group {
-        flex-direction: row;
-      }
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); color: #fff;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 18px; z-index: 999;
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <div id="overlay"><span>⏳ Loading...</span></div>
+  <div id="overlay">Loading...</div>
+
   <div class="container">
-    <!-- Halaman Login -->
-    <div id="login-card" class="card">
-      <h1>Login Pengajar</h1>
-      <form id="login-form">
-        <input type="text" id="username" placeholder="Username" required />
-        <div class="password-group">
-          <input type="password" id="password" placeholder="Password" required />
-          <button type="button" id="toggle-password" class="toggle-btn">👁</button>
-        </div>
-        <button type="submit">Login</button>
-      </form>
-      <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
+    <!-- Login -->
+    <div id="loginContainer" class="login-container">
+      <h2>Login</h2>
+      <label for="username">Username</label>
+      <input type="text" id="username" />
+
+      <label for="password">Password</label>
+      <div class="password-container">
+        <input type="password" id="password" />
+        <button id="togglePassword" type="button">👁</button>
+      </div>
+
+      <button id="loginBtn">Login</button>
     </div>
 
     <!-- Dashboard -->
-    <div id="dashboard-card" class="card" style="display: none;">
-      <h1>Absensi & Hafalan Santri</h1>
+    <div id="dashboardContainer" class="dashboard-container hidden">
       <h2>Dashboard</h2>
+      <label for="kelasSelect">Pilih Kelas</label>
+      <select id="kelasSelect">
+        <option value="">-- Pilih Kelas --</option>
+        <option value="kelas_1">Kelas 1</option>
+        <option value="kelas_2">Kelas 2</option>
+      </select>
 
-      <div class="dashboard-header">
-        <div>
-          <label for="kelas">Pilih Kelas:</label>
-          <select id="kelas">
-            <option value="kelas_1">Kelas 1</option>
-            <option value="kelas_2">Kelas 2</option>
-          </select>
-        </div>
-        <div>
-          <label for="tanggal">Tanggal:</label>
-          <input type="date" id="tanggal" />
-        </div>
+      <label for="tanggalInput">Pilih Tanggal</label>
+      <input type="date" id="tanggalInput" />
+
+      <div class="button-container">
+        <button id="saveBtn">💾 Simpan</button>
+        <button id="downloadBtn">⬇️ Download PDF</button>
+        <button id="logoutBtn">🚪 Logout</button>
       </div>
 
-      <table id="santri-table">
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Nama Santri</th>
-            <th>Absensi</th>
-            <th>Setoran Dari</th>
-            <th>Setoran Sampai</th>
-            <th>Total Juz</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div class="actions">
-        <button id="save-btn">Simpan</button>
-        <button class="logout-btn" id="logout-btn">Logout</button>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama</th>
+              <th>Absensi</th>
+              <th>Dari Ayat</th>
+              <th>Sampai Ayat</th>
+              <th>Total Juz</th>
+            </tr>
+          </thead>
+          <tbody id="santriTableBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
   <script>
-    const loginCard = document.getElementById("login-card");
-    const dashboardCard = document.getElementById("dashboard-card");
-    const loginForm = document.getElementById("login-form");
-    const loginError = document.getElementById("login-error");
-    const logoutBtn = document.getElementById("logout-btn");
-    const togglePasswordBtn = document.getElementById("toggle-password");
-    const passwordInput = document.getElementById("password");
     const overlay = document.getElementById("overlay");
+    const loginContainer = document.getElementById("loginContainer");
+    const dashboardContainer = document.getElementById("dashboardContainer");
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const togglePassword = document.getElementById("togglePassword");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const kelasSelect = document.getElementById("kelasSelect");
+    const tanggalInput = document.getElementById("tanggalInput");
+    const santriTableBody = document.getElementById("santriTableBody");
 
-    const kelasSelect = document.getElementById("kelas");
-    const tanggalInput = document.getElementById("tanggal");
-    const santriTableBody = document.querySelector("#santri-table tbody");
+    // Password toggle
+    togglePassword.addEventListener("click", () => {
+      passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+    });
 
     // Cek login dari localStorage
-    window.addEventListener("DOMContentLoaded", () => {
-      const isLoggedIn = localStorage.getItem("isLoggedIn");
-      if (isLoggedIn) {
+    window.addEventListener("load", () => {
+      if (localStorage.getItem("isLoggedIn")) {
         showDashboard();
       }
     });
 
-    // Toggle password
-    togglePasswordBtn.addEventListener("click", () => {
-      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
-      passwordInput.setAttribute("type", type);
-      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
-    });
-
-    // Login submit
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const username = document.getElementById("username").value;
-      const password = passwordInput.value;
-
+    // Login
+    loginBtn.addEventListener("click", async () => {
       overlay.style.display = "flex";
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
 
       try {
         const res = await fetch("/.netlify/functions/getUsers");
@@ -224,121 +125,184 @@
         const user = users.find(u => u.username === username && u.password === password);
 
         if (user) {
-          localStorage.setItem("isLoggedIn", true);
-          localStorage.setItem("username", username);
+          localStorage.setItem("isLoggedIn", "true");
           showDashboard();
         } else {
-          loginError.style.display = "block";
+          alert("Username atau password salah!");
         }
       } catch (err) {
-        loginError.textContent = "Gagal memuat data user!";
-        loginError.style.display = "block";
+        alert("Gagal login!");
       }
       overlay.style.display = "none";
     });
 
-    // Tampilkan dashboard
-    function showDashboard() {
-      loginCard.style.display = "none";
-      dashboardCard.style.display = "block";
-      tanggalInput.valueAsDate = new Date();
-      loadSantriData();
-    }
-
     // Logout
     logoutBtn.addEventListener("click", () => {
       overlay.style.display = "flex";
+      localStorage.removeItem("isLoggedIn");
       setTimeout(() => {
-        localStorage.removeItem("isLoggedIn");
-        localStorage.removeItem("username");
-        loginCard.style.display = "block";
-        dashboardCard.style.display = "none";
+        loginContainer.classList.remove("hidden");
+        dashboardContainer.classList.add("hidden");
         overlay.style.display = "none";
-      }, 500);
+      }, 300);
     });
 
-    // Event perubahan kelas / tanggal
-    kelasSelect.addEventListener("change", loadSantriData);
-    tanggalInput.addEventListener("change", loadSantriData);
+    // Show dashboard
+    function showDashboard() {
+      loginContainer.classList.add("hidden");
+      dashboardContainer.classList.remove("hidden");
+    }
 
+    // Load data santri + absensi
     async function loadSantriData() {
-  const kelas = kelasSelect.value;
-  const tanggal = tanggalInput.value;
-  overlay.style.display = "flex";
-
-  try {
-    // Ambil list santri
-    const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-    const santriData = await resSantri.json();
-
-    // Ambil absensi tersimpan
-    const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-    const absensiData = await resAbsensi.json();
-
-    santriTableBody.innerHTML = "";
-    santriData.forEach((santri, i) => {
-      // Cari data absensi tersimpan
-      const existing = absensiData.find(a => a.id === santri.id);
-
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${i + 1}</td>
-        <td>${santri.nama}</td>
-        <td>
-          <select>
-            <option value="Hadir" ${existing && existing.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
-            <option value="Sakit" ${existing && existing.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
-            <option value="Izin" ${existing && existing.absensi === "Izin" ? "selected" : ""}>Izin</option>
-          </select>
-        </td>
-        <td><input type="text" placeholder="dari ayat" value="${existing ? existing.dari : ""}"></td>
-        <td><input type="text" placeholder="sampai ayat" value="${existing ? existing.sampai : ""}"></td>
-        <td>${existing ? existing.totalJuz : 0}</td>
-      `;
-      santriTableBody.appendChild(row);
-    });
-  } catch (err) {
-    alert("Gagal memuat data santri!");
-  }
-  overlay.style.display = "none";
-}
-
-
-    // Tombol Simpan
-    document.getElementById("save-btn").addEventListener("click", async () => {
       const kelas = kelasSelect.value;
       const tanggal = tanggalInput.value;
-
-      const rows = santriTableBody.querySelectorAll("tr");
-      const data = [];
-      rows.forEach((row, i) => {
-        const id = i + 1;
-        const nama = row.children[1].textContent;
-        const absensi = row.querySelector("select").value;
-        const dari = row.children[3].querySelector("input").value;
-        const sampai = row.children[4].querySelector("input").value;
-        const totalJuz = row.children[5].textContent;
-
-        data.push({ id, nama, absensi, dari, sampai, totalJuz });
-      });
+      if (!kelas || !tanggal) return;
 
       overlay.style.display = "flex";
       try {
+        const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+        const santriData = await resSantri.json();
+
+        const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+        const absensiData = await resAbsensi.json();
+
+        santriTableBody.innerHTML = "";
+        santriData.forEach((santri, i) => {
+          const existing = absensiData.find(a => a.id === santri.id);
+
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${santri.nama}</td>
+            <td>
+              <select>
+                <option value="Hadir" ${existing && existing.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
+                <option value="Sakit" ${existing && existing.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
+                <option value="Izin" ${existing && existing.absensi === "Izin" ? "selected" : ""}>Izin</option>
+              </select>
+            </td>
+            <td><input type="text" placeholder="dari ayat" value="${existing ? existing.dari : ""}"></td>
+            <td><input type="text" placeholder="sampai ayat" value="${existing ? existing.sampai : ""}"></td>
+            <td>${existing ? existing.totalJuz : 0}</td>
+          `;
+          santriTableBody.appendChild(row);
+        });
+      } catch (err) {
+        alert("Gagal memuat data santri!");
+      }
+      overlay.style.display = "none";
+    }
+
+    kelasSelect.addEventListener("change", loadSantriData);
+    tanggalInput.addEventListener("change", loadSantriData);
+
+    // Simpan data
+    saveBtn.addEventListener("click", async () => {
+      const kelas = kelasSelect.value;
+      const tanggal = tanggalInput.value;
+      if (!kelas || !tanggal) {
+        alert("Pilih kelas dan tanggal!");
+        return;
+      }
+
+      overlay.style.display = "flex";
+
+      const data = [];
+      santriTableBody.querySelectorAll("tr").forEach((row, i) => {
+        const tds = row.querySelectorAll("td");
+        const nama = tds[1].textContent;
+        const absensi = tds[2].querySelector("select").value;
+        const dari = tds[3].querySelector("input").value;
+        const sampai = tds[4].querySelector("input").value;
+
+        // Hitung total juz (sementara 0 jika tidak ada data page mapping)
+        const totalJuz = "0";
+
+        data.push({
+          id: i + 1,
+          nama,
+          absensi,
+          dari,
+          sampai,
+          totalJuz
+        });
+      });
+
+      try {
         const res = await fetch("/.netlify/functions/saveData", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tanggal, kelas, data })
         });
-        const result = await res.json();
-        if (result.success) {
-          alert("✅ Data berhasil disimpan!");
-        } else {
-          alert("❌ Gagal menyimpan data!");
-        }
+
+        if (!res.ok) throw new Error("Gagal menyimpan!");
+        alert("Data berhasil disimpan!");
       } catch (err) {
-        alert("⚠️ Error menyimpan data!");
-        console.error(err);
+        alert("Gagal menyimpan data!");
       }
+
+      overlay.style.display = "none";
+    });
+
+    // Download PDF
+    downloadBtn.addEventListener("click", async () => {
+      const kelas = kelasSelect.value;
+      const tanggal = tanggalInput.value;
+
+      if (!kelas || !tanggal) {
+        alert("Pilih kelas dan tanggal terlebih dahulu!");
+        return;
+      }
+
+      overlay.style.display = "flex";
+
+      try {
+        const res = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+        const absensiData = await res.json();
+
+        if (!absensiData || absensiData.length === 0) {
+          alert("Belum ada data absensi untuk tanggal ini!");
+          overlay.style.display = "none";
+          return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        doc.setFontSize(16);
+        doc.text(`Data Absensi ${kelas} - ${tanggal}`, 14, 20);
+
+        const startY = 30;
+        let y = startY;
+        doc.setFontSize(12);
+        doc.text("No", 14, y);
+        doc.text("Nama", 30, y);
+        doc.text("Absensi", 90, y);
+        doc.text("Dari", 130, y);
+        doc.text("Sampai", 150, y);
+        doc.text("Total Juz", 170, y);
+
+        y += 10;
+        absensiData.forEach((item, index) => {
+          doc.text(`${index + 1}`, 14, y);
+          doc.text(item.nama, 30, y);
+          doc.text(item.absensi, 90, y);
+          doc.text(item.dari || "-", 130, y);
+          doc.text(item.sampai || "-", 150, y);
+          doc.text(item.totalJuz || "0", 170, y);
+          y += 10;
+
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+        });
+
+        doc.save(`absensi_${kelas}_${tanggal}.pdf`);
+      } catch (err) {
+        alert("Gagal download PDF!");
+      }
+
       overlay.style.display = "none";
     });
   </script>
