@@ -36,7 +36,7 @@
       <h2>Dashboard</h2>
       <div>
         <label for="kelasSelect">Pilih Kelas:</label>
-        <select id="kelasSelect" onchange="loadSantri()">
+        <select id="kelasSelect">
           <option value="">--Pilih--</option>
           <option value="kelas_1">Kelas 1</option>
           <option value="kelas_2">Kelas 2</option>
@@ -72,19 +72,25 @@
     let ayatData = [];
     let pagesMap = {};
 
-    async function fetchUsers() {
-      const res = await fetch("/.netlify/functions/getUsers");
-      users = await res.json();
-    }
+    // Fetch all required data
+    async function initData() {
+      try {
+        const [usersRes, ayatRes, pagesRes] = await Promise.all([
+          fetch("/.netlify/functions/getUsers"),
+          fetch("/.netlify/functions/getAyat"),
+          fetch("/.netlify/functions/getPagesMap")
+        ]);
 
-    async function fetchAyat() {
-      const res = await fetch("/.netlify/functions/getAyat");
-      ayatData = await res.json();
-    }
+        if (!usersRes.ok || !ayatRes.ok || !pagesRes.ok) {
+          throw new Error("Gagal memuat data awal!");
+        }
 
-    async function fetchPagesMap() {
-      const res = await fetch("/.netlify/functions/getPagesMap");
-      pagesMap = await res.json();
+        users = await usersRes.json();
+        ayatData = await ayatRes.json();
+        pagesMap = await pagesRes.json();
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
     }
 
     function login() {
@@ -103,18 +109,25 @@
       document.getElementById("dashboard-section").classList.remove("hidden");
     }
 
-    async function loadSantri() {
-      const kelas = document.getElementById("kelasSelect").value;
-      if (!kelas) return;
-
-      const res = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-      santri = await res.json();
-      renderTable();
+    async function loadSantri(kelas) {
+      try {
+        const res = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+        if (!res.ok) throw new Error("Gagal memuat data santri!");
+        santri = await res.json();
+        renderTable();
+      } catch (err) {
+        alert(err.message);
+      }
     }
 
     function renderTable() {
       const tbody = document.getElementById("santriBody");
       tbody.innerHTML = "";
+
+      if (!santri.length) {
+        tbody.innerHTML = `<tr><td colspan="6">Tidak ada data santri</td></tr>`;
+        return;
+      }
 
       santri.forEach((s, idx) => {
         const tr = document.createElement("tr");
@@ -140,7 +153,6 @@
     }
 
     function renderSurahAyatDropdown(id) {
-      // Buat dropdown berdasarkan getAyat.json
       let options = '<option value="">--pilih--</option>';
       ayatData.forEach(surah => {
         for (let ayat = 1; ayat <= surah.jumlah_ayat; ayat++) {
@@ -188,12 +200,15 @@
       alert("Data berhasil disimpan (lihat console untuk detail)");
     }
 
-    // Load data awal
-    (async () => {
-      await fetchUsers();
-      await fetchAyat();
-      await fetchPagesMap();
-    })();
+    // Init saat halaman dibuka
+    initData();
+
+    // Event listener dropdown kelas
+    document.getElementById("kelasSelect").addEventListener("change", (e) => {
+      if (e.target.value) {
+        loadSantri(e.target.value);
+      }
+    });
   </script>
 </body>
 </html>
