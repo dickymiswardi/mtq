@@ -363,45 +363,39 @@
 
     // Tombol Download PDF langsung dari JSON
     document.getElementById("pdf-btn").addEventListener("click", async () => {
-      const { jsPDF } = window.jspdf;
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
 
-      overlay.style.display = "flex";
-      try {
-        // Ambil data dari json absensi
-        const res = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-        const data = await res.json();
+  overlay.style.display = "flex";
+  try {
+    const res = await fetch(`/.netlify/functions/downloadAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+    const data = await res.json();
 
-        if (!data || data.length === 0) {
-          alert("Data absensi kosong!");
-          overlay.style.display = "none";
-          return;
-        }
-
-        const doc = new jsPDF();
-        doc.setFontSize(16);
-        doc.text(`Laporan Absensi & Hafalan Santri`, 14, 15);
-        doc.setFontSize(12);
-        doc.text(`Kelas: ${kelas} | Tanggal: ${tanggal}`, 14, 23);
-
-        const tableData = data.map((s, i) => [
-          i + 1, s.nama, s.absensi, s.dari, s.sampai, s.totalJuz
-        ]);
-
-        doc.autoTable({
-          startY: 30,
-          head: [["No", "Nama Santri", "Absensi", "Dari", "Sampai", "Total Juz"]],
-          body: tableData
-        });
-
-        doc.save(`Laporan_${kelas}_${tanggal}.pdf`);
-      } catch (err) {
-        alert("⚠️ Gagal mendownload laporan!");
-        console.error(err);
-      }
+    if (!data || data.length === 0) {
+      alert("⚠️ Data absensi kosong!");
       overlay.style.display = "none";
+      return;
+    }
+
+    // Konversi data ke PDF (gunakan jsPDF)
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text(`Laporan Absensi Kelas ${kelas} (${tanggal})`, 10, 10);
+
+    let y = 20;
+    data.forEach((s, i) => {
+      doc.text(`${i + 1}. ${s.nama} - Absensi: ${s.absensi} - Dari: ${s.dari} - Sampai: ${s.sampai} - Total Juz: ${s.totalJuz}`, 10, y);
+      y += 10;
     });
+
+    doc.save(`Absensi_${kelas}_${tanggal}.pdf`);
+  } catch (err) {
+    alert("⚠️ Gagal mendownload data!");
+    console.error(err);
+  }
+  overlay.style.display = "none";
+});
   </script>
 </body>
 </html>
