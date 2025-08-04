@@ -369,43 +369,48 @@
     }
 
     function updateTotalJuz(row) {
-  const surahDari = row.querySelector(".surah-dari").value;
-  const ayatDari = row.querySelector(".ayat-dari").value;
-  const surahSampai = row.querySelector(".surah-sampai").value;
-  const ayatSampai = row.querySelector(".ayat-sampai").value;
+  const surahDari = row.querySelector(".surah-dari").value.trim();
+  const ayatDari = row.querySelector(".ayat-dari").value.trim();
+  const surahSampai = row.querySelector(".surah-sampai").value.trim();
+  const ayatSampai = row.querySelector(".ayat-sampai").value.trim();
 
-  const halamanAwal = pagesMap[`${surahDari}:${ayatDari}`] || 1;
-  const halamanAkhir = pagesMap[`${surahSampai}:${ayatSampai}`] || halamanAwal;
+  const keyDari = `${surahDari}:${ayatDari}`;
+  const keySampai = `${surahSampai}:${ayatSampai}`;
 
-  const totalHalaman = Math.max(halamanAkhir - halamanAwal + 1, 1);
-  const totalJuz = (totalHalaman / 20).toFixed(2); // Bisa diganti logika jika mau lebih presisi
+  const halamanAwal = pagesMap[keyDari] || 1;
+  const halamanAkhir = pagesMap[keySampai] || halamanAwal;
 
-  // Gunakan daftar halaman awal resmi setiap juz (30 juz)
+  // Hitung total halaman yang valid, abaikan 601-604
+  let totalHalaman = 0;
+  for (let h = halamanAwal; h <= halamanAkhir; h++) {
+    if (h < 601 || h > 604) totalHalaman++;
+  }
+
+  const totalJuz = (totalHalaman / 20).toFixed(2); // Perkiraan kasar
+
+  // Daftar halaman awal setiap juz
   const halamanAwalJuz = [
     1, 22, 42, 62, 82, 102, 121, 142, 162, 182,
     201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
     402, 422, 442, 462, 482, 502, 522, 542, 562, 582
   ];
 
-  // Buat daftar juz yang tercakup
+  // Cari juz yang masuk dalam rentang dan bukan di 601-604
   const juzTercakup = halamanAwalJuz
-    .map((h, i) => ({ juz: i + 1, halaman: h }))
-    .filter(j => j.halaman >= halamanAwal && j.halaman <= halamanAkhir)
-    .map(j => j.juz);
+    .filter(h => h >= halamanAwal && h <= halamanAkhir && (h < 601 || h > 604))
+    .map((_, i) => i + 1);
 
-  // Fungsi bantu untuk membuat rentang dari list terurut
-  function compressJuzRanges(juzList) {
-    if (juzList.length === 0) return "";
+  // Kompresi format Juz
+  function compressJuzRanges(list) {
+    if (list.length === 0) return "";
     const ranges = [];
-    let start = juzList[0];
-    let end = start;
-
-    for (let i = 1; i < juzList.length; i++) {
-      if (juzList[i] === end + 1) {
-        end = juzList[i];
+    let start = list[0], end = start;
+    for (let i = 1; i < list.length; i++) {
+      if (list[i] === end + 1) {
+        end = list[i];
       } else {
         ranges.push(start === end ? `Juz ${start}` : `Juz ${start}-${end}`);
-        start = end = juzList[i];
+        start = end = list[i];
       }
     }
     ranges.push(start === end ? `Juz ${start}` : `Juz ${start}-${end}`);
