@@ -425,17 +425,17 @@
       const data = [];
 
       rows.forEach((row, i) => {
-        const id = i + 1;
-        const nama = row.children[1].textContent;
-        const category = row.children[2].textContent;
-        const absensi = row.querySelector(".absensi").value;
-        const surahDari = row.querySelector(".surah-dari").value;
-        const ayatDari = row.querySelector(".ayat-dari").value;
-        const surahSampai = row.querySelector(".surah-sampai").value;
-        const ayatSampai = row.querySelector(".ayat-sampai").value;
-        const totalJuz = row.querySelector(".total-juz").textContent;
-        const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
-
+      const id = parseInt(row.children[0].textContent);      // ambil dari kolom nomor
+      const nama = row.children[1].textContent;               // kolom nama
+      const category = row.children[2].textContent;           // kolom kategori
+      const absensi = row.querySelector(".absensi").value;
+      const surahDari = row.querySelector(".surah-dari").value;
+      const ayatDari = row.querySelector(".ayat-dari").value;
+      const surahSampai = row.querySelector(".surah-sampai").value;
+      const ayatSampai = row.querySelector(".ayat-sampai").value;
+      const totalJuz = row.querySelector(".total-juz").textContent;
+      const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
+        
         data.push({
           id, nama, absensi, category,
           dari: `${surahDari}:${ayatDari}`,
