@@ -573,7 +573,7 @@
     Object.entries(rekap).forEach(([nama, data], i) => {
       const juzList = ringkasJuzTerbaca(data.juzTerbacaSet);
       const kategori = santri?.category || "-";
-      const text = `${i + 1}. ${nama} | ${kategori} | Hadir: ${data.hadir || 0}, Sakit: ${data.sakit || 0}, Izin: ${data.izin || 0} | Total Juz: ${data.totalJuz.toFixed(2)} | Juz Terbaca: ${juzList}`;
+      const text = `${i + 1}. ${nama} (${kategori}) | Hadir: ${data.hadir || 0}, Sakit: ${data.sakit || 0}, Izin: ${data.izin || 0} | Total Juz: ${data.totalJuz.toFixed(2)} | Juz Terbaca: ${juzList}`;
       doc.text(text, 14, y);
       y += 8;
       if (y > 280) {
