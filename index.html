@@ -174,7 +174,6 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
-            <th>Pencapaian</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -453,41 +452,6 @@
         });
       });
 
-      const pencapaianCell = document.createElement("td");
-      pencapaianCell.className = "pencapaian";
-      row.appendChild(pencapaianCell);
-
-      function getTargetJuzBySemester(semester) {
-  const targets = {
-    1: 8,
-    2: 13,
-    3: 18,
-    4: 23,
-    5: 28,
-    6: 30
-  };
-  return targets[semester] || 30; // Default fallback
-}
-
-
-const semester = parseInt(santri.semester); // Pastikan kamu punya data ini
-const target = getTargetJuzBySemester(semester);
-const persen = Math.round((totalJuz / target) * 100);
-
-let teks = `${totalJuz.toFixed(2)} Juz (${persen}%)`;
-pencapaianCell.textContent = teks;
-
-// Tambahkan tombol jika >100%
-if (persen >= 100) {
-  const naikBtn = document.createElement("button");
-  naikBtn.textContent = "Naik Kelas";
-  naikBtn.className = "naik-kelas-btn";
-  naikBtn.onclick = () => naikKelas(santri); // Fungsi ini akan dibuat
-  pencapaianCell.appendChild(document.createElement("br"));
-  pencapaianCell.appendChild(naikBtn);
-}
-
-      
       saveBtn.disabled = true;
       saveBtn.textContent = "⏳ Menyimpan...";
 
