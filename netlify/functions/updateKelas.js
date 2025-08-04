@@ -4,7 +4,7 @@ exports.handler = async (event) => {
   try {
     const { filename, data } = JSON.parse(event.body);
 
-    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+    const octokit = new Octokit({ auth: process.env.MTQ_TOKEN });
 
     const owner = "dickymiswardi";
     const repo = "usermtq";
