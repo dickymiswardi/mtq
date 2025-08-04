@@ -174,7 +174,7 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
-            <th>Ketuntasa</th>
+            <th>Pencapaian</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -327,7 +327,6 @@
             <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
             <td class="total-juz">${dataAbsensi.totalJuz || 0}</td>
             <td>${santri.semester || '-'}</td>
-            <td class="ketuntasan-target">-</td> <!-- ✅ Kolom baru -->
           `;
 
           santriTableBody.appendChild(row);
@@ -454,6 +453,41 @@
         });
       });
 
+      const pencapaianCell = document.createElement("td");
+      pencapaianCell.className = "pencapaian";
+      row.appendChild(pencapaianCell);
+
+      function getTargetJuzBySemester(semester) {
+  const targets = {
+    1: 8,
+    2: 13,
+    3: 18,
+    4: 23,
+    5: 28,
+    6: 30
+  };
+  return targets[semester] || 30; // Default fallback
+}
+
+
+const semester = parseInt(santri.semester); // Pastikan kamu punya data ini
+const target = getTargetJuzBySemester(semester);
+const persen = Math.round((totalJuz / target) * 100);
+
+let teks = `${totalJuz.toFixed(2)} Juz (${persen}%)`;
+pencapaianCell.textContent = teks;
+
+// Tambahkan tombol jika >100%
+if (persen >= 100) {
+  const naikBtn = document.createElement("button");
+  naikBtn.textContent = "Naik Kelas";
+  naikBtn.className = "naik-kelas-btn";
+  naikBtn.onclick = () => naikKelas(santri); // Fungsi ini akan dibuat
+  pencapaianCell.appendChild(document.createElement("br"));
+  pencapaianCell.appendChild(naikBtn);
+}
+
+      
       saveBtn.disabled = true;
       saveBtn.textContent = "⏳ Menyimpan...";
 
@@ -600,54 +634,6 @@
 
   overlay.style.display = "none";
 });
-
-
-    const targetPerSemester = {
-  1: 8,
-  2: 13,
-  3: 18,
-  4: 23,
-  5: 28,
-  6: 30
-};
-
-    function updateKetuntasanTarget(data) {
-  // 1. Akumulasi totalJuz per nama
-  const akumulasi = {};
-  data.forEach(item => {
-    const nama = item.nama;
-    const juz = parseFloat(item.totalJuz) || 0;
-    const semester = item.semester;
-
-    if (!akumulasi[nama]) {
-      akumulasi[nama] = { total: 0, semester };
-    }
-
-    akumulasi[nama].total += juz;
-  });
-
-  // 2. Update tabel
-  const rows = document.querySelectorAll("tbody tr");
-  rows.forEach(row => {
-    const nama = row.children[1].textContent;
-    const cell = row.querySelector(".ketuntasan-target");
-
-    if (!akumulasi[nama]) return;
-
-    const { total, semester } = akumulasi[nama];
-    const target = targetPerSemester[semester] || 30;
-
-    if (total >= target) {
-      cell.textContent = "TUNTAS";
-    } else {
-      const persen = Math.floor((total / target) * 100);
-      cell.textContent = `${persen}%`;
-    }
-  });
-}
-
-    renderTable(data);
-    updateKetuntasanTarget(data); // ✅ Tambahkan ini
   </script>
 </body>
 </html>
