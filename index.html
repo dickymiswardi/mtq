@@ -499,7 +499,17 @@
     const rekap = {};
     let totalJuz = 0;
     allData.forEach(item => {
-      if (!rekap[item.nama]) rekap[item.nama] = { hadir: 0, sakit: 0, izin: 0, totalJuz: 0 };
+      if (!rekap[item.nama]) {
+  rekap[item.nama] = {
+    hadir: 0,
+    sakit: 0,
+    izin: 0,
+    totalJuz: 0,
+    juzTerbacaSet: new Set()
+  };
+}
+
+      rekap[item.nama].juzTerbacaSet.add(item.juzTerbaca || '-');
       rekap[item.nama][item.absensi.toLowerCase()]++;
       rekap[item.nama].totalJuz += parseFloat(item.totalJuz || 0);
       totalJuz += parseFloat(item.totalJuz || 0);
@@ -514,7 +524,8 @@
 
     let y = 35;
     Object.entries(rekap).forEach(([nama, data], i) => {
-      const text = `${i + 1}. ${nama} | Hadir: ${data.hadir || 0}, Sakit: ${data.sakit || 0}, Izin: ${data.izin || 0} | Total Juz: ${data.totalJuz.toFixed(2)}`;
+      const juzList = Array.from(data.juzTerbacaSet).filter(j => j !== '-').join("; ") || '-';
+      const text = `${i + 1}. ${nama} | Hadir: ${data.hadir || 0}, Sakit: ${data.sakit || 0}, Izin: ${data.izin || 0} | Total Juz: ${data.totalJuz.toFixed(2)} | Juz Terbaca: ${juzList}`;
       doc.text(text, 14, y);
       y += 8;
       if (y > 280) {
