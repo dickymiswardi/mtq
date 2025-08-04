@@ -434,9 +434,10 @@
         const ayatSampai = row.querySelector(".ayat-sampai").value;
         const totalJuz = row.querySelector(".total-juz").textContent;
         const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
+        const category = row.children[1].textContent;
 
         data.push({
-          id, nama, absensi,
+          id, nama, absensi, category,
           dari: `${surahDari}:${ayatDari}`,
           sampai: `${surahSampai}:${ayatSampai}`,
           totalJuz,
