@@ -498,12 +498,67 @@
     // Hitung rekap
     const rekap = {};
     let totalJuz = 0;
+
     allData.forEach(item => {
-      if (!rekap[item.nama]) rekap[item.nama] = { hadir: 0, sakit: 0, izin: 0, totalJuz: 0 };
+      if (!rekap[item.nama]) {
+        rekap[item.nama] = {
+          hadir: 0,
+          sakit: 0,
+          izin: 0,
+          totalJuz: 0,
+          juzTerbacaSet: new Set()
+        };
+      }
+
       rekap[item.nama][item.absensi.toLowerCase()]++;
-      rekap[item.nama].totalJuz += parseFloat(item.totalJuz || 0);
-      totalJuz += parseFloat(item.totalJuz || 0);
+      const juz = parseFloat(item.totalJuz || 0);
+      rekap[item.nama].totalJuz += juz;
+      totalJuz += juz;
+
+      // Ekstrak Juz ke dalam Set angka
+      if (item.juzTerbaca) {
+        const matches = item.juzTerbaca.match(/Juz (\d+)(?:-(\d+))?/g);
+        if (matches) {
+          matches.forEach(match => {
+            const parts = match.match(/Juz (\d+)(?:-(\d+))?/);
+            if (parts) {
+              const start = parseInt(parts[1]);
+              const end = parseInt(parts[2] || parts[1]);
+              for (let i = start; i <= end; i++) {
+                rekap[item.nama].juzTerbacaSet.add(i);
+              }
+            }
+          });
+        }
+      }
     });
+
+    // Fungsi untuk meringkas Juz ke bentuk: Juz 2-4; Juz 10
+    function ringkasJuzTerbaca(set) {
+      const arr = Array.from(set).sort((a, b) => a - b);
+      if (arr.length === 0) return "-";
+
+      const result = [];
+      let start = arr[0];
+      let prev = arr[0];
+
+      for (let i = 1; i <= arr.length; i++) {
+        const curr = arr[i];
+        if (curr === prev + 1) {
+          prev = curr;
+          continue;
+        }
+        if (start === prev) {
+          result.push(`Juz ${start}`);
+        } else {
+          result.push(`Juz ${start}-${prev}`);
+        }
+        start = curr;
+        prev = curr;
+      }
+
+      return result.join("; ");
+    }
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -514,7 +569,8 @@
 
     let y = 35;
     Object.entries(rekap).forEach(([nama, data], i) => {
-      const text = `${i + 1}. ${nama} | Hadir: ${data.hadir || 0}, Sakit: ${data.sakit || 0}, Izin: ${data.izin || 0} | Total Juz: ${data.totalJuz.toFixed(2)}`;
+      const juzList = ringkasJuzTerbaca(data.juzTerbacaSet);
+      const text = `${i + 1}. ${nama} | Hadir: ${data.hadir || 0}, Sakit: ${data.sakit || 0}, Izin: ${data.izin || 0} | Total Juz: ${data.totalJuz.toFixed(2)} | Juz Terbaca: ${juzList}`;
       doc.text(text, 14, y);
       y += 8;
       if (y > 280) {
