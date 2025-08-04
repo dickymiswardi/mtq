@@ -171,6 +171,7 @@
             <th>Absensi</th>
             <th>Setoran Dari</th>
             <th>Setoran Sampai</th>
+            <th>Juz Terbaca</th>
             <th>Total Juz</th>
           </tr>
         </thead>
@@ -321,6 +322,7 @@
               <select class="surah-sampai">${surahOptions}</select>
               <select class="ayat-sampai"></select>
             </td>
+            <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
             <td class="total-juz">${dataAbsensi.totalJuz || 0}</td>
           `;
 
@@ -365,19 +367,21 @@
     }
 
     function updateTotalJuz(row) {
-      const surahDari = row.querySelector(".surah-dari").value;
-      const ayatDari = row.querySelector(".ayat-dari").value;
-      const surahSampai = row.querySelector(".surah-sampai").value;
-      const ayatSampai = row.querySelector(".ayat-sampai").value;
+  const surahDari = row.querySelector(".surah-dari").value;
+  const ayatDari = row.querySelector(".ayat-dari").value;
+  const surahSampai = row.querySelector(".surah-sampai").value;
+  const ayatSampai = row.querySelector(".ayat-sampai").value;
 
-      const halamanAwal = pagesMap[`${surahDari}:${ayatDari}`] || 1;
-      const halamanAkhir = pagesMap[`${surahSampai}:${ayatSampai}`] || halamanAwal;
+  const halamanAwal = pagesMap[`${surahDari}:${ayatDari}`] || 1;
+  const halamanAkhir = pagesMap[`${surahSampai}:${ayatSampai}`] || halamanAwal;
 
-      const totalHalaman = Math.max(halamanAkhir - halamanAwal + 1, 1);
-      const totalJuz = (totalHalaman / 20).toFixed(2);
+  const totalHalaman = Math.max(halamanAkhir - halamanAwal + 1, 1);
+  const totalJuz = (totalHalaman / 20).toFixed(2);
 
-      row.querySelector(".total-juz").textContent = totalJuz;
-    }
+  const juzKe = Math.ceil(halamanAwal / 20);
+  row.querySelector(".juz-terbaca").textContent = `Juz ${juzKe}`;
+  row.querySelector(".total-juz").textContent = totalJuz;
+}
 
     kelasSelect.addEventListener("change", loadSantriData);
     tanggalInput.addEventListener("change", loadSantriData);
@@ -397,12 +401,14 @@
         const surahSampai = row.querySelector(".surah-sampai").value;
         const ayatSampai = row.querySelector(".ayat-sampai").value;
         const totalJuz = row.querySelector(".total-juz").textContent;
+        const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
 
         data.push({
           id, nama, absensi,
           dari: `${surahDari}:${ayatDari}`,
           sampai: `${surahSampai}:${ayatSampai}`,
-          totalJuz
+          totalJuz,
+          juzTerbaca
         });
       });
 
