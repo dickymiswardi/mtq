@@ -168,7 +168,6 @@
           <tr>
             <th>No</th>
             <th>Nama Santri</th>
-            <th>Kategori</th>
             <th>Absensi</th>
             <th>Setoran Dari</th>
             <th>Setoran Sampai</th>
@@ -308,7 +307,6 @@
           row.innerHTML = `
             <td>${i + 1}</td>
             <td>${santri.nama}</td>
-            <td>${santri.category || '-'}</td>
             <td>
               <select class="absensi">
                 <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
@@ -572,8 +570,7 @@
     let y = 35;
     Object.entries(rekap).forEach(([nama, data], i) => {
       const juzList = ringkasJuzTerbaca(data.juzTerbacaSet);
-      const kategori = santri?.category || "-";
-      const text = `${i + 1}. ${nama} (${kategori}) | Hadir: ${data.hadir || 0}, Sakit: ${data.sakit || 0}, Izin: ${data.izin || 0} | Total Juz: ${data.totalJuz.toFixed(2)} | Juz Terbaca: ${juzList}`;
+      const text = `${i + 1}. ${nama} | Hadir: ${data.hadir || 0}, Sakit: ${data.sakit || 0}, Izin: ${data.izin || 0} | Total Juz: ${data.totalJuz.toFixed(2)} | Juz Terbaca: ${juzList}`;
       doc.text(text, 14, y);
       y += 8;
       if (y > 280) {
