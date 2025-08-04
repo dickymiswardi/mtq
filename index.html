@@ -626,6 +626,67 @@ row.innerHTML = `
 
   overlay.style.display = "none";
 });
+
+    async function naikkanKelas(id, nama, kelasIndex) {
+  const kelasSekarang = `kelas_${kelasIndex}`;
+  const kelasBerikut = `kelas_${kelasIndex + 1}`;
+
+  if (kelasIndex >= 6) {
+    alert("Sudah di kelas tertinggi.");
+    return;
+  }
+
+  if (!confirm(`Yakin ingin menaikkan ${nama} ke ${kelasBerikut}?`)) return;
+
+  try {
+    overlay.style.display = "flex";
+
+    // Ambil data semua kelas
+    const urlSekarang = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/${kelasSekarang}.json`;
+    const urlBerikut = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/${kelasBerikut}.json`;
+
+    const [resNow, resNext] = await Promise.all([
+      fetch(urlSekarang),
+      fetch(urlBerikut)
+    ]);
+    const dataNow = await resNow.json();
+    const dataNext = await resNext.json();
+
+    // Cari dan pindahkan santri
+    const santri = dataNow.find(s => s.id === id);
+    if (!santri) throw new Error("Santri tidak ditemukan di kelas saat ini.");
+
+    const newDataNow = dataNow.filter(s => s.id !== id);
+    const newDataNext = [...dataNext, santri];
+
+    // Simpan ke GitHub via Netlify Function
+    await Promise.all([
+      fetch("/.netlify/functions/updateKelas", {
+        method: "POST",
+        body: JSON.stringify({
+          filename: `${kelasSekarang}.json`,
+          data: newDataNow
+        })
+      }),
+      fetch("/.netlify/functions/updateKelas", {
+        method: "POST",
+        body: JSON.stringify({
+          filename: `${kelasBerikut}.json`,
+          data: newDataNext
+        })
+      })
+    ]);
+
+    alert(`✅ ${nama} berhasil naik ke ${kelasBerikut}.`);
+    location.reload(); // Refresh tabel
+
+  } catch (err) {
+    console.error(err);
+    alert("❌ Gagal menaikkan kelas.");
+  } finally {
+    overlay.style.display = "none";
+  }
+}
   </script>
 </body>
 </html>
