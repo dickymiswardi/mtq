@@ -429,7 +429,7 @@
       const data = [];
 
       rows.forEach((row, i) => {
-        const id = row.children[0].textContent;
+        const id = row.children[0].textContent.trim();
         const nama = row.children[1].textContent;
         const absensi = row.querySelector(".absensi").value;
         const surahDari = row.querySelector(".surah-dari").value;
