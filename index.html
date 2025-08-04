@@ -173,7 +173,6 @@
             <th>Setoran Sampai</th>
             <th>Juz Terbaca</th>
             <th>Total Juz</th>
-            <th>Pencapaian</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -189,16 +188,6 @@
   </div>
 
   <script>
-
-const targetJuzPerKelas = {
-  kelas_1: 8,
-  kelas_2: 5,
-  kelas_3: 5,
-  kelas_4: 5,
-  kelas_5: 5,
-  kelas_6: 2,
-};
-    
     const loginCard = document.getElementById("login-card");
     const dashboardCard = document.getElementById("dashboard-card");
     const loginForm = document.getElementById("login-form");
@@ -315,52 +304,27 @@ const targetJuzPerKelas = {
           const dari = (dataAbsensi.dari || "1:1").split(":");
           const sampai = (dataAbsensi.sampai || "1:1").split(":");
 
-          const totalJuz = parseFloat(dataAbsensi.totalJuz || 0);
-const kelasIndex = parseInt(kelas.split("_")[1]);
-let targetTotal = 0;
-for (let i = 1; i <= kelasIndex; i++) {
-  targetTotal += targetJuzPerKelas[`kelas_${i}`] || 0;
-}
-const persen = Math.min(100, ((totalJuz / targetTotal) * 100).toFixed(0));
-
-let pencapaianHTML = `${totalJuz.toFixed(2)} Juz (${persen}%)`;
-
-// Jika sudah mencapai 100% dan belum kelas_6, tambahkan tombol
-if (persen >= 100 && kelasIndex < 6) {
-  pencapaianHTML += ` <button class="naik-kelas-btn" data-id="${santri.id}" data-nama="${santri.nama}" data-kelas="${kelasIndex}">Naik Kelas</button>`;
-}
-
-row.innerHTML = `
-  <td>${i + 1}</td>
-  <td>${santri.nama}</td>
-  <td>
-    <select class="absensi">
-      <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
-      <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
-      <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
-    </select>
-  </td>
-  <td>
-    <select class="surah-dari">${surahOptions}</select>
-    <select class="ayat-dari"></select>
-  </td>
-  <td>
-    <select class="surah-sampai">${surahOptions}</select>
-    <select class="ayat-sampai"></select>
-  </td>
-  <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
-  <td class="total-juz">${dataAbsensi.totalJuz || 0}</td>
-  <td class="pencapaian">${pencapaianHTML}</td>
-`;
-
-          document.querySelectorAll(".naik-kelas-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const id = parseInt(btn.dataset.id);
-    const nama = btn.dataset.nama;
-    const kelasIndex = parseInt(btn.dataset.kelas);
-    naikkanKelas(id, nama, kelasIndex);
-  });
-});
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${santri.nama}</td>
+            <td>
+              <select class="absensi">
+                <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
+                <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
+                <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
+              </select>
+            </td>
+            <td>
+              <select class="surah-dari">${surahOptions}</select>
+              <select class="ayat-dari"></select>
+            </td>
+            <td>
+              <select class="surah-sampai">${surahOptions}</select>
+              <select class="ayat-sampai"></select>
+            </td>
+            <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
+            <td class="total-juz">${dataAbsensi.totalJuz || 0}</td>
+          `;
 
           santriTableBody.appendChild(row);
 
@@ -626,67 +590,6 @@ row.innerHTML = `
 
   overlay.style.display = "none";
 });
-
-    async function naikkanKelas(id, nama, kelasIndex) {
-  const kelasSekarang = `kelas_${kelasIndex}`;
-  const kelasBerikut = `kelas_${kelasIndex + 1}`;
-
-  if (kelasIndex >= 6) {
-    alert("Sudah di kelas tertinggi.");
-    return;
-  }
-
-  if (!confirm(`Yakin ingin menaikkan ${nama} ke ${kelasBerikut}?`)) return;
-
-  try {
-    overlay.style.display = "flex";
-
-    // Ambil data semua kelas
-    const urlSekarang = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/${kelasSekarang}.json`;
-    const urlBerikut = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/${kelasBerikut}.json`;
-
-    const [resNow, resNext] = await Promise.all([
-      fetch(urlSekarang),
-      fetch(urlBerikut)
-    ]);
-    const dataNow = await resNow.json();
-    const dataNext = await resNext.json();
-
-    // Cari dan pindahkan santri
-    const santri = dataNow.find(s => s.id === id);
-    if (!santri) throw new Error("Santri tidak ditemukan di kelas saat ini.");
-
-    const newDataNow = dataNow.filter(s => s.id !== id);
-    const newDataNext = [...dataNext, santri];
-
-    // Simpan ke GitHub via Netlify Function
-    await Promise.all([
-      fetch("/.netlify/functions/updateKelas", {
-        method: "POST",
-        body: JSON.stringify({
-          filename: `${kelasSekarang}.json`,
-          data: newDataNow
-        })
-      }),
-      fetch("/.netlify/functions/updateKelas", {
-        method: "POST",
-        body: JSON.stringify({
-          filename: `${kelasBerikut}.json`,
-          data: newDataNext
-        })
-      })
-    ]);
-
-    alert(`✅ ${nama} berhasil naik ke ${kelasBerikut}.`);
-    location.reload(); // Refresh tabel
-
-  } catch (err) {
-    console.error(err);
-    alert("❌ Gagal menaikkan kelas.");
-  } finally {
-    overlay.style.display = "none";
-  }
-}
   </script>
 </body>
 </html>
