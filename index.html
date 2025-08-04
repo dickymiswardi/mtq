@@ -307,6 +307,7 @@
           row.innerHTML = `
             <td>${i + 1}</td>
             <td>${santri.nama}</td>
+            <td>${santri.category || '-'}</td>
             <td>
               <select class="absensi">
                 <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
