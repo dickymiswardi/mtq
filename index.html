@@ -169,8 +169,10 @@
             <th>No</th>
             <th>Nama Santri</th>
             <th>Absensi</th>
-            <th>Setoran Dari</th>
-            <th>Setoran Sampai</th>
+            <th>Surah Dari</th>
+            <th>Ayat Dari</th>
+            <th>Surah Sampai</th>
+            <th>Ayat Sampai</th>
             <th>Total Juz</th>
           </tr>
         </thead>
@@ -199,8 +201,32 @@
     const saveBtn = document.getElementById("save-btn");
     const downloadBtn = document.getElementById("download-btn");
 
+    let surahList = [];
+    let pagesMap = {};
+
+    // Load data referensi surah dan pagesMap
+    async function loadReferences() {
+      const resSurah = await fetch("/.netlify/functions/getAyat");
+      surahList = await resSurah.json();
+      const resPages = await fetch("/.netlify/functions/getPagesMap");
+      pagesMap = await resPages.json();
+    }
+
+    // Hitung total juz berdasarkan halaman
+    function calculateJuz(fromSurah, fromAyah, toSurah, toAyah) {
+      if (!fromSurah || !fromAyah || !toSurah || !toAyah) return 0;
+      const fromKey = `${fromSurah}:${fromAyah}`;
+      const toKey = `${toSurah}:${toAyah}`;
+      const pageFrom = pagesMap[fromKey] || 0;
+      const pageTo = pagesMap[toKey] || 0;
+      const totalPages = pageTo - pageFrom + 1;
+      if (totalPages <= 0) return 0;
+      return (totalPages / 20).toFixed(2);
+    }
+
     // Cek login dari localStorage
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
+      await loadReferences();
       const isLoggedIn = localStorage.getItem("isLoggedIn");
       if (isLoggedIn) {
         showDashboard();
@@ -282,17 +308,45 @@
             <td>${i + 1}</td>
             <td>${santri.nama}</td>
             <td>
-              <select>
+              <select class="absensi">
                 <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
                 <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
                 <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
               </select>
             </td>
-            <td><input type="text" placeholder="dari ayat" value="${dataAbsensi.dari || ""}"></td>
-            <td><input type="text" placeholder="sampai ayat" value="${dataAbsensi.sampai || ""}"></td>
-            <td>${dataAbsensi.totalJuz || 0}</td>
+            <td>
+              <select class="fromSurah">
+                <option value="">Surah</option>
+                ${surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("")}
+              </select>
+            </td>
+            <td><input type="number" min="1" class="fromAyah" placeholder="Ayat" /></td>
+            <td>
+              <select class="toSurah">
+                <option value="">Surah</option>
+                ${surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("")}
+              </select>
+            </td>
+            <td><input type="number" min="1" class="toAyah" placeholder="Ayat" /></td>
+            <td class="totalJuz">${dataAbsensi.totalJuz || 0}</td>
           `;
+          // set value jika ada data absensi lama
+          const el = document.createElement("tr");
           santriTableBody.appendChild(row);
+
+          // event listener untuk update totalJuz
+          const fromSurah = row.querySelector(".fromSurah");
+          const fromAyah = row.querySelector(".fromAyah");
+          const toSurah = row.querySelector(".toSurah");
+          const toAyah = row.querySelector(".toAyah");
+          const totalJuzCell = row.querySelector(".totalJuz");
+
+          function updateTotalJuz() {
+            totalJuzCell.textContent = calculateJuz(
+              fromSurah.value, fromAyah.value, toSurah.value, toAyah.value
+            );
+          }
+          [fromSurah, fromAyah, toSurah, toAyah].forEach(el => el.addEventListener("change", updateTotalJuz));
         });
       } catch (err) {
         alert("Gagal memuat data santri / absensi!");
@@ -305,54 +359,54 @@
     tanggalInput.addEventListener("change", loadSantriData);
 
     // Simpan data absensi
-    // Tombol Simpan
-saveBtn.addEventListener("click", async () => {
-  const kelas = kelasSelect.value;
-  const tanggal = tanggalInput.value;
+    saveBtn.addEventListener("click", async () => {
+      const kelas = kelasSelect.value;
+      const tanggal = tanggalInput.value;
 
-  const rows = santriTableBody.querySelectorAll("tr");
-  const data = [];
-  rows.forEach((row, i) => {
-    const id = i + 1;
-    const nama = row.children[1].textContent;
-    const absensi = row.querySelector("select").value;
-    const dari = row.children[3].querySelector("input").value;
-    const sampai = row.children[4].querySelector("input").value;
-    const totalJuz = row.children[5].textContent;
+      const rows = santriTableBody.querySelectorAll("tr");
+      const data = [];
+      rows.forEach((row, i) => {
+        const id = i + 1;
+        const nama = row.children[1].textContent;
+        const absensi = row.querySelector(".absensi").value;
+        const fromSurah = row.querySelector(".fromSurah").value;
+        const fromAyah = row.querySelector(".fromAyah").value;
+        const toSurah = row.querySelector(".toSurah").value;
+        const toAyah = row.querySelector(".toAyah").value;
+        const totalJuz = row.querySelector(".totalJuz").textContent;
 
-    data.push({ id, nama, absensi, dari, sampai, totalJuz });
-  });
+        data.push({ id, nama, absensi, dari: `${fromSurah}:${fromAyah}`, sampai: `${toSurah}:${toAyah}`, totalJuz });
+      });
 
-  // Ubah tombol jadi loading
-  saveBtn.disabled = true;
-  saveBtn.textContent = "⏳ Menyimpan...";
+      saveBtn.disabled = true;
+      saveBtn.textContent = "⏳ Menyimpan...";
 
-  try {
-    const res = await fetch("/.netlify/functions/saveData", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tanggal, kelas, data })
-    });
-    const result = await res.json();
-    if (result.success) {
-      // Tampilkan centang hijau
-      saveBtn.textContent = "✅ Tersimpan";
-      setTimeout(() => {
-        saveBtn.textContent = "Simpan";
+      try {
+        const res = await fetch("/.netlify/functions/saveData", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tanggal, kelas, data })
+        });
+        const result = await res.json();
+        if (result.success) {
+          saveBtn.textContent = "✅ Tersimpan";
+          setTimeout(() => {
+            saveBtn.textContent = "Simpan";
+            saveBtn.disabled = false;
+          }, 2000);
+        } else {
+          alert("❌ Gagal menyimpan data!");
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Simpan";
+        }
+      } catch (err) {
+        alert("⚠️ Error menyimpan data!");
+        console.error(err);
         saveBtn.disabled = false;
-      }, 2000);
-    } else {
-      alert("❌ Gagal menyimpan data!");
-      saveBtn.disabled = false;
-      saveBtn.textContent = "Simpan";
-    }
-  } catch (err) {
-    alert("⚠️ Error menyimpan data!");
-    console.error(err);
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Simpan";
-  }
-});
+        saveBtn.textContent = "Simpan";
+      }
+    });
+
     // Download PDF
     downloadBtn.addEventListener("click", async () => {
       const kelas = kelasSelect.value;
