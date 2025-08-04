@@ -1,41 +1,30 @@
-// netlify/functions/getAbsensi.js
-const fs = require("fs");
-const path = require("path");
+// netlify/functions/getAyat.js
+import fetch from "node-fetch";
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== "GET") {
-    return { statusCode: 405, body: "Metode tidak diizinkan" };
-  }
+export async function handler() {
+  const token = process.env.MTQ_TOKEN;
+
+  // URL file getAyat.json di repo privat
+  const url = "https://raw.githubusercontent.com/dickymiswardi/usermtq/main/getAyat.json";
 
   try {
-    const kelas = event.queryStringParameters.kelas;
-    const tanggal = event.queryStringParameters.tanggal;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-    if (!kelas || !tanggal) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: "Parameter kelas & tanggal wajib ada" }),
-      };
-    }
+    if (!response.ok) throw new Error(`Gagal fetch data: ${response.status}`);
 
-    const fileName = `${kelas}_${tanggal}.json`;
-    const filePath = path.join(__dirname, "../../absensi", fileName);
-
-    if (!fs.existsSync(filePath)) {
-      // Tidak ada data, kembalikan array kosong
-      return { statusCode: 200, body: JSON.stringify([]) };
-    }
-
-    const data = fs.readFileSync(filePath, "utf8");
-    return {
-      statusCode: 200,
-      body: data,
+    const data = await response.text();
+    return { 
+      statusCode: 200, 
+      headers: { "Content-Type": "application/json" }, 
+      body: data 
     };
-  } catch (err) {
-    console.error("Error getAbsensi.js:", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: "Gagal membaca data absensi" }),
+  } catch (error) {
+    return { 
+      statusCode: 500, 
+      headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify({ error: error.message }) 
     };
   }
-};
+}
