@@ -174,6 +174,7 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
+            <th>Pencapaian</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -326,9 +327,26 @@
             <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
             <td class="total-juz">${dataAbsensi.totalJuz || 0}</td>
             <td>${santri.semester || '-'}</td>
+            <td class="pencapaian"></td>
+            const pencapaianCell = document.createElement("td");
+            pencapaianCell.className = "pencapaian";
+            row.appendChild(pencapaianCell);
           `;
 
           santriTableBody.appendChild(row);
+
+
+          function getTargetJuzBySemester(semester) {
+  semester = parseInt(semester);
+  if (semester === 1) return 8;
+  if (semester === 2) return 13;
+  if (semester === 3) return 18;
+  if (semester === 4) return 23;
+  if (semester === 5) return 28;
+  if (semester === 6) return 30;
+  return 30;
+}
+
 
           const surahDari = row.querySelector(".surah-dari");
           const ayatDari = row.querySelector(".ayat-dari");
@@ -451,6 +469,32 @@
           juzTerbaca
         });
       });
+
+      const totalJuzSantri = totalJuzPerSantri[santri.id] || 0;
+const semester = parseInt(santri.semester || "1");
+const targetJuz = getTargetJuzBySemester(semester);
+const persen = Math.round((totalJuzSantri / targetJuz) * 100);
+
+let teksPencapaian = `${totalJuzSantri.toFixed(2)} Juz (${persen}%)`;
+pencapaianCell.textContent = teksPencapaian;
+
+if (persen >= 100) {
+  const naikBtn = document.createElement("button");
+  naikBtn.textContent = "Naik Kelas";
+  naikBtn.className = "naik-kelas-btn";
+  naikBtn.onclick = () => naikKelas(santri);
+  pencapaianCell.appendChild(document.createElement("br"));
+  pencapaianCell.appendChild(naikBtn);
+}
+
+
+      function naikKelas(santri) {
+  const nextSemester = parseInt(santri.semester) + 1;
+  alert(`${santri.nama} akan naik ke semester ${nextSemester}`);
+
+  // TODO: Tambahkan proses update JSON GitHub, pindah file jika perlu
+}
+
 
       saveBtn.disabled = true;
       saveBtn.textContent = "⏳ Menyimpan...";
