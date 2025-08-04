@@ -1,4 +1,4 @@
-TOLONG CEK KENAPA AMBIL DATA DARI JSON TIDAK BERHASIL KARENA TADI SAYA RUBAH ID MENJADI 6 ANGKA UNIK: <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
@@ -301,7 +301,7 @@ TOLONG CEK KENAPA AMBIL DATA DARI JSON TIDAK BERHASIL KARENA TADI SAYA RUBAH ID 
         santriTableBody.innerHTML = "";
 
         santriData.forEach((santri, i) => {
-          const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
+          const dataAbsensi = absensiData.find(a => String(a.id) === String(santri.id)) || {};
           const row = document.createElement("tr");
 
           const surahOptions = surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
