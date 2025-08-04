@@ -434,7 +434,10 @@
         const ayatSampai = row.querySelector(".ayat-sampai").value;
         const totalJuz = row.querySelector(".total-juz").textContent;
         const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
-        const category = row.children[1].textContent;
+
+        const santri = dataSantriGlobal.find(s => s.nama === nama);
+        const id = santri?.id || 0;
+        const category = santri?.category || "-";
 
         data.push({
           id, nama, absensi, category,
