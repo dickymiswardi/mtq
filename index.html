@@ -427,6 +427,7 @@
       rows.forEach((row, i) => {
         const id = i + 1;
         const nama = row.children[1].textContent;
+        const category = row.children[2].textContent;
         const absensi = row.querySelector(".absensi").value;
         const surahDari = row.querySelector(".surah-dari").value;
         const ayatDari = row.querySelector(".ayat-dari").value;
@@ -436,7 +437,7 @@
         const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
 
         data.push({
-          id, nama, absensi,
+          id, nama, absensi, category,
           dari: `${surahDari}:${ayatDari}`,
           sampai: `${surahSampai}:${ayatSampai}`,
           totalJuz,
