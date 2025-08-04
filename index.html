@@ -155,10 +155,6 @@
           <select id="kelas">
             <option value="kelas_1">Kelas 1</option>
             <option value="kelas_2">Kelas 2</option>
-            <option value="kelas_3">Kelas 3</option>
-            <option value="kelas_4">Kelas 4</option>
-            <option value="kelas_5">Kelas 5</option>
-            <option value="kelas_6">Kelas 6</option>
           </select>
         </div>
         <div>
@@ -170,7 +166,7 @@
       <table id="santri-table">
         <thead>
           <tr>
-            <th>No. ID</th>
+            <th>No</th>
             <th>Nama Santri</th>
             <th>Absensi</th>
             <th>Setoran Dari</th>
@@ -301,7 +297,7 @@
         santriTableBody.innerHTML = "";
 
         santriData.forEach((santri, i) => {
-          const dataAbsensi = absensiData.find(a => String(a.id) === String(santri.id)) || {};
+          const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
           const row = document.createElement("tr");
 
           const surahOptions = surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
@@ -309,7 +305,7 @@
           const sampai = (dataAbsensi.sampai || "1:1").split(":");
 
           row.innerHTML = `
-            <td>${santri.id}</td>
+            <td>${i + 1}</td>
             <td>${santri.nama}</td>
             <td>
               <select class="absensi">
@@ -429,7 +425,7 @@
       const data = [];
 
       rows.forEach((row, i) => {
-        const id = row.children[0].textContent.trim();
+        const id = i + 1;
         const nama = row.children[1].textContent;
         const absensi = row.querySelector(".absensi").value;
         const surahDari = row.querySelector(".surah-dari").value;
