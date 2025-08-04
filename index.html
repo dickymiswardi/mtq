@@ -169,10 +169,8 @@
             <th>No</th>
             <th>Nama Santri</th>
             <th>Absensi</th>
-            <th>Surah Dari</th>
-            <th>Ayat Dari</th>
-            <th>Surah Sampai</th>
-            <th>Ayat Sampai</th>
+            <th>Setoran Dari</th>
+            <th>Setoran Sampai</th>
             <th>Total Juz</th>
           </tr>
         </thead>
@@ -204,43 +202,28 @@
     let surahList = [];
     let pagesMap = {};
 
-    // Load data referensi surah dan pagesMap
-    async function loadReferences() {
-      const resSurah = await fetch("/.netlify/functions/getAyat");
-      surahList = await resSurah.json();
-      const resPages = await fetch("/.netlify/functions/getPagesMap");
-      pagesMap = await resPages.json();
-    }
-
-    // Hitung total juz berdasarkan halaman
-    function calculateJuz(fromSurah, fromAyah, toSurah, toAyah) {
-      if (!fromSurah || !fromAyah || !toSurah || !toAyah) return 0;
-      const fromKey = `${fromSurah}:${fromAyah}`;
-      const toKey = `${toSurah}:${toAyah}`;
-      const pageFrom = pagesMap[fromKey] || 0;
-      const pageTo = pagesMap[toKey] || 0;
-      const totalPages = pageTo - pageFrom + 1;
-      if (totalPages <= 0) return 0;
-      return (totalPages / 20).toFixed(2);
-    }
-
-    // Cek login dari localStorage
+    // Load Surah & PagesMap di awal
     window.addEventListener("DOMContentLoaded", async () => {
-      await loadReferences();
       const isLoggedIn = localStorage.getItem("isLoggedIn");
-      if (isLoggedIn) {
-        showDashboard();
+      if (isLoggedIn) showDashboard();
+
+      try {
+        const resSurah = await fetch("/.netlify/functions/getAyat");
+        surahList = await resSurah.json();
+
+        const resPages = await fetch("/.netlify/functions/getPagesMap");
+        pagesMap = await resPages.json();
+      } catch (err) {
+        console.error("Gagal load surah/pagesMap:", err);
       }
     });
 
-    // Toggle password
     togglePasswordBtn.addEventListener("click", () => {
       const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
       passwordInput.setAttribute("type", type);
       togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
     });
 
-    // Login submit
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const username = document.getElementById("username").value;
@@ -267,7 +250,6 @@
       overlay.style.display = "none";
     });
 
-    // Tampilkan dashboard
     function showDashboard() {
       loginCard.style.display = "none";
       dashboardCard.style.display = "block";
@@ -275,7 +257,6 @@
       loadSantriData();
     }
 
-    // Logout
     logoutBtn.addEventListener("click", () => {
       overlay.style.display = "flex";
       setTimeout(() => {
@@ -287,7 +268,6 @@
       }, 500);
     });
 
-    // Load data santri + absensi terakhir
     async function loadSantriData() {
       const kelas = kelasSelect.value;
       const tanggal = tanggalInput.value;
@@ -301,9 +281,15 @@
         const absensiData = await resAbsensi.json();
 
         santriTableBody.innerHTML = "";
+
         santriData.forEach((santri, i) => {
           const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
           const row = document.createElement("tr");
+
+          const surahOptions = surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
+          const dari = (dataAbsensi.dari || "1:1").split(":");
+          const sampai = (dataAbsensi.sampai || "1:1").split(":");
+
           row.innerHTML = `
             <td>${i + 1}</td>
             <td>${santri.nama}</td>
@@ -315,67 +301,96 @@
               </select>
             </td>
             <td>
-              <select class="fromSurah">
-                <option value="">Surah</option>
-                ${surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("")}
-              </select>
+              <select class="surah-dari">${surahOptions}</select>
+              <select class="ayat-dari"></select>
             </td>
-            <td><input type="number" min="1" class="fromAyah" placeholder="Ayat" /></td>
             <td>
-              <select class="toSurah">
-                <option value="">Surah</option>
-                ${surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("")}
-              </select>
+              <select class="surah-sampai">${surahOptions}</select>
+              <select class="ayat-sampai"></select>
             </td>
-            <td><input type="number" min="1" class="toAyah" placeholder="Ayat" /></td>
-            <td class="totalJuz">${dataAbsensi.totalJuz || 0}</td>
+            <td class="total-juz">${dataAbsensi.totalJuz || 0}</td>
           `;
-          // set value jika ada data absensi lama
-          const el = document.createElement("tr");
+
           santriTableBody.appendChild(row);
 
-          // event listener untuk update totalJuz
-          const fromSurah = row.querySelector(".fromSurah");
-          const fromAyah = row.querySelector(".fromAyah");
-          const toSurah = row.querySelector(".toSurah");
-          const toAyah = row.querySelector(".toAyah");
-          const totalJuzCell = row.querySelector(".totalJuz");
+          const surahDari = row.querySelector(".surah-dari");
+          const ayatDari = row.querySelector(".ayat-dari");
+          const surahSampai = row.querySelector(".surah-sampai");
+          const ayatSampai = row.querySelector(".ayat-sampai");
 
-          function updateTotalJuz() {
-            totalJuzCell.textContent = calculateJuz(
-              fromSurah.value, fromAyah.value, toSurah.value, toAyah.value
-            );
-          }
-          [fromSurah, fromAyah, toSurah, toAyah].forEach(el => el.addEventListener("change", updateTotalJuz));
+          surahDari.value = dari[0];
+          surahSampai.value = sampai[0];
+
+          fillAyatOptions(ayatDari, surahDari.value, dari[1]);
+          fillAyatOptions(ayatSampai, surahSampai.value, sampai[1]);
+
+          surahDari.addEventListener("change", () => fillAyatOptions(ayatDari, surahDari.value));
+          surahSampai.addEventListener("change", () => fillAyatOptions(ayatSampai, surahSampai.value));
+
+          [ayatDari, ayatSampai, surahDari, surahSampai].forEach(el => {
+            el.addEventListener("change", () => updateTotalJuz(row));
+          });
         });
       } catch (err) {
         alert("Gagal memuat data santri / absensi!");
       }
+
       overlay.style.display = "none";
     }
 
-    // Event perubahan kelas / tanggal
+    function fillAyatOptions(selectEl, surahId, selectedAyat = 1) {
+      const surah = surahList.find(s => s.id == surahId);
+      if (!surah) return;
+      selectEl.innerHTML = "";
+      for (let i = 1; i <= surah.jumlah_ayat; i++) {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = i;
+        if (i == selectedAyat) opt.selected = true;
+        selectEl.appendChild(opt);
+      }
+    }
+
+    function updateTotalJuz(row) {
+      const surahDari = row.querySelector(".surah-dari").value;
+      const ayatDari = row.querySelector(".ayat-dari").value;
+      const surahSampai = row.querySelector(".surah-sampai").value;
+      const ayatSampai = row.querySelector(".ayat-sampai").value;
+
+      const halamanAwal = pagesMap[`${surahDari}:${ayatDari}`] || 1;
+      const halamanAkhir = pagesMap[`${surahSampai}:${ayatSampai}`] || halamanAwal;
+
+      const totalHalaman = Math.max(halamanAkhir - halamanAwal + 1, 1);
+      const totalJuz = (totalHalaman / 20).toFixed(2);
+
+      row.querySelector(".total-juz").textContent = totalJuz;
+    }
+
     kelasSelect.addEventListener("change", loadSantriData);
     tanggalInput.addEventListener("change", loadSantriData);
 
-    // Simpan data absensi
     saveBtn.addEventListener("click", async () => {
       const kelas = kelasSelect.value;
       const tanggal = tanggalInput.value;
-
       const rows = santriTableBody.querySelectorAll("tr");
       const data = [];
+
       rows.forEach((row, i) => {
         const id = i + 1;
         const nama = row.children[1].textContent;
         const absensi = row.querySelector(".absensi").value;
-        const fromSurah = row.querySelector(".fromSurah").value;
-        const fromAyah = row.querySelector(".fromAyah").value;
-        const toSurah = row.querySelector(".toSurah").value;
-        const toAyah = row.querySelector(".toAyah").value;
-        const totalJuz = row.querySelector(".totalJuz").textContent;
+        const surahDari = row.querySelector(".surah-dari").value;
+        const ayatDari = row.querySelector(".ayat-dari").value;
+        const surahSampai = row.querySelector(".surah-sampai").value;
+        const ayatSampai = row.querySelector(".ayat-sampai").value;
+        const totalJuz = row.querySelector(".total-juz").textContent;
 
-        data.push({ id, nama, absensi, dari: `${fromSurah}:${fromAyah}`, sampai: `${toSurah}:${toAyah}`, totalJuz });
+        data.push({
+          id, nama, absensi,
+          dari: `${surahDari}:${ayatDari}`,
+          sampai: `${surahSampai}:${ayatSampai}`,
+          totalJuz
+        });
       });
 
       saveBtn.disabled = true;
@@ -407,7 +422,6 @@
       }
     });
 
-    // Download PDF
     downloadBtn.addEventListener("click", async () => {
       const kelas = kelasSelect.value;
       const tanggal = tanggalInput.value;
@@ -434,7 +448,7 @@
         let y = 40;
         absensiData.forEach((item, i) => {
           doc.text(
-            `${i + 1}. ${item.nama} | Absensi: ${item.absensi} | Dari: ${item.dari || "-"} | Sampai: ${item.sampai || "-"} | Total Juz: ${item.totalJuz}`,
+            `${i + 1}. ${item.nama} | Absensi: ${item.absensi} | Dari: ${item.dari} | Sampai: ${item.sampai} | Total Juz: ${item.totalJuz}`,
             14,
             y
           );
