@@ -1,8 +1,11 @@
+// netlify/functions/getPagesMap.js
+import fetch from "node-fetch";
+
 export async function handler() {
   const token = process.env.MTQ_TOKEN;
 
   // URL file getPagesMap.json di repo privat
-  const url = "https://github.com/dickymiswardi/usermtq/raw/refs/heads/main/getPagesMap.json";
+  const url = "https://raw.githubusercontent.com/dickymiswardi/usermtq/main/getPagesMap.json";
 
   try {
     const response = await fetch(url, {
