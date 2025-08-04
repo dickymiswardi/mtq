@@ -251,11 +251,15 @@
     });
 
     function showDashboard() {
-      loginCard.style.display = "none";
-      dashboardCard.style.display = "block";
-      tanggalInput.valueAsDate = new Date();
-      loadSantriData();
-    }
+  loginCard.style.display = "none";
+  dashboardCard.style.display = "block";
+
+  const today = new Date().toISOString().split("T")[0];
+  tanggalInput.max = today; // ⛔ Batasi agar tidak bisa pilih tanggal ke depan
+  tanggalInput.valueAsDate = new Date();
+
+  loadSantriData();
+}
 
     logoutBtn.addEventListener("click", () => {
       overlay.style.display = "flex";
