@@ -257,14 +257,16 @@
   dashboardCard.style.display = "block";
 
   const today = new Date().toISOString().split("T")[0];
-  tanggalInput.max = today; // ⛔ Batasi agar tidak bisa pilih tanggal ke depan
+
+  tanggalInput.max = today;
   tanggalInput.valueAsDate = new Date();
 
-  const today = new Date().toISOString().split("T")[0];
-  document.getElementById("start-date").max = today;
-  document.getElementById("end-date").max = today;
+  const startDate = document.getElementById("start-date");
+  const endDate = document.getElementById("end-date");
 
-
+  if (startDate) startDate.max = today;
+  if (endDate) endDate.max = today;
+      
   loadSantriData();
 }
 
