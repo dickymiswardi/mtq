@@ -376,22 +376,43 @@
   const halamanAkhir = pagesMap[`${surahSampai}:${ayatSampai}`] || halamanAwal;
 
   const totalHalaman = Math.max(halamanAkhir - halamanAwal + 1, 1);
-  const totalJuz = (totalHalaman / 20).toFixed(2); // Opsional, bisa tetap pakai 20
+  const totalJuz = (totalHalaman / 20).toFixed(2); // Bisa diganti logika jika mau lebih presisi
 
-  // Gunakan daftar halaman awal juz resmi
+  // Gunakan daftar halaman awal resmi setiap juz (30 juz)
   const halamanAwalJuz = [
     1, 22, 42, 62, 82, 102, 121, 142, 162, 182,
     201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
     402, 422, 442, 462, 482, 502, 522, 542, 562, 582
   ];
 
-  const juzTerbaca = halamanAwalJuz
+  // Buat daftar juz yang tercakup
+  const juzTercakup = halamanAwalJuz
     .map((h, i) => ({ juz: i + 1, halaman: h }))
     .filter(j => j.halaman >= halamanAwal && j.halaman <= halamanAkhir)
-    .map(j => `Juz ${j.juz}`)
-    .join(", ");
+    .map(j => j.juz);
 
-  row.querySelector(".juz-terbaca").textContent = juzTerbaca;
+  // Fungsi bantu untuk membuat rentang dari list terurut
+  function compressJuzRanges(juzList) {
+    if (juzList.length === 0) return "";
+    const ranges = [];
+    let start = juzList[0];
+    let end = start;
+
+    for (let i = 1; i < juzList.length; i++) {
+      if (juzList[i] === end + 1) {
+        end = juzList[i];
+      } else {
+        ranges.push(start === end ? `Juz ${start}` : `Juz ${start}-${end}`);
+        start = end = juzList[i];
+      }
+    }
+    ranges.push(start === end ? `Juz ${start}` : `Juz ${start}-${end}`);
+    return ranges.join(", ");
+  }
+
+  const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
+
+  row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
   row.querySelector(".total-juz").textContent = totalJuz;
 }
     kelasSelect.addEventListener("change", loadSantriData);
