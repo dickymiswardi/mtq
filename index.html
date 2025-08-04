@@ -437,26 +437,27 @@
       const data = [];
 
       rows.forEach((row) => {
-  const nama = row.children[1].textContent;
-  const absensi = row.querySelector(".absensi").value;
-  const surahDari = row.querySelector(".surah-dari").value;
-  const ayatDari = row.querySelector(".ayat-dari").value;
-  const surahSampai = row.querySelector(".surah-sampai").value;
-  const ayatSampai = row.querySelector(".ayat-sampai").value;
-  const totalJuz = row.querySelector(".total-juz").textContent;
-  const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
+      const nama = row.children[1].textContent.trim();  // pastikan bersih
+      const absensi = row.querySelector(".absensi").value;
+      const surahDari = row.querySelector(".surah-dari").value;
+      const ayatDari = row.querySelector(".ayat-dari").value;
+      const surahSampai = row.querySelector(".surah-sampai").value;
+      const ayatSampai = row.querySelector(".ayat-sampai").value;
+      const totalJuz = row.querySelector(".total-juz").textContent;
+      const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
 
-  const santri = dataSantriGlobal.find(s => s.nama === nama);
-  const id = santri?.id || 0;
+      const santri = dataSantriGlobal.find(s => s.nama.trim() === nama.trim());
+      const id = santri?.id || 0;
 
-  data.push({
-    id, nama, absensi,
-    dari: `${surahDari}:${ayatDari}`,
-    sampai: `${surahSampai}:${ayatSampai}`,
-    totalJuz,
-    juzTerbaca
-  });
-});
+      data.push({
+        id, nama, absensi,
+        dari: `${surahDari}:${ayatDari}`,
+        sampai: `${surahSampai}:${ayatSampai}`,
+        totalJuz,
+        juzTerbaca
+      });
+    });
+
 
       saveBtn.disabled = true;
       saveBtn.textContent = "⏳ Menyimpan...";
