@@ -257,7 +257,7 @@
   loginCard.style.display = "none";
   dashboardCard.style.display = "block";
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString('sv-SE'); // Format: YYYY-MM-DD
 
   tanggalInput.max = today;
   tanggalInput.valueAsDate = new Date();
