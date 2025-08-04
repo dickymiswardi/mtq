@@ -178,6 +178,10 @@
       </table>
       <div class="actions">
         <button id="save-btn">Simpan</button>
+        <div class="actions">
+        <label>Dari: <input type="date" id="start-date" /></label>
+        <label>Sampai: <input type="date" id="end-date" /></label>
+        </div>
         <button id="download-btn">Download PDF</button>
         <button class="logout-btn" id="logout-btn">Logout</button>
       </div>
@@ -255,8 +259,8 @@
   dashboardCard.style.display = "block";
 
   const today = new Date().toISOString().split("T")[0];
-  tanggalInput.max = today; // ⛔ Batasi agar tidak bisa pilih tanggal ke depan
-  tanggalInput.valueAsDate = new Date();
+  document.getElementById("start-date").max = today;
+  document.getElementById("end-date").max = today;
 
   loadSantriData();
 }
@@ -427,46 +431,66 @@
     });
 
     downloadBtn.addEventListener("click", async () => {
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
-      overlay.style.display = "flex";
+  const kelas = kelasSelect.value;
+  const startDate = document.getElementById("start-date").value;
+  const endDate = document.getElementById("end-date").value;
 
-      try {
-        const res = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-        const absensiData = await res.json();
+  if (!startDate || !endDate) {
+    alert("Mohon pilih tanggal mulai dan tanggal akhir.");
+    return;
+  }
 
-        if (absensiData.length === 0) {
-          alert("Belum ada data absensi untuk tanggal ini.");
-          overlay.style.display = "none";
-          return;
-        }
+  overlay.style.display = "flex";
 
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+  try {
+    const res = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${startDate}&end=${endDate}`);
+    const allData = await res.json();
 
-        doc.setFontSize(16);
-        doc.text(`Absensi & Hafalan Santri`, 14, 15);
-        doc.setFontSize(12);
-        doc.text(`Kelas: ${kelas} - Tanggal: ${tanggal}`, 14, 25);
-
-        let y = 40;
-        absensiData.forEach((item, i) => {
-          doc.text(
-            `${i + 1}. ${item.nama} | Absensi: ${item.absensi} | Dari: ${item.dari} | Sampai: ${item.sampai} | Total Juz: ${item.totalJuz}`,
-            14,
-            y
-          );
-          y += 10;
-        });
-
-        doc.save(`Absensi_${kelas}_${tanggal}.pdf`);
-      } catch (err) {
-        alert("Gagal mengunduh data absensi!");
-        console.error(err);
-      }
-
+    if (allData.length === 0) {
+      alert("Tidak ada data pada rentang tanggal tersebut.");
       overlay.style.display = "none";
+      return;
+    }
+
+    // Hitung rekap
+    const rekap = {};
+    let totalJuz = 0;
+    allData.forEach(item => {
+      if (!rekap[item.nama]) rekap[item.nama] = { hadir: 0, sakit: 0, izin: 0, totalJuz: 0 };
+      rekap[item.nama][item.absensi.toLowerCase()]++;
+      rekap[item.nama].totalJuz += parseFloat(item.totalJuz || 0);
+      totalJuz += parseFloat(item.totalJuz || 0);
     });
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text(`Rekap Absensi & Hafalan`, 14, 15);
+    doc.setFontSize(11);
+    doc.text(`Kelas: ${kelas} | Tanggal: ${startDate} - ${endDate}`, 14, 23);
+
+    let y = 35;
+    Object.entries(rekap).forEach(([nama, data], i) => {
+      const text = `${i + 1}. ${nama} | Hadir: ${data.hadir || 0}, Sakit: ${data.sakit || 0}, Izin: ${data.izin || 0} | Total Juz: ${data.totalJuz.toFixed(2)}`;
+      doc.text(text, 14, y);
+      y += 8;
+      if (y > 280) {
+        doc.addPage();
+        y = 20;
+      }
+    });
+
+    y += 10;
+    doc.setFontSize(12);
+    doc.text(`Total Juz Keseluruhan: ${totalJuz.toFixed(2)}`, 14, y);
+    doc.save(`Rekap_${kelas}_${startDate}_sd_${endDate}.pdf`);
+  } catch (err) {
+    console.error(err);
+    alert("Gagal mengunduh PDF!");
+  }
+
+  overlay.style.display = "none";
+});
   </script>
 </body>
 </html>
