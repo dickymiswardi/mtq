@@ -378,8 +378,15 @@
   const totalHalaman = Math.max(halamanAkhir - halamanAwal + 1, 1);
   const totalJuz = (totalHalaman / 20).toFixed(2);
 
-  const juzKe = Math.ceil(halamanAwal / 20);
-  row.querySelector(".juz-terbaca").textContent = `Juz ${juzKe}`;
+  // Akumulasi semua juz yang tercakup
+  const juzAwal = Math.ceil(halamanAwal / 20);
+  const juzAkhir = Math.ceil(halamanAkhir / 20);
+  const juzList = [];
+  for (let i = juzAwal; i <= juzAkhir; i++) {
+    juzList.push(`Juz ${i}`);
+  }
+
+  row.querySelector(".juz-terbaca").textContent = juzList.join(", ");
   row.querySelector(".total-juz").textContent = totalJuz;
 }
 
