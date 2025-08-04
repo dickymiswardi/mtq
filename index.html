@@ -188,6 +188,18 @@
   </div>
 
   <script>
+
+    let dataSantriGlobal = []; // Untuk menyimpan data ID santri dari file kelas_1.json
+
+    function loadSantriKelas(kelas) {
+      fetch(`https://raw.githubusercontent.com/dickymiswardi/usermtq/main/kelas_${kelas}.json`)
+        .then(res => res.json())
+        .then(data => {
+          dataSantriGlobal = data;  // simpan data untuk referensi ID saat simpan
+          renderTable(data);        // fungsi ini tetap seperti biasa
+        });
+    }
+    
     const loginCard = document.getElementById("login-card");
     const dashboardCard = document.getElementById("dashboard-card");
     const loginForm = document.getElementById("login-form");
@@ -424,25 +436,27 @@
       const rows = santriTableBody.querySelectorAll("tr");
       const data = [];
 
-      rows.forEach((row, i) => {
-        const id = i + 1;
-        const nama = row.children[1].textContent;
-        const absensi = row.querySelector(".absensi").value;
-        const surahDari = row.querySelector(".surah-dari").value;
-        const ayatDari = row.querySelector(".ayat-dari").value;
-        const surahSampai = row.querySelector(".surah-sampai").value;
-        const ayatSampai = row.querySelector(".ayat-sampai").value;
-        const totalJuz = row.querySelector(".total-juz").textContent;
-        const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
+      rows.forEach((row) => {
+  const nama = row.children[1].textContent;
+  const absensi = row.querySelector(".absensi").value;
+  const surahDari = row.querySelector(".surah-dari").value;
+  const ayatDari = row.querySelector(".ayat-dari").value;
+  const surahSampai = row.querySelector(".surah-sampai").value;
+  const ayatSampai = row.querySelector(".ayat-sampai").value;
+  const totalJuz = row.querySelector(".total-juz").textContent;
+  const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
 
-        data.push({
-          id, nama, absensi,
-          dari: `${surahDari}:${ayatDari}`,
-          sampai: `${surahSampai}:${ayatSampai}`,
-          totalJuz,
-          juzTerbaca
-        });
-      });
+  const santri = dataSantriGlobal.find(s => s.nama === nama);
+  const id = santri?.id || 0;
+
+  data.push({
+    id, nama, absensi,
+    dari: `${surahDari}:${ayatDari}`,
+    sampai: `${surahSampai}:${ayatSampai}`,
+    totalJuz,
+    juzTerbaca
+  });
+});
 
       saveBtn.disabled = true;
       saveBtn.textContent = "⏳ Menyimpan...";
