@@ -400,7 +400,7 @@ const halamanAwalJuz = [
 // Hitung total halaman valid
 let totalHalaman = 0;
 for (let h = halamanAwal; h <= halamanAkhir; h++) {
-  if (h >= 601 && h <= 604) continue; // skip 601–604
+  if (h >= 602 && h <= 604) continue; // skip 601–604
   if (h === 21) continue;             // skip halaman 21
   totalHalaman++;
 }
@@ -410,7 +410,7 @@ const totalJuz = (totalHalaman / 20).toFixed(2);
 
 // Juz yang dicakup oleh rentang halaman ini
 const juzTercakup = halamanAwalJuz
-  .filter(h => h >= halamanAwal && h <= halamanAkhir && (h < 601 || h > 604))
+  .filter(h => h >= halamanAwal && h <= halamanAkhir && (h < 602 || h > 604))
   .map((_, i) => i + 1);
 
   // Kompresi format Juz
