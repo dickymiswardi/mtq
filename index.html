@@ -174,6 +174,10 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
+            Dari: <input type="date" id="tanggalAwal">
+            Sampai: <input type="date" id="tanggalAkhir">
+            <button onclick="hitungTotalAllJuz()">🔄 Hitung Total All Juz</button>
+            <th>Total All Juz</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -650,6 +654,60 @@ saveTotalBtn.addEventListener("click", async () => {
     overlay.style.display = "none";
   }, 2000);
 });
+
+
+
+
+
+    async function hitungTotalAllJuz() {
+  const kelas = document.getElementById("kelasDropdown").value;  // atau ID lain
+  const dari = document.getElementById("tanggalAwal").value;
+  const sampai = document.getElementById("tanggalAkhir").value;
+
+  if (!dari || !sampai) {
+    alert("Pilih tanggal awal dan akhir");
+    return;
+  }
+
+  const url = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/rekap/${kelas}_totalJuz.json`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const rekap = data.rekap;
+
+    // Filter tanggal
+    const tanggalList = Object.keys(rekap).filter(tgl => tgl >= dari && tgl <= sampai);
+
+    const totalPerSantri = {};  // id: { totalJuz, nama }
+
+    for (const tgl of tanggalList) {
+      for (const entri of rekap[tgl]) {
+        const id = entri.id;
+        if (!totalPerSantri[id]) {
+          totalPerSantri[id] = { nama: entri.nama, totalJuz: 0 };
+        }
+        totalPerSantri[id].totalJuz += entri.totalJuz;
+      }
+    }
+
+    // Tampilkan ke tabel
+    const rows = document.querySelectorAll("#dashboardTable tbody tr");
+    rows.forEach(row => {
+      const id = parseInt(row.querySelector("td").textContent);
+      const cell = row.querySelector(".total-all-juz");
+      if (totalPerSantri[id]) {
+        cell.textContent = totalPerSantri[id].totalJuz.toFixed(2);
+      } else {
+        cell.textContent = "0";
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert("Gagal mengambil data total hafalan.");
+  }
+}
   </script>
 </body>
 </html>
