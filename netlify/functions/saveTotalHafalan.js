@@ -3,7 +3,7 @@ import fetch from "node-fetch";
 import { Octokit } from "@octokit/core";
 
 export async function handler(event) {
-  const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Hanya 1 token dipakai
+  const GITHUB_TOKEN = process.env.MTQ_TOKEN; // Pakai MTQ_TOKEN sesuai instruksi
   const { kelas } = event.queryStringParameters;
 
   if (!kelas) {
