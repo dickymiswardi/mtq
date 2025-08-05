@@ -39,12 +39,12 @@ export async function handler(event) {
       const fileRes = await fetch(file.download_url, { headers });
       const absensiData = await fileRes.json();
 
-      const perTanggalData = absensiData.map(entry => ({
-        id: entry.id,
-        nama: entry.nama,
-        semester: parseInt(entry.semester),
-        totalJuz: parseFloat(parseFloat(entry.totalJuz || 0).toFixed(2))
-      }));
+      const perTanggalData = absensiData.map((entry, index) => ({
+  id: typeof entry.id === "number" && entry.id > 0 ? entry.id : index + 1,
+  nama: entry.nama || `Santri ${index + 1}`,
+  semester: entry.semester ? parseInt(entry.semester) : null,
+  totalJuz: entry.totalJuz ? parseFloat(parseFloat(entry.totalJuz).toFixed(2)) : 0
+}));
 
       rekapMap[tanggal] = perTanggalData;
     }
