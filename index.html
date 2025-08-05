@@ -163,9 +163,6 @@
         </div>
       </div>
 
-      Dari: <input type="date" id="rangeDari">
-      Sampai: <input type="date" id="rangeSampai">
-      <button onclick="hitungTotalAllJuzFromTable()">🔄 Hitung Total All Juz</button>
       <table id="santri-table">
         <thead>
           <tr>
@@ -177,14 +174,12 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
-            <th>Total All Juz</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
       <div class="actions">
         <button id="save-btn">Simpan</button>
-        <button id="save-total-btn">💾 Simpan Total Hafalan Semua Tanggal</button>
         <button id="download-btn">Download PDF</button>
         <label>Dari: <input type="date" id="start-date" /></label>
         <label>Sampai: <input type="date" id="end-date" /></label>
@@ -340,7 +335,7 @@
               <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
             </select>
             </td>
-            <td class="total-all-juz">0</td>
+
           `;
 
           santriTableBody.appendChild(row);
@@ -616,101 +611,6 @@ const juzTercakup = halamanAwalJuz
 
   overlay.style.display = "none";
 });
-
-
-
-
-
-    const saveTotalBtn = document.getElementById("save-total-btn");
-
-saveTotalBtn.addEventListener("click", async () => {
-  const kelas = kelasSelect.value;
-
-  if (!confirm(`Yakin ingin menyimpan total hafalan semua tanggal untuk ${kelas}?`)) return;
-
-  overlay.style.display = "flex";
-  saveTotalBtn.disabled = true;
-  saveTotalBtn.textContent = "⏳ Memproses...";
-
-  try {
-    const res = await fetch(`/.netlify/functions/saveTotalHafalan?kelas=${kelas}`);
-    const result = await res.json();
-
-    if (result.success) {
-      saveTotalBtn.textContent = `✅ ${result.totalTanggal} tanggal tersimpan`;
-    } else {
-      saveTotalBtn.textContent = "❌ Gagal simpan";
-      alert("Gagal menyimpan rekap total hafalan.");
-    }
-  } catch (err) {
-    console.error(err);
-    saveTotalBtn.textContent = "❌ Error";
-    alert("Terjadi error saat menyimpan.");
-  }
-
-  setTimeout(() => {
-    saveTotalBtn.textContent = "💾 Simpan Total Hafalan Semua Tanggal";
-    saveTotalBtn.disabled = false;
-    overlay.style.display = "none";
-  }, 2000);
-});
-
-
-
-
-
-    async function hitungTotalAllJuzFromTable() {
-  const kelas = kelasSelect.value;
-  const dari = document.getElementById("rangeDari").value;
-  const sampai = document.getElementById("rangeSampai").value;
-
-  if (!dari || !sampai) {
-    alert("Mohon pilih tanggal Dari dan Sampai.");
-    return;
-  }
-
-  overlay.style.display = "flex";
-
-  try {
-    // Ambil semua data absensi rentang tanggal
-    const res = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
-    const allData = await res.json();
-
-    const rows = santriTableBody.querySelectorAll("tr");
-    const rekap = {}; // { id: {totalJuz, semester} }
-
-    // Rekap total per santri
-    allData.forEach(item => {
-      const id = item.id;
-      if (!rekap[id]) {
-        rekap[id] = {
-          totalJuz: 0,
-          semester: item.semester || null,
-        };
-      }
-      rekap[id].totalJuz += parseFloat(item.totalJuz || 0);
-    });
-
-    // Update ke tabel kolom "Total All Juz"
-    rows.forEach(row => {
-      const id = parseInt(row.children[0].textContent);
-      const cell = row.querySelector(".total-all-juz");
-      if (rekap[id]) {
-        cell.textContent = rekap[id].totalJuz.toFixed(2);
-      } else {
-        cell.textContent = "0.00";
-      }
-    });
-
-    alert("✅ Total All Juz berhasil dihitung.");
-  } catch (err) {
-    console.error(err);
-    alert("❌ Gagal memproses Total All Juz.");
-  }
-
-  overlay.style.display = "none";
-}
-
   </script>
 </body>
 </html>
