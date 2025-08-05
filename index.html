@@ -394,13 +394,14 @@
   let totalHalaman = 0;
   for (let h = halamanAwal; h <= halamanAkhir; h++) {
     if (h < 601 || h > 604) totalHalaman++;
+    if (h < 21 || h > 21) totalHalaman++;
   }
 
   const totalJuz = (totalHalaman / 20).toFixed(2); // Perkiraan kasar
 
   // Daftar halaman awal setiap juz
   const halamanAwalJuz = [
-    1, 21, 42, 62, 82, 102, 121, 142, 162, 182,
+    1, 22, 42, 62, 82, 102, 121, 142, 162, 182,
     201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
     402, 422, 442, 462, 482, 502, 522, 542, 562, 582
   ];
