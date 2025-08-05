@@ -422,7 +422,7 @@
   // Hitung total halaman yang valid, abaikan 601-604
   let totalHalaman = 0;
   for (let h = halamanAwal; h <= halamanAkhir; h++) {
-    if (h < 602 || h > 604) totalHalaman++;
+    if (h < 601 || h > 604) totalHalaman++;
   }
 
   const totalJuz = (totalHalaman / 20).toFixed(2); // Perkiraan kasar
