@@ -325,7 +325,17 @@
             </td>
             <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
             <td class="total-juz">${dataAbsensi.totalJuz || 0}</td>
-            <td>${santri.semester || '-'}</td>
+            <td>
+            <select class="semester">
+              <option value="1" ${santri.semester == 1 ? 'selected' : ''}>Semester 1</option>
+              <option value="2" ${santri.semester == 2 ? 'selected' : ''}>Semester 2</option>
+              <option value="3" ${santri.semester == 3 ? 'selected' : ''}>Semester 3</option>
+              <option value="4" ${santri.semester == 4 ? 'selected' : ''}>Semester 4</option>
+              <option value="5" ${santri.semester == 5 ? 'selected' : ''}>Semester 5</option>
+              <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
+            </select>
+            </td>
+
           `;
 
           santriTableBody.appendChild(row);
@@ -434,7 +444,7 @@
       rows.forEach((row, i) => {
       const id = parseInt(row.children[0].textContent);      // ambil dari kolom nomor
       const nama = row.children[1].textContent;               // kolom nama
-      const semester = row.children[2].textContent;           // kolom kategori
+      const semester = row.querySelector(".semester").value;  // BENAR
       const absensi = row.querySelector(".absensi").value;
       const surahDari = row.querySelector(".surah-dari").value;
       const ayatDari = row.querySelector(".ayat-dari").value;
