@@ -1,7 +1,7 @@
 const { Octokit } = require("@octokit/core");
 
 exports.handler = async function (event, context) {
-  const token = process.env.GITHUB_TOKEN;
+  const token = process.env.MTQ_TOKEN;
   const repoOwner = "dickymiswardi";
   const repoName = "usermtq";
   const path = `rekap_juz/total_juz.json`;
