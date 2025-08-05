@@ -1,8 +1,11 @@
+// netlify/functions/saveTotalHafalan.js
 import fetch from "node-fetch";
+import { Octokit } from "@octokit/core";
 
 export async function handler(event) {
-  const token = process.env.MTQ_TOKEN;  // token GitHub dari Netlify
-  const kelas = event.queryStringParameters.kelas;
+  const token = process.env.MTQ_TOKEN;
+  const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+  const { kelas } = event.queryStringParameters;
 
   if (!kelas) {
     return {
@@ -11,81 +14,84 @@ export async function handler(event) {
     };
   }
 
-  const repo = "dickymiswardi/usermtq"; // nama repo GitHub privat
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/vnd.github.v3+json",
-  };
-
-  const absensiUrl = `https://api.github.com/repos/${repo}/contents/absensi`;
-  const rekapUrl = `https://api.github.com/repos/${repo}/contents/rekap/${kelas}_totalJuz.json`;
+  const octokit = new Octokit({ auth: GITHUB_TOKEN });
+  const baseURL = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/absensi/`;
 
   try {
-    // Ambil semua file absensi untuk kelas ini
-    const listRes = await fetch(absensiUrl, { headers });
-    const files = await listRes.json();
+    // Ambil daftar file JSON absensi
+    const listRes = await fetch(
+      `https://api.github.com/repos/dickymiswardi/usermtq/contents/absensi`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
-    const targetFiles = files
-      .filter(f => f.name.startsWith(`${kelas}_`) && f.name.endsWith(".json"))
-      .sort((a, b) => a.name.localeCompare(b.name)); // urut berdasarkan tanggal
+    const list = await listRes.json();
 
-    const rekapMap = {}; // { tanggal: [ {id, nama, semester, totalJuz} ] }
+    const filtered = list.filter(item => item.name.startsWith(kelas) && item.name.endsWith(".json"));
 
-    for (const file of targetFiles) {
-      const tanggalMatch = file.name.match(/^.+_(\d{4}-\d{2}-\d{2})\.json$/);
-      const tanggal = tanggalMatch ? tanggalMatch[1] : null;
-      if (!tanggal) continue;
+    const rekapPerTanggal = {};
 
-      const fileRes = await fetch(file.download_url, { headers });
-      const absensiData = await fileRes.json();
+    for (const file of filtered) {
+      const tanggalMatch = file.name.match(/_(\d{4}-\d{2}-\d{2})\.json$/);
+      if (!tanggalMatch) continue;
+      const tanggal = tanggalMatch[1];
+
+      const res = await fetch(`${baseURL}${file.name}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const absensiData = await res.json();
 
       const perTanggalData = absensiData.map((entry, index) => ({
-  id: typeof entry.id === "number" && entry.id > 0 ? entry.id : index + 1,
-  nama: entry.nama || `Santri ${index + 1}`,
-  semester: entry.semester ? parseInt(entry.semester) : null,
-  totalJuz: entry.totalJuz ? parseFloat(parseFloat(entry.totalJuz).toFixed(2)) : 0
-}));
+        id: typeof entry.id === "number" && entry.id > 0 ? entry.id : index + 1,
+        nama: entry.nama || `Santri ${index + 1}`,
+        semester: entry.semester ? parseInt(entry.semester) : null,
+        totalJuz: entry.totalJuz ? parseFloat(parseFloat(entry.totalJuz).toFixed(2)) : 0,
+      }));
 
-      rekapMap[tanggal] = perTanggalData;
+      rekapPerTanggal[tanggal] = perTanggalData;
     }
 
-    const finalJson = {
+    const finalData = {
       kelas,
-      rekap: rekapMap
+      rekap: rekapPerTanggal,
     };
 
-    // Cek apakah file sudah ada
+    const filePath = `rekap/${kelas}.json`;
+
+    // Ambil SHA jika file sudah ada
     let sha = null;
-    const checkRes = await fetch(rekapUrl, { headers });
-    if (checkRes.ok) {
-      const checkJson = await checkRes.json();
-      sha = checkJson.sha;
+    try {
+      const res = await octokit.request(
+        "GET /repos/{owner}/{repo}/contents/{path}",
+        {
+          owner: "dickymiswardi",
+          repo: "usermtq",
+          path: filePath,
+        }
+      );
+      sha = res.data.sha;
+    } catch (e) {
+      // File belum ada, biarkan sha = null
     }
 
-    // Simpan file ke GitHub (rekap)
-    const payload = {
-      message: `Update total hafalan per tanggal untuk ${kelas}`,
-      content: Buffer.from(JSON.stringify(finalJson, null, 2)).toString("base64"),
-      sha
-    };
+    const contentEncoded = Buffer.from(JSON.stringify(finalData, null, 2)).toString("base64");
 
-    const saveRes = await fetch(rekapUrl, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify(payload)
+    await octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", {
+      owner: "dickymiswardi",
+      repo: "usermtq",
+      path: filePath,
+      message: `Save total hafalan kelas ${kelas}`,
+      content: contentEncoded,
+      sha: sha || undefined,
     });
-
-    if (!saveRes.ok) throw new Error("Gagal menyimpan file rekap");
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        file: `rekap/${kelas}_totalJuz.json`,
-        totalTanggal: Object.keys(rekapMap).length
-      })
+      body: JSON.stringify({ success: true, file: filePath }),
     };
   } catch (err) {
+    console.error(err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message }),
