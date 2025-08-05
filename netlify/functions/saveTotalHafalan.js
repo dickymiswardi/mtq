@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 
 export async function handler(event) {
-  const token = process.env.MTQ_TOKEN;  // GitHub token dari Netlify env
+  const token = process.env.MTQ_TOKEN;
   const kelas = event.queryStringParameters.kelas;
 
   if (!kelas) {
@@ -19,23 +19,12 @@ export async function handler(event) {
 
   const absensiUrl = `https://api.github.com/repos/${repo}/contents/absensi`;
   const rekapUrl = `https://api.github.com/repos/${repo}/contents/rekap/${kelas}_totalJuz.json`;
-  const profilKelasUrl = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/${kelas}.json`;
+  const kelasUrl = `https://raw.githubusercontent.com/${repo}/main/${kelas}.json`;
 
   try {
-    // Ambil profil kelas (id, nama, semester)
-    const profilRes = await fetch(profilKelasUrl, { headers });
-    const profilList = await profilRes.json(); // array of {id, nama, semester}
+    const kelasRes = await fetch(kelasUrl, { headers });
+    const kelasData = await kelasRes.json();
 
-    // Buat map nama ➜ semester, dan id ➜ semester
-    const namaToSemester = {};
-    const idToSemester = {};
-    profilList.forEach(item => {
-      const smstr = parseInt(item.semester);
-      if (item.nama) namaToSemester[item.nama] = smstr;
-      if (item.id) idToSemester[item.id] = smstr;
-    });
-
-    // Ambil daftar file absensi
     const listRes = await fetch(absensiUrl, { headers });
     const files = await listRes.json();
 
@@ -43,7 +32,7 @@ export async function handler(event) {
       .filter(f => f.name.startsWith(`${kelas}_`) && f.name.endsWith(".json"))
       .sort((a, b) => a.name.localeCompare(b.name));
 
-    const rekapMap = {};  // { tanggal: [...] }
+    const rekapMap = {}; // { tanggal: [ {id, nama, semester, totalJuz} ] }
 
     for (const file of targetFiles) {
       const tanggalMatch = file.name.match(/^.+_(\d{4}-\d{2}-\d{2})\.json$/);
@@ -53,16 +42,12 @@ export async function handler(event) {
       const fileRes = await fetch(file.download_url, { headers });
       const absensiData = await fileRes.json();
 
-      const perTanggalData = absensiData.map((entry, index) => {
-        const id = entry.id || index + 1;
-        const nama = entry.nama || `Santri ${id}`;
-        const semester =
-          idToSemester[id] || namaToSemester[nama] || null;
-
+      const perTanggalData = absensiData.map(entry => {
+        const info = kelasData.find(k => k.nama === entry.nama);
         return {
-          id,
-          nama,
-          semester,
+          id: info ? info.id : 0,
+          nama: entry.nama,
+          semester: info ? parseInt(info.semester) : null,
           totalJuz: parseFloat(parseFloat(entry.totalJuz || 0).toFixed(2))
         };
       });
@@ -70,12 +55,38 @@ export async function handler(event) {
       rekapMap[tanggal] = perTanggalData;
     }
 
+    // Hitung total per semester
+    const semesterTotals = {};
+    const namaSemesterMap = {}; // nama => semester
+
+    for (const tanggal in rekapMap) {
+      for (const entry of rekapMap[tanggal]) {
+        const semester = entry.semester;
+        if (!semester) continue;
+
+        if (!semesterTotals[semester]) {
+          semesterTotals[semester] = 0;
+        }
+
+        semesterTotals[semester] += entry.totalJuz;
+        namaSemesterMap[entry.nama] = semester; // fallback map
+      }
+    }
+
+    // Bulatkan total dan buat array
+    const totalPerSemester = Object.keys(semesterTotals).map(sem => ({
+      semester: parseInt(sem),
+      totalJuz: parseFloat(semesterTotals[sem].toFixed(2))
+    }));
+
     const finalJson = {
       kelas,
+      totalHari: Object.keys(rekapMap).length,
+      totalPerSemester,
       rekap: rekapMap
     };
 
-    // Ambil SHA jika file sudah ada
+    // Cek apakah file sudah ada
     let sha = null;
     const checkRes = await fetch(rekapUrl, { headers });
     if (checkRes.ok) {
@@ -84,7 +95,7 @@ export async function handler(event) {
     }
 
     const payload = {
-      message: `Update total hafalan per tanggal untuk ${kelas}`,
+      message: `Update total hafalan per tanggal & semester untuk ${kelas}`,
       content: Buffer.from(JSON.stringify(finalJson, null, 2)).toString("base64"),
       sha
     };
@@ -95,14 +106,15 @@ export async function handler(event) {
       body: JSON.stringify(payload)
     });
 
-    if (!saveRes.ok) throw new Error("Gagal menyimpan file rekap");
+    if (!saveRes.ok) throw new Error("Gagal menyimpan file rekap baru");
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
         file: `rekap/${kelas}_totalJuz.json`,
-        totalTanggal: Object.keys(rekapMap).length
+        totalHari: finalJson.totalHari,
+        totalPerSemester
       })
     };
   } catch (err) {
