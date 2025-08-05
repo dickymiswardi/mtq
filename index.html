@@ -11,6 +11,11 @@
       margin: 0;
       background: #f4f6f8;
     }
+
+    .total-all-juz span {
+      font-weight: bold;
+      color: green;
+    }
     .container {
       max-width: 1400px;
       margin: auto;
@@ -667,6 +672,40 @@ const juzTercakup = halamanAwalJuz
   }
 
   overlay.style.display = "none";
+}
+
+    function hitungTotalAllJuzFromTable() {
+  const rows = document.querySelectorAll("#santri-table tbody tr");
+  const semesterTarget = {
+    1: 8,
+    2: 13,
+    3: 18,
+    4: 23,
+    5: 28,
+    6: 30
+  };
+
+  rows.forEach(row => {
+    const semester = parseInt(row.querySelector(".semester").value);
+    const target = semesterTarget[semester] || 0;
+
+    // Ambil nilai Total Juz dan konversi ke angka
+    const totalJuz = parseFloat(row.querySelector(".total-all-juz").textContent) || 0;
+
+    // Tambahkan indikator TUNTAS jika sudah memenuhi target
+    let cell = row.querySelector(".total-all-juz");
+    let existingSpan = cell.querySelector("span");
+    if (existingSpan) existingSpan.remove(); // Hapus label lama jika ada
+
+    if (totalJuz >= target) {
+      const span = document.createElement("span");
+      span.textContent = " TUNTAS";
+      span.style.color = "green";
+      span.style.fontSize = "12px";
+      span.style.marginLeft = "5px";
+      cell.appendChild(span);
+    }
+  });
 }
   </script>
 </body>
