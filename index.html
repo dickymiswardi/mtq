@@ -390,26 +390,28 @@
   const halamanAwal = pagesMap[keyDari] || 1;
   const halamanAkhir = pagesMap[keySampai] || halamanAwal;
 
-  // Hitung total halaman yang valid, abaikan 601-604
-  let totalHalaman = 0;
-  for (let h = halamanAwal; h <= halamanAkhir; h++) {
-    if (h < 601 || h > 604) totalHalaman++;
-    if (h < 21 || h > 21) totalHalaman++;
-  }
+// Daftar halaman awal tiap juz
+const halamanAwalJuz = [
+  1, 22, 42, 62, 82, 102, 121, 142, 162, 182,
+  201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
+  402, 422, 442, 462, 482, 502, 522, 542, 562, 582
+];
 
-  const totalJuz = (totalHalaman / 20).toFixed(2); // Perkiraan kasar
+// Hitung total halaman valid
+let totalHalaman = 0;
+for (let h = halamanAwal; h <= halamanAkhir; h++) {
+  if (h >= 601 && h <= 604) continue; // skip 601–604
+  if (h === 21) continue;             // skip halaman 21
+  totalHalaman++;
+}
 
-  // Daftar halaman awal setiap juz
-  const halamanAwalJuz = [
-    1, 22, 42, 62, 82, 102, 121, 142, 162, 182,
-    201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
-    402, 422, 442, 462, 482, 502, 522, 542, 562, 582
-  ];
+// Hitung total juz (berdasarkan 20 halaman per juz)
+const totalJuz = (totalHalaman / 20).toFixed(2);
 
-  // Cari juz yang masuk dalam rentang dan bukan di 601-604
-  const juzTercakup = halamanAwalJuz
-    .filter(h => h >= halamanAwal && h <= halamanAkhir && (h < 601 || h > 604))
-    .map((_, i) => i + 1);
+// Juz yang dicakup oleh rentang halaman ini
+const juzTercakup = halamanAwalJuz
+  .filter(h => h >= halamanAwal && h <= halamanAkhir && (h < 601 || h > 604))
+  .map((_, i) => i + 1);
 
   // Kompresi format Juz
   function compressJuzRanges(list) {
