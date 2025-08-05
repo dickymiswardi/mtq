@@ -1,3 +1,4 @@
+// netlify/functions/saveTotalHafalan.js
 import fetch from "node-fetch";
 
 export async function handler(event) {
@@ -18,12 +19,12 @@ export async function handler(event) {
   };
 
   const absensiUrl = `https://api.github.com/repos/${repo}/contents/absensi`;
+  const kelasDataUrl = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/${kelas}.json`;
   const rekapUrl = `https://api.github.com/repos/${repo}/contents/rekap/${kelas}_totalJuz.json`;
-  const kelasUrl = `https://raw.githubusercontent.com/${repo}/main/${kelas}.json`;
 
   try {
-    const kelasRes = await fetch(kelasUrl, { headers });
-    const kelasData = await kelasRes.json();
+    const kelasRes = await fetch(kelasDataUrl, { headers });
+    const kelasList = await kelasRes.json();
 
     const listRes = await fetch(absensiUrl, { headers });
     const files = await listRes.json();
@@ -33,9 +34,10 @@ export async function handler(event) {
       .sort((a, b) => a.name.localeCompare(b.name));
 
     const rekapMap = {}; // { tanggal: [ {id, nama, semester, totalJuz} ] }
+    const namaMap = {}; // { nama: { id, semester, totalJuzSum, tanggal[] } }
 
     for (const file of targetFiles) {
-      const tanggalMatch = file.name.match(/^.+_(\d{4}-\d{2}-\d{2})\.json$/);
+      const tanggalMatch = file.name.match(/_(\d{4}-\d{2}-\d{2})\.json$/);
       const tanggal = tanggalMatch ? tanggalMatch[1] : null;
       if (!tanggal) continue;
 
@@ -43,46 +45,47 @@ export async function handler(event) {
       const absensiData = await fileRes.json();
 
       const perTanggalData = absensiData.map(entry => {
-        const info = kelasData.find(k => k.nama === entry.nama);
+        const found = kelasList.find(k => k.id === entry.id);
+        const semester = found ? parseInt(found.semester) : null;
+        const nama = entry.nama || (found ? found.nama : "Unknown");
+
+        if (!namaMap[nama]) {
+          namaMap[nama] = {
+            id: entry.id,
+            semester,
+            totalJuz: 0,
+            tanggal: []
+          };
+        }
+        const juz = parseFloat(entry.totalJuz || 0);
+        namaMap[nama].totalJuz += juz;
+        namaMap[nama].tanggal.push(tanggal);
+
         return {
-          id: info ? info.id : 0,
-          nama: entry.nama,
-          semester: info ? parseInt(info.semester) : null,
-          totalJuz: parseFloat(parseFloat(entry.totalJuz || 0).toFixed(2))
+          id: entry.id,
+          nama,
+          semester,
+          totalJuz: parseFloat(juz.toFixed(2))
         };
       });
 
       rekapMap[tanggal] = perTanggalData;
     }
 
-    // Hitung total per semester
-    const semesterTotals = {};
-    const namaSemesterMap = {}; // nama => semester
-
-    for (const tanggal in rekapMap) {
-      for (const entry of rekapMap[tanggal]) {
-        const semester = entry.semester;
-        if (!semester) continue;
-
-        if (!semesterTotals[semester]) {
-          semesterTotals[semester] = 0;
-        }
-
-        semesterTotals[semester] += entry.totalJuz;
-        namaSemesterMap[entry.nama] = semester; // fallback map
-      }
-    }
-
-    // Bulatkan total dan buat array
-    const totalPerSemester = Object.keys(semesterTotals).map(sem => ({
-      semester: parseInt(sem),
-      totalJuz: parseFloat(semesterTotals[sem].toFixed(2))
+    // Format tanggal untuk setiap nama
+    const allSantri = Object.entries(namaMap).map(([nama, val]) => ({
+      id: val.id,
+      nama,
+      semester: val.semester,
+      totalJuz: parseFloat(val.totalJuz.toFixed(2)),
+      totalHari: val.tanggal.length,
+      tanggalAktif: compressDates(val.tanggal.sort())
     }));
 
     const finalJson = {
       kelas,
       totalHari: Object.keys(rekapMap).length,
-      totalPerSemester,
+      santri: allSantri,
       rekap: rekapMap
     };
 
@@ -95,7 +98,7 @@ export async function handler(event) {
     }
 
     const payload = {
-      message: `Update total hafalan per tanggal & semester untuk ${kelas}`,
+      message: `Update total hafalan untuk ${kelas}`,
       content: Buffer.from(JSON.stringify(finalJson, null, 2)).toString("base64"),
       sha
     };
@@ -106,15 +109,14 @@ export async function handler(event) {
       body: JSON.stringify(payload)
     });
 
-    if (!saveRes.ok) throw new Error("Gagal menyimpan file rekap baru");
+    if (!saveRes.ok) throw new Error("Gagal menyimpan file rekap");
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
         file: `rekap/${kelas}_totalJuz.json`,
-        totalHari: finalJson.totalHari,
-        totalPerSemester
+        totalSantri: allSantri.length
       })
     };
   } catch (err) {
@@ -123,4 +125,36 @@ export async function handler(event) {
       body: JSON.stringify({ error: err.message }),
     };
   }
+}
+
+// Kompres tanggal berurutan jadi rentang
+function compressDates(dates) {
+  const result = [];
+  let start = null;
+  let prev = null;
+
+  for (const dateStr of dates) {
+    const date = new Date(dateStr);
+    if (!start) {
+      start = date;
+      prev = date;
+    } else {
+      const diff = (date - prev) / (1000 * 60 * 60 * 24);
+      if (diff === 1) {
+        prev = date;
+      } else {
+        result.push(formatRange(start, prev));
+        start = date;
+        prev = date;
+      }
+    }
+  }
+  if (start) result.push(formatRange(start, prev));
+  return result.join(", ");
+}
+
+function formatRange(start, end) {
+  const s = start.getDate();
+  const e = end.getDate();
+  return s === e ? `${s}` : `${s}-${e}`;
 }
