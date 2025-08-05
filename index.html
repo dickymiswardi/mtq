@@ -659,43 +659,58 @@ saveTotalBtn.addEventListener("click", async () => {
 
 
 
-    function hitungTotalAllJuzFromTable() {
-  const dari = new Date(document.getElementById("rangeDari").value);
-  const sampai = new Date(document.getElementById("rangeSampai").value);
+    async function hitungTotalAllJuzFromTable() {
+  const kelas = kelasSelect.value;
+  const dari = document.getElementById("rangeDari").value;
+  const sampai = document.getElementById("rangeSampai").value;
 
-  if (isNaN(dari) || isNaN(sampai)) {
-    alert("Pilih tanggal awal dan akhir");
+  if (!dari || !sampai) {
+    alert("Mohon pilih tanggal Dari dan Sampai.");
     return;
   }
 
-  const rows = document.querySelectorAll("#dashboardTable tbody tr");
-  const santriTotals = {};
+  overlay.style.display = "flex";
 
-  rows.forEach(row => {
-    const id = parseInt(row.cells[0].textContent.trim());
-    const nama = row.cells[1].textContent.trim();
-    const semester = row.querySelector("select:last-of-type").value.replace("Semester ", "");
-    const juz = parseFloat(row.cells[6].textContent.trim()) || 0; // kolom ke-7 = “Total Juz”
+  try {
+    // Ambil semua data absensi rentang tanggal
+    const res = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
+    const allData = await res.json();
 
-    if (!santriTotals[id]) {
-      santriTotals[id] = { nama, semester, totalJuz: 0 };
-    }
-    santriTotals[id].totalJuz += juz;
-  });
+    const rows = santriTableBody.querySelectorAll("tr");
+    const rekap = {}; // { id: {totalJuz, semester} }
 
-  // Update kolom Total All Juz
-  rows.forEach(row => {
-    const id = parseInt(row.cells[0].textContent.trim());
-    const cell = row.querySelector(".total-all-juz");
-    if (santriTotals[id]) {
-      cell.textContent = santriTotals[id].totalJuz.toFixed(2);
-    } else {
-      cell.textContent = "0";
-    }
-  });
+    // Rekap total per santri
+    allData.forEach(item => {
+      const id = item.id;
+      if (!rekap[id]) {
+        rekap[id] = {
+          totalJuz: 0,
+          semester: item.semester || null,
+        };
+      }
+      rekap[id].totalJuz += parseFloat(item.totalJuz || 0);
+    });
 
-  alert("✅ Total All Juz dihitung dari tabel.");
+    // Update ke tabel kolom "Total All Juz"
+    rows.forEach(row => {
+      const id = parseInt(row.children[0].textContent);
+      const cell = row.querySelector(".total-all-juz");
+      if (rekap[id]) {
+        cell.textContent = rekap[id].totalJuz.toFixed(2);
+      } else {
+        cell.textContent = "0.00";
+      }
+    });
+
+    alert("✅ Total All Juz berhasil dihitung.");
+  } catch (err) {
+    console.error(err);
+    alert("❌ Gagal memproses Total All Juz.");
+  }
+
+  overlay.style.display = "none";
 }
+
   </script>
 </body>
 </html>
