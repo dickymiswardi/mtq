@@ -174,8 +174,6 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
-            <th>Total Juz All Dates</th>
-            <th>Pencapaian</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -207,21 +205,6 @@
 
     let surahList = [];
     let pagesMap = {};
-
-    const targetPerSemester = {
-      1: 8,
-      2: 13,
-      3: 18,
-      4: 23,
-      5: 28,
-      6: 30
-    };
-
-    function hitungPencapaian(totalJuz, semester) {
-      const target = targetPerSemester[parseInt(semester)] || 30;
-      const persen = (totalJuz / target) * 100;
-      return persen >= 100 ? "TUNTAS" : `${persen.toFixed(1)}%`;
-    }
 
     // Load Surah & PagesMap di awal
     window.addEventListener("DOMContentLoaded", async () => {
@@ -311,15 +294,6 @@
 
         const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
         const absensiData = await resAbsensi.json();
-        const resAllAbsensi = await fetch(`/.netlify/functions/getAbsensiAll?kelas=${kelas}`);
-        const allAbsensiData = await resAllAbsensi.json();
-
-        const totalJuzMap = {};
-        allAbsensiData.forEach(item => {
-        if (!totalJuzMap[item.id]) totalJuzMap[item.id] = 0;
-        totalJuzMap[item.id] += parseFloat(item.totalJuz || 0);
-      });
-
 
         santriTableBody.innerHTML = "";
 
@@ -352,9 +326,6 @@
             <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
             <td class="total-juz">${dataAbsensi.totalJuz || 0}</td>
             <td>${santri.semester || '-'}</td>
-            <td>${santri.semester || '-'}</td>
-            <td class="total-juz-all">${(totalJuzMap[santri.id] || 0).toFixed(2)}</td>
-            <td class="pencapaian">${hitungPencapaian(totalJuzMap[santri.id] || 0, santri.semester)}</td>
           `;
 
           santriTableBody.appendChild(row);
@@ -463,8 +434,7 @@
       rows.forEach((row, i) => {
       const id = parseInt(row.children[0].textContent);      // ambil dari kolom nomor
       const nama = row.children[1].textContent;               // kolom nama
-      const santriAsli = santriData.find(s => s.id === id);
-      const semester = parseInt(santriAsli?.semester || 1);// kolom semester
+      const semester = row.children[2].textContent;           // kolom kategori
       const absensi = row.querySelector(".absensi").value;
       const surahDari = row.querySelector(".surah-dari").value;
       const ayatDari = row.querySelector(".ayat-dari").value;
