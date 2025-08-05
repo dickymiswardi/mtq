@@ -163,6 +163,9 @@
         </div>
       </div>
 
+      Dari: <input type="date" id="rangeDari">
+      Sampai: <input type="date" id="rangeSampai">
+      <button onclick="hitungTotalAllJuzFromTable()">🔄 Hitung Total All Juz</button>
       <table id="santri-table">
         <thead>
           <tr>
@@ -174,9 +177,6 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
-            Dari: <input type="date" id="tanggalAwal">
-            Sampai: <input type="date" id="tanggalAkhir">
-            <button onclick="hitungTotalAllJuz()">🔄 Hitung Total All Juz</button>
             <th>Total All Juz</th>
           </tr>
         </thead>
@@ -340,7 +340,7 @@
               <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
             </select>
             </td>
-
+            <td class="total-all-juz">0</td>
           `;
 
           santriTableBody.appendChild(row);
@@ -659,54 +659,42 @@ saveTotalBtn.addEventListener("click", async () => {
 
 
 
-    async function hitungTotalAllJuz() {
-  const kelas = document.getElementById("kelasDropdown").value;  // atau ID lain
-  const dari = document.getElementById("tanggalAwal").value;
-  const sampai = document.getElementById("tanggalAkhir").value;
+    function hitungTotalAllJuzFromTable() {
+  const dari = new Date(document.getElementById("rangeDari").value);
+  const sampai = new Date(document.getElementById("rangeSampai").value);
 
-  if (!dari || !sampai) {
+  if (isNaN(dari) || isNaN(sampai)) {
     alert("Pilih tanggal awal dan akhir");
     return;
   }
 
-  const url = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/rekap/${kelas}_totalJuz.json`;
+  const rows = document.querySelectorAll("#dashboardTable tbody tr");
+  const santriTotals = {};
 
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    const rekap = data.rekap;
+  rows.forEach(row => {
+    const id = parseInt(row.cells[0].textContent.trim());
+    const nama = row.cells[1].textContent.trim();
+    const semester = row.querySelector("select:last-of-type").value.replace("Semester ", "");
+    const juz = parseFloat(row.cells[6].textContent.trim()) || 0; // kolom ke-7 = “Total Juz”
 
-    // Filter tanggal
-    const tanggalList = Object.keys(rekap).filter(tgl => tgl >= dari && tgl <= sampai);
-
-    const totalPerSantri = {};  // id: { totalJuz, nama }
-
-    for (const tgl of tanggalList) {
-      for (const entri of rekap[tgl]) {
-        const id = entri.id;
-        if (!totalPerSantri[id]) {
-          totalPerSantri[id] = { nama: entri.nama, totalJuz: 0 };
-        }
-        totalPerSantri[id].totalJuz += entri.totalJuz;
-      }
+    if (!santriTotals[id]) {
+      santriTotals[id] = { nama, semester, totalJuz: 0 };
     }
+    santriTotals[id].totalJuz += juz;
+  });
 
-    // Tampilkan ke tabel
-    const rows = document.querySelectorAll("#dashboardTable tbody tr");
-    rows.forEach(row => {
-      const id = parseInt(row.querySelector("td").textContent);
-      const cell = row.querySelector(".total-all-juz");
-      if (totalPerSantri[id]) {
-        cell.textContent = totalPerSantri[id].totalJuz.toFixed(2);
-      } else {
-        cell.textContent = "0";
-      }
-    });
+  // Update kolom Total All Juz
+  rows.forEach(row => {
+    const id = parseInt(row.cells[0].textContent.trim());
+    const cell = row.querySelector(".total-all-juz");
+    if (santriTotals[id]) {
+      cell.textContent = santriTotals[id].totalJuz.toFixed(2);
+    } else {
+      cell.textContent = "0";
+    }
+  });
 
-  } catch (err) {
-    console.error(err);
-    alert("Gagal mengambil data total hafalan.");
-  }
+  alert("✅ Total All Juz dihitung dari tabel.");
 }
   </script>
 </body>
