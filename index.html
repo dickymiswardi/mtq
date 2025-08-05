@@ -689,21 +689,14 @@ const juzTercakup = halamanAwalJuz
     const semester = parseInt(row.querySelector(".semester").value);
     const target = semesterTarget[semester] || 0;
 
-    // Ambil nilai Total Juz dan konversi ke angka
-    const totalJuz = parseFloat(row.querySelector(".total-all-juz").textContent) || 0;
-
-    // Tambahkan indikator TUNTAS jika sudah memenuhi target
     let cell = row.querySelector(".total-all-juz");
-    let existingSpan = cell.querySelector("span");
-    if (existingSpan) existingSpan.remove(); // Hapus label lama jika ada
+    let totalJuz = parseFloat(cell.textContent) || 0;
 
+    // Buat label "TUNTAS" hanya jika memenuhi target
     if (totalJuz >= target) {
-      const span = document.createElement("span");
-      span.textContent = " TUNTAS";
-      span.style.color = "green";
-      span.style.fontSize = "12px";
-      span.style.marginLeft = "5px";
-      cell.appendChild(span);
+      cell.innerHTML = `${totalJuz.toFixed(2)} <span style="color:green;font-size:12px;margin-left:5px;">TUNTAS</span>`;
+    } else {
+      cell.textContent = totalJuz.toFixed(2);  // Hapus label jika belum tuntas
     }
   });
 }
