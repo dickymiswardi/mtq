@@ -11,11 +11,6 @@
       margin: 0;
       background: #f4f6f8;
     }
-
-.actions button {
-  margin-left: 10px;
-}
-    
     .container {
       max-width: 1400px;
       margin: auto;
@@ -189,7 +184,6 @@
         <label>Dari: <input type="date" id="start-date" /></label>
         <label>Sampai: <input type="date" id="end-date" /></label>
         <button class="logout-btn" id="logout-btn">Logout</button>
-        <button id="save-totaljuz-btn">Simpan Total Juz All Dates</button>
       </div>
     </div>
   </div>
@@ -449,58 +443,6 @@ const juzTercakup = halamanAwalJuz
       const tanggal = tanggalInput.value;
       const rows = santriTableBody.querySelectorAll("tr");
       const data = [];
-
-      const saveTotalJuzBtn = document.getElementById("save-totaljuz-btn");
-
-saveTotalJuzBtn.addEventListener("click", async () => {
-  const kelas = kelasSelect.value;
-  overlay.style.display = "flex";
-
-  try {
-    const res = await fetch(`/.netlify/functions/getAbsensiAll?kelas=${kelas}`);
-    const semuaData = await res.json();
-
-    // Map untuk akumulasi per santri
-    const rekap = {};
-    semuaData.forEach(item => {
-      const id = item.id;
-      if (!rekap[id]) {
-        rekap[id] = {
-          id: item.id,
-          nama: item.nama,
-          semester: item.semester,
-          totalJuz: 0
-        };
-      }
-      rekap[id].totalJuz += parseFloat(item.totalJuz || 0);
-    });
-
-    const hariIni = new Date().toISOString().split("T")[0];
-    const dataUntukSimpan = {
-      tanggal: hariIni,
-      data: Object.values(rekap)
-    };
-
-    const resSimpan = await fetch("/.netlify/functions/saveTotalJuzAll", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(dataUntukSimpan)
-    });
-
-    const hasil = await resSimpan.json();
-    if (hasil.success) {
-      alert("✅ Total Juz berhasil disimpan!");
-    } else {
-      alert("❌ Gagal menyimpan total juz!");
-    }
-  } catch (err) {
-    console.error(err);
-    alert("⚠️ Terjadi kesalahan saat menyimpan total juz!");
-  }
-
-  overlay.style.display = "none";
-});
-
 
       rows.forEach((row, i) => {
       const id = parseInt(row.children[0].textContent);      // ambil dari kolom nomor
