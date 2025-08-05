@@ -463,7 +463,8 @@
       rows.forEach((row, i) => {
       const id = parseInt(row.children[0].textContent);      // ambil dari kolom nomor
       const nama = row.children[1].textContent;               // kolom nama
-      const semester = row.children[2].textContent;           // kolom kategori
+      const santriAsli = santriData.find(s => s.id === id);
+      const semester = parseInt(santriAsli?.semester || 1);// kolom semester
       const absensi = row.querySelector(".absensi").value;
       const surahDari = row.querySelector(".surah-dari").value;
       const ayatDari = row.querySelector(".ayat-dari").value;
