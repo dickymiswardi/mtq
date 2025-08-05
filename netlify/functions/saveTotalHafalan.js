@@ -1,8 +1,7 @@
-// netlify/functions/saveTotalHafalan.js
 import fetch from "node-fetch";
 
 export async function handler(event) {
-  const token = process.env.MTQ_TOKEN;
+  const token = process.env.MTQ_TOKEN;  // GitHub token dari Netlify
   const kelas = event.queryStringParameters.kelas;
 
   if (!kelas) {
@@ -19,11 +18,12 @@ export async function handler(event) {
   };
 
   const absensiUrl = `https://api.github.com/repos/${repo}/contents/absensi`;
-  const kelasDataUrl = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/${kelas}.json`;
-  const rekapUrl = `https://api.github.com/repos/${repo}/contents/rekap/${kelas}_totalJuz.json`;
+  const kelasUrl = `https://raw.githubusercontent.com/${repo}/main/${kelas}.json`;
+  const rekapPath = `rekap/${kelas}_totalJuz.json`;
+  const rekapUrl = `https://api.github.com/repos/${repo}/contents/${rekapPath}`;
 
   try {
-    const kelasRes = await fetch(kelasDataUrl, { headers });
+    const kelasRes = await fetch(kelasUrl, { headers });
     const kelasList = await kelasRes.json();
 
     const listRes = await fetch(absensiUrl, { headers });
@@ -33,63 +33,87 @@ export async function handler(event) {
       .filter(f => f.name.startsWith(`${kelas}_`) && f.name.endsWith(".json"))
       .sort((a, b) => a.name.localeCompare(b.name));
 
-    const rekapMap = {}; // { tanggal: [ {id, nama, semester, totalJuz} ] }
-    const namaMap = {}; // { nama: { id, semester, totalJuzSum, tanggal[] } }
+    const rekapMap = {};  // { tanggal: [data] }
+    const totalSantri = {};
+    const tanggalAktifMap = {};
+    const allTanggal = [];
 
     for (const file of targetFiles) {
-      const tanggalMatch = file.name.match(/_(\d{4}-\d{2}-\d{2})\.json$/);
-      const tanggal = tanggalMatch ? tanggalMatch[1] : null;
+      const match = file.name.match(/_(\d{4}-\d{2}-\d{2})\.json$/);
+      const tanggal = match ? match[1] : null;
       if (!tanggal) continue;
 
-      const fileRes = await fetch(file.download_url, { headers });
-      const absensiData = await fileRes.json();
+      allTanggal.push(tanggal);
+
+      const res = await fetch(file.download_url, { headers });
+      const absensiData = await res.json();
 
       const perTanggalData = absensiData.map(entry => {
-        const found = kelasList.find(k => k.id === entry.id);
-        const semester = found ? parseInt(found.semester) : null;
-        const nama = entry.nama || (found ? found.nama : "Unknown");
+        const id = entry.id || 0;
+        const nama = entry.nama || "Unknown";
+        const totalJuz = parseFloat(entry.totalJuz || 0);
 
-        if (!namaMap[nama]) {
-          namaMap[nama] = {
-            id: entry.id,
-            semester,
-            totalJuz: 0,
-            tanggal: []
-          };
+        if (!totalSantri[id]) {
+          totalSantri[id] = { id, nama, semester: null, totalJuz: 0, hariSetor: [] };
         }
-        const juz = parseFloat(entry.totalJuz || 0);
-        namaMap[nama].totalJuz += juz;
-        namaMap[nama].tanggal.push(tanggal);
+
+        totalSantri[id].totalJuz += totalJuz;
+        totalSantri[id].hariSetor.push(tanggal);
 
         return {
-          id: entry.id,
+          id,
           nama,
-          semester,
-          totalJuz: parseFloat(juz.toFixed(2))
+          semester: parseInt(entry.semester) || null,
+          totalJuz: parseFloat(totalJuz.toFixed(2)),
         };
       });
 
       rekapMap[tanggal] = perTanggalData;
     }
 
-    // Format tanggal untuk setiap nama
-    const allSantri = Object.entries(namaMap).map(([nama, val]) => ({
-      id: val.id,
-      nama,
-      semester: val.semester,
-      totalJuz: parseFloat(val.totalJuz.toFixed(2)),
-      totalHari: val.tanggal.length,
-      tanggalAktif: compressDates(val.tanggal.sort())
+    // Gabungkan semester dari kelas.json
+    for (const s of kelasList) {
+      const id = s.id;
+      if (totalSantri[id]) {
+        totalSantri[id].semester = parseInt(s.semester);
+      }
+    }
+
+    // Format tanggal aktif
+    const formatTanggalAktif = (tanggalList) => {
+      const hari = tanggalList.map(t => parseInt(t.split("-")[2])).sort((a,b) => a - b);
+      const ranges = [];
+      let start = hari[0], end = hari[0];
+
+      for (let i = 1; i < hari.length; i++) {
+        if (hari[i] === end + 1) {
+          end = hari[i];
+        } else {
+          ranges.push(start === end ? `${start}` : `${start}-${end}`);
+          start = end = hari[i];
+        }
+      }
+      ranges.push(start === end ? `${start}` : `${start}-${end}`);
+      return ranges.join(", ");
+    };
+
+    const santriList = Object.values(totalSantri).map(s => ({
+      id: s.id,
+      nama: s.nama,
+      semester: s.semester,
+      totalJuz: parseFloat(s.totalJuz.toFixed(2)),
+      totalHari: s.hariSetor.length,
+      tanggalAktif: formatTanggalAktif(s.hariSetor)
     }));
 
     const finalJson = {
       kelas,
-      totalHari: Object.keys(rekapMap).length,
-      santri: allSantri,
+      totalHari: [...new Set(allTanggal)].length,
+      santri: santriList,
       rekap: rekapMap
     };
 
-    // Cek apakah file sudah ada
+    // Cek SHA file lama
     let sha = null;
     const checkRes = await fetch(rekapUrl, { headers });
     if (checkRes.ok) {
@@ -98,7 +122,7 @@ export async function handler(event) {
     }
 
     const payload = {
-      message: `Update total hafalan untuk ${kelas}`,
+      message: `Update total hafalan + info santri ${kelas}`,
       content: Buffer.from(JSON.stringify(finalJson, null, 2)).toString("base64"),
       sha
     };
@@ -109,52 +133,16 @@ export async function handler(event) {
       body: JSON.stringify(payload)
     });
 
-    if (!saveRes.ok) throw new Error("Gagal menyimpan file rekap");
+    if (!saveRes.ok) throw new Error("Gagal menyimpan rekap total");
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        file: `rekap/${kelas}_totalJuz.json`,
-        totalSantri: allSantri.length
-      })
+      body: JSON.stringify({ success: true, file: rekapPath })
     };
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message }),
+      body: JSON.stringify({ error: err.message })
     };
   }
-}
-
-// Kompres tanggal berurutan jadi rentang
-function compressDates(dates) {
-  const result = [];
-  let start = null;
-  let prev = null;
-
-  for (const dateStr of dates) {
-    const date = new Date(dateStr);
-    if (!start) {
-      start = date;
-      prev = date;
-    } else {
-      const diff = (date - prev) / (1000 * 60 * 60 * 24);
-      if (diff === 1) {
-        prev = date;
-      } else {
-        result.push(formatRange(start, prev));
-        start = date;
-        prev = date;
-      }
-    }
-  }
-  if (start) result.push(formatRange(start, prev));
-  return result.join(", ");
-}
-
-function formatRange(start, end) {
-  const s = start.getDate();
-  const e = end.getDate();
-  return s === e ? `${s}` : `${s}-${e}`;
 }
