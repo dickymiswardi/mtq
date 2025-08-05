@@ -1,10 +1,8 @@
-// netlify/functions/saveTotalHafalan.js
 import fetch from "node-fetch";
-import { Octokit } from "@octokit/core";
 
 export async function handler(event) {
-  const token = process.env.MTQ_TOKEN;
-  const { kelas } = event.queryStringParameters;
+  const token = process.env.MTQ_TOKEN;  // GitHub token dari Netlify env
+  const kelas = event.queryStringParameters.kelas;
 
   if (!kelas) {
     return {
@@ -13,105 +11,101 @@ export async function handler(event) {
     };
   }
 
-  const octokit = new Octokit({ auth: token });
-  const baseURL = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/absensi/`;
-  const kelasDataURL = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/${kelas}.json`;
+  const repo = "dickymiswardi/usermtq";
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github.v3+json",
+  };
+
+  const absensiUrl = `https://api.github.com/repos/${repo}/contents/absensi`;
+  const rekapUrl = `https://api.github.com/repos/${repo}/contents/rekap/${kelas}_totalJuz.json`;
+  const profilKelasUrl = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/${kelas}.json`;
 
   try {
-    // Ambil data master santri dari kelas_X.json
-    const kelasRes = await fetch(kelasDataURL);
-    const masterSantri = await kelasRes.json();
+    // Ambil profil kelas (id, nama, semester)
+    const profilRes = await fetch(profilKelasUrl, { headers });
+    const profilList = await profilRes.json(); // array of {id, nama, semester}
 
-    // Buat map id -> semester dan nama
-    const santriMap = {};
-    for (const santri of masterSantri) {
-      santriMap[santri.nama] = {
-        id: santri.id,
-        semester: parseInt(santri.semester),
-      };
-    }
+    // Buat map nama ➜ semester, dan id ➜ semester
+    const namaToSemester = {};
+    const idToSemester = {};
+    profilList.forEach(item => {
+      const smstr = parseInt(item.semester);
+      if (item.nama) namaToSemester[item.nama] = smstr;
+      if (item.id) idToSemester[item.id] = smstr;
+    });
 
-    // Ambil daftar file JSON absensi
-    const listRes = await fetch(
-      `https://api.github.com/repos/dickymiswardi/usermtq/contents/absensi`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    // Ambil daftar file absensi
+    const listRes = await fetch(absensiUrl, { headers });
+    const files = await listRes.json();
 
-    const list = await listRes.json();
+    const targetFiles = files
+      .filter(f => f.name.startsWith(`${kelas}_`) && f.name.endsWith(".json"))
+      .sort((a, b) => a.name.localeCompare(b.name));
 
-    const filtered = list.filter(
-      (item) => item.name.startsWith(kelas) && item.name.endsWith(".json")
-    );
+    const rekapMap = {};  // { tanggal: [...] }
 
-    const rekapPerTanggal = {};
+    for (const file of targetFiles) {
+      const tanggalMatch = file.name.match(/^.+_(\d{4}-\d{2}-\d{2})\.json$/);
+      const tanggal = tanggalMatch ? tanggalMatch[1] : null;
+      if (!tanggal) continue;
 
-    for (const file of filtered) {
-      const tanggalMatch = file.name.match(/_(\d{4}-\d{2}-\d{2})\.json$/);
-      if (!tanggalMatch) continue;
-      const tanggal = tanggalMatch[1];
-
-      const res = await fetch(`${baseURL}${file.name}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const absensiData = await res.json();
+      const fileRes = await fetch(file.download_url, { headers });
+      const absensiData = await fileRes.json();
 
       const perTanggalData = absensiData.map((entry, index) => {
-        const dataSantri = santriMap[entry.nama] || { id: index + 1, semester: null };
+        const id = entry.id || index + 1;
+        const nama = entry.nama || `Santri ${id}`;
+        const semester =
+          idToSemester[id] || namaToSemester[nama] || null;
+
         return {
-          id: dataSantri.id,
-          nama: entry.nama || `Santri ${index + 1}`,
-          semester: dataSantri.semester,
-          totalJuz: entry.totalJuz ? parseFloat(parseFloat(entry.totalJuz).toFixed(2)) : 0,
+          id,
+          nama,
+          semester,
+          totalJuz: parseFloat(parseFloat(entry.totalJuz || 0).toFixed(2))
         };
       });
 
-      rekapPerTanggal[tanggal] = perTanggalData;
+      rekapMap[tanggal] = perTanggalData;
     }
 
-    const finalData = {
+    const finalJson = {
       kelas,
-      rekap: rekapPerTanggal,
+      rekap: rekapMap
     };
-
-    const filePath = `rekap/${kelas}.json`;
 
     // Ambil SHA jika file sudah ada
     let sha = null;
-    try {
-      const res = await octokit.request(
-        "GET /repos/{owner}/{repo}/contents/{path}",
-        {
-          owner: "dickymiswardi",
-          repo: "usermtq",
-          path: filePath,
-        }
-      );
-      sha = res.data.sha;
-    } catch (e) {
-      // File belum ada, biarkan sha = null
+    const checkRes = await fetch(rekapUrl, { headers });
+    if (checkRes.ok) {
+      const checkJson = await checkRes.json();
+      sha = checkJson.sha;
     }
 
-    const contentEncoded = Buffer.from(
-      JSON.stringify(finalData, null, 2)
-    ).toString("base64");
+    const payload = {
+      message: `Update total hafalan per tanggal untuk ${kelas}`,
+      content: Buffer.from(JSON.stringify(finalJson, null, 2)).toString("base64"),
+      sha
+    };
 
-    await octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", {
-      owner: "dickymiswardi",
-      repo: "usermtq",
-      path: filePath,
-      message: `Save total hafalan kelas ${kelas}`,
-      content: contentEncoded,
-      sha: sha || undefined,
+    const saveRes = await fetch(rekapUrl, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(payload)
     });
+
+    if (!saveRes.ok) throw new Error("Gagal menyimpan file rekap");
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, file: filePath }),
+      body: JSON.stringify({
+        success: true,
+        file: `rekap/${kelas}_totalJuz.json`,
+        totalTanggal: Object.keys(rekapMap).length
+      })
     };
   } catch (err) {
-    console.error(err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message }),
