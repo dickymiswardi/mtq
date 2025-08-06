@@ -425,35 +425,19 @@ fillAyatOptions(ayatDari, surahDari.value, dari[1]);
 fillAyatOptions(ayatSampai, surahSampai.value, sampai[1]);
 
 surahDari.addEventListener("change", () => {
-  fillAyatOptions(ayatDari, surahDari.value);
-
-  // Otomatis sinkron jika surat berubah
+  fillAyatOptions(ayatDari, surahDari.value, 1);
   surahSampai.value = surahDari.value;
-  fillAyatOptions(ayatSampai, surahSampai.value, ayatDari.value);
-});
-
-ayatDari.addEventListener("change", () => {
-  const dariSurah = parseInt(surahDari.value);
-  const sampaiSurah = parseInt(surahSampai.value);
-  const dariAyat = parseInt(ayatDari.value);
-
-  if (dariSurah === sampaiSurah) {
-    fillAyatOptions(ayatSampai, surahSampai.value, dariAyat);
-  }
+  fillAyatOptions(ayatSampai, surahSampai.value, 1);
 });
 
 surahSampai.addEventListener("change", () => {
-  const dariSurah = parseInt(surahDari.value);
-  const sampaiSurah = parseInt(surahSampai.value);
-  const dariAyat = parseInt(ayatDari.value);
-
-  const minAyat = (dariSurah === sampaiSurah) ? dariAyat : 1;
-  fillAyatOptions(ayatSampai, surahSampai.value, minAyat);
+  fillAyatOptions(ayatSampai, surahSampai.value, 1);
 });
 
 [ayatDari, ayatSampai, surahDari, surahSampai].forEach(el => {
   el.addEventListener("change", () => updateTotalJuz(row));
 });
+
 
 function fillAyatOptions(selectEl, surahId, selectedAyat = 1) {
   const surah = surahList.find(s => s.id == surahId);
