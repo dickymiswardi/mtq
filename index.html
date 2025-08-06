@@ -178,21 +178,29 @@
 </head>
 <body>
   <div id="overlay"><span>⏳ Loading...</span></div>
-  <div class="container">
-    <!-- Halaman Login -->
-    <div id="login-card" class="card">
-      <h1>Login Pengajar</h1>
-      <form id="login-form">
-        <input type="text" id="username" placeholder="Username" required />
-        <div class="password-group">
-          <input type="password" id="password" placeholder="Password" required />
-          <button type="button" id="toggle-password" class="toggle-btn">👁</button>
-        </div>
-        <button type="submit">Login</button>
-      </form>
-      <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
-    </div>
 
+<div class="container">
+  <!-- Halaman Login -->
+  <div id="login-card" class="card">
+    <h1>Login Pengajar</h1>
+    <form id="login-form" onsubmit="event.preventDefault(); login();">
+      <input type="text" id="username" placeholder="Username" required />
+      
+      <div class="password-group" style="display: flex; align-items: center;">
+        <input type="password" id="password" placeholder="Password" required style="flex: 1;" />
+        <button type="button" id="toggle-password" class="toggle-btn">👁</button>
+      </div>
+
+      <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
+        <button type="submit">Login</button>
+        <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
+      </div>
+    </form>
+
+    <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
+  </div>
+</div>
+  
     <!-- Dashboard -->
     <div id="dashboard-card" class="card" style="display: none;">
       <h1>Mutaba'ah Hafalan Santri</h1>
@@ -851,5 +859,42 @@ function getDateRangeArray(start, end) {
   document.getElementById("juzOverlay").style.display = "flex";
 }
   </script>
+
+  <script>
+  async function daftar() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!username || !password) {
+      alert("Username dan password wajib diisi.");
+      return;
+    }
+
+    const konfirmasi = confirm(`Yakin ingin mendaftar user baru: ${username}?`);
+    if (!konfirmasi) return;
+
+    try {
+      const res = await fetch("/.netlify/functions/daftar-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const hasil = await res.json();
+
+      if (res.ok) {
+        alert("🎉 Pendaftaran berhasil!\nSilakan login.");
+        // Optional: Kosongkan form
+        document.getElementById("username").value = "";
+        document.getElementById("password").value = "";
+      } else {
+        alert("⚠️ " + (hasil.message || "Gagal mendaftar."));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan saat menghubungi server.");
+    }
+  }
+</script>
 </body>
 </html>
