@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-
+ghighikglkhjljlh
 export async function handler() {
   const token = process.env.MTQ_TOKEN;
   const apiUrl = "https://api.github.com/repos/dickymiswardi/usermtq/contents/getAyat.json";
