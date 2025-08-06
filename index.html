@@ -693,63 +693,7 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
 });
 
 
-// Ambil semua data juz absensi rentang tanggal
-  async function hitungTotalAllJuzFromTable() {
-  const kelas = kelasSelect.value;
-  const dari = document.getElementById("rangeDari").value;
-  const sampai = document.getElementById("rangeSampai").value;
-
-  if (!dari || !sampai) {
-    alert("Mohon pilih tanggal Dari dan Sampai.");
-    return;
-  }
-
-  overlay.style.display = "flex";
-      // Tutup overlay setelah selesai
-overlay.style.display = "none";
-
-
-  try {
-    // Ambil semua data absensi rentang tanggal
-    const res = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
-    const allData = await res.json();
-
-    const rows = santriTableBody.querySelectorAll("tr");
-    const rekap = {}; // { id: {totalJuz, semester} }
-
-    // Rekap total per santri
-    allData.forEach(item => {
-      const id = item.id;
-      if (!rekap[id]) {
-        rekap[id] = {
-          totalJuz: 0,
-          semester: item.semester || null,
-        };
-      }
-      rekap[id].totalJuz += parseFloat(item.totalJuz || 0);
-    });
-
-    // Update ke tabel kolom "Total All Juz"
-    rows.forEach(row => {
-      const id = parseInt(row.children[0].textContent);
-      const cell = row.querySelector(".total-all-juz");
-      if (rekap[id]) {
-        cell.textContent = rekap[id].totalJuz.toFixed(2);
-      } else {
-        cell.textContent = "0.00";
-      }
-    });
-
-    alert("✅ Total All Juz berhasil dihitung.");
-  } catch (err) {
-    console.error(err);
-    alert("❌ Gagal memproses Total All Juz.");
-  }
-
-  overlay.style.display = "none";
-}
-
-    function hitungTotalAllJuzFromTable() {
+function hitungTotalAllJuzFromTable() {
   const rows = santriTableBody.querySelectorAll("tr");
   const kelas = kelasSelect.value;
 
@@ -778,38 +722,47 @@ overlay.style.display = "none";
     .then(res => res.json())
     .then(data => {
       const totalMap = {}; // id => total juz
+      const juzTracker = {}; // id => Set of juzTerbaca
 
       santriList.forEach(s => {
         totalMap[s.id] = 0;
+        juzTracker[s.id] = new Set();
       });
 
       data.forEach(item => {
         const id = parseInt(item.id);
         const juz = parseFloat(item.totalJuz || 0);
-        if (!isNaN(juz) && totalMap.hasOwnProperty(id)) {
-          totalMap[id] += juz;
+        const juzTerbaca = item.juzTerbaca?.trim();
+
+        if (!isNaN(juz) && totalMap.hasOwnProperty(id) && juzTerbaca) {
+          // Hindari duplikat juz jika juzTerbaca sudah pernah dicatat
+          if (!juzTracker[id].has(juzTerbaca)) {
+            totalMap[id] += juz;
+            juzTracker[id].add(juzTerbaca);
+          }
         }
       });
 
       // Batas TUNTAS per semester
-const batasSemester = { 1: 8, 2: 13, 3: 18, 4: 23, 5: 28, 6: 30 };
+      const batasSemester = { 1: 8, 2: 13, 3: 18, 4: 23, 5: 28, 6: 30 };
 
-// Tampilkan hasil
-santriList.forEach(s => {
-  const totalJuz = parseFloat(totalMap[s.id] || 0).toFixed(2);
-  const cell = s.rowEl.querySelector(".total-all-juz");
+      // Tampilkan hasil
+      santriList.forEach(s => {
+        const totalJuz = parseFloat(totalMap[s.id] || 0).toFixed(2);
+        const cell = s.rowEl.querySelector(".total-all-juz");
 
-  const batas = batasSemester[s.semester] || 0;
-  const tuntas = totalJuz >= batas && batas > 0;
+        const batas = batasSemester[s.semester] || 0;
+        const tuntas = totalJuz >= batas && batas > 0;
 
-  cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? 'green' : 'red'}; font-size: 11px;">${tuntas ? 'TUNTAS' : 'BELUM'}</span>`;
-});
+        cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? 'green' : 'red'}; font-size: 11px;">${tuntas ? 'TUNTAS' : 'BELUM'}</span>`;
+      });
 
+      alert("✅ Total All Juz berhasil dihitung.");
       overlay.style.display = "none";
     })
     .catch(err => {
       console.error(err);
-      alert("Gagal menghitung total All Juz.");
+      alert("❌ Gagal memproses Total All Juz.");
       overlay.style.display = "none";
     });
 }
