@@ -11,7 +11,7 @@ export async function handler(event) {
     };
   }
 
-  // Fungsi bantu untuk buat daftar tanggal antara start dan end
+  // Fungsi untuk membuat array tanggal antara start dan end
   function generateDateRange(startDate, endDate) {
     const dates = [];
     let current = new Date(startDate);
@@ -28,21 +28,27 @@ export async function handler(event) {
 
   for (const tanggal of tanggalList) {
     const fileName = `${kelas}_${tanggal}.json`;
-    const url = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/absensi/${fileName}`;
+    const apiUrl = `https://api.github.com/repos/dickymiswardi/usermtq/contents/absensi/${fileName}`;
 
     try {
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await fetch(apiUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github.v3+json",
+        },
       });
 
-      if (response.status === 404) continue;
+      if (response.status === 404) continue; // Lewati jika file tidak ditemukan
 
       if (!response.ok) {
         throw new Error(`Gagal fetch: ${response.status}`);
       }
 
-      const data = await response.json();
-      hasilGabungan.push(...data);
+      const result = await response.json();
+      const decoded = Buffer.from(result.content, "base64").toString("utf-8");
+      const jsonData = JSON.parse(decoded);
+
+      hasilGabungan.push(...jsonData);
     } catch (err) {
       console.error(`Gagal ambil data untuk ${tanggal}:`, err.message);
     }
