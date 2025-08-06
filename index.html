@@ -653,7 +653,7 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
 
 
 // Ambil semua data juz absensi rentang tanggal
-    async function hitungTotalAllJuzFromTable() {
+async function hitungTotalAllJuzFromTable() {
   const kelas = kelasSelect.value;
   const dari = document.getElementById("rangeDari").value;
   const sampai = document.getElementById("rangeSampai").value;
@@ -663,9 +663,28 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
     return;
   }
 
-  overlay.style.display = "flex";
-      // Tutup overlay setelah selesai
-overlay.style.display = "none";
+  const overlay = document.getElementById("juzOverlay");
+  overlay.style.display = "flex"; // tampilkan saat proses
+
+  try {
+    let totalJuz = 0;
+    for (const row of document.querySelectorAll("#dataBody tr")) {
+      const tanggal = row.getAttribute("data-tanggal");
+      if (tanggal >= dari && tanggal <= sampai) {
+        const juz = parseFloat(row.querySelector(".total-juz").textContent) || 0;
+        totalJuz += juz;
+      }
+    }
+
+    alert(`Total Juz antara ${dari} sampai ${sampai}: ${totalJuz.toFixed(2)}`);
+  } catch (err) {
+    console.error("Gagal menghitung:", err);
+    alert("Terjadi kesalahan saat menghitung total juz.");
+  } finally {
+    // Tutup overlay meskipun error
+    overlay.style.display = "none";
+  }
+}
 
   try {
     // Ambil semua data absensi rentang tanggal
