@@ -751,18 +751,18 @@ overlay.style.display = "none";
       });
 
       // Batas TUNTAS per semester
-      const batasSemester = { 1: 8, 2: 13, 3: 18, 4: 23, 5: 28, 6: 30 };
+const batasSemester = { 1: 8, 2: 13, 3: 18, 4: 23, 5: 28, 6: 30 };
 
-      // Tampilkan hasil
-      santriList.forEach(s => {
-        const totalJuz = parseFloat(totalMap[s.id] || 0).toFixed(2);
-        const cell = s.rowEl.querySelector(".total-all-juz");
+// Tampilkan hasil
+santriList.forEach(s => {
+  const totalJuz = parseFloat(totalMap[s.id] || 0).toFixed(2);
+  const cell = s.rowEl.querySelector(".total-all-juz");
 
-        const batas = batasSemester[s.semester] || 0;
-        const tuntas = totalJuz >= batas && batas > 0;
+  const batas = batasSemester[s.semester] || 0;
+  const tuntas = totalJuz >= batas && batas > 0;
 
-        cell.innerHTML = `${totalJuz}${tuntas ? ' <span style="color: green; font-size: 11px;">TUNTAS</span>' : ''}`;
-      });
+  cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? 'green' : 'red'}; font-size: 11px;">${tuntas ? 'TUNTAS' : 'BELUM TUNTAS'}</span>`;
+});
 
       overlay.style.display = "none";
     })
