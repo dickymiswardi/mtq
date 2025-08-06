@@ -424,30 +424,19 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
           fillAyatOptions(ayatDari, surahDari.value, dari[1]);
           fillAyatOptions(ayatSampai, surahSampai.value, sampai[1]);
 
-          surahDari.addEventListener("change", () => {
-            fillAyatOptions(ayatDari, surahDari.value);
-            surahSampai.value = surahDari.value;
-            fillAyatOptions(ayatSampai, surahSampai.value, ayatDari.value);
-          });
-
-          ayatDari.addEventListener("change", () => {
-            fillAyatOptions(ayatSampai, surahSampai.value, ayatDari.value);
-          });
-
-          surahSampai.addEventListener("change", () => {
-            fillAyatOptions(ayatSampai, surahSampai.value);
-          });
+          surahDari.addEventListener("change", () => fillAyatOptions(ayatDari, surahDari.value));
+          surahSampai.addEventListener("change", () => fillAyatOptions(ayatSampai, surahSampai.value));
 
           [ayatDari, ayatSampai, surahDari, surahSampai].forEach(el => {
             el.addEventListener("change", () => updateTotalJuz(row));
           });
-          });
-          } catch (err) {
-            alert("Gagal memuat data santri / absensi!");
-          }
+        });
+      } catch (err) {
+        alert("Gagal memuat data santri / absensi!");
+      }
 
-          overlay.style.display = "none";
-
+      overlay.style.display = "none";
+    }
 
     function fillAyatOptions(selectEl, surahId, selectedAyat = 1) {
       const surah = surahList.find(s => s.id == surahId);
