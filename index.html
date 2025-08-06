@@ -648,6 +648,9 @@ const juzTercakup = halamanAwalJuz
   }
 
   overlay.style.display = "flex";
+      // ✅ Tambahkan baris ini untuk menyembunyikan overlay setelah selesai
+  document.getElementById("juzOverlay").style.display = "none";
+}
 
   try {
     // Ambil semua data absensi rentang tanggal
