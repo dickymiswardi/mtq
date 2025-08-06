@@ -3,15 +3,21 @@ export async function handler(event) {
   const kelas = event.queryStringParameters.kelas;
 
   if (!kelas) {
-    return { statusCode: 400, body: JSON.stringify({ error: "Parameter 'kelas' wajib diisi" }) };
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "Parameter 'kelas' wajib diisi" })
+    };
   }
 
-  // URL versi raw.githubusercontent
-  const url = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/${kelas}.json`;
+  // URL API GitHub (bukan raw)
+  const apiUrl = `https://api.github.com/repos/dickymiswardi/usermtq/contents/${kelas}.json`;
 
   try {
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` }
+    const response = await fetch(apiUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github.v3+json"
+      }
     });
 
     if (!response.ok) {
@@ -21,10 +27,20 @@ export async function handler(event) {
       };
     }
 
-    const data = await response.text();
-    return { statusCode: 200, body: data };
+    const result = await response.json();
+
+    // Decode base64 -> UTF-8
+    const decoded = Buffer.from(result.content, 'base64').toString('utf-8');
+
+    return {
+      statusCode: 200,
+      body: decoded
+    };
 
   } catch (error) {
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message })
+    };
   }
 }
