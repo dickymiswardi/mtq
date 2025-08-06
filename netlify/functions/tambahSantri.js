@@ -1,67 +1,68 @@
 import fetch from "node-fetch";
+import { Buffer } from "buffer";
 
 export async function handler(event) {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
-  }
-
   const token = process.env.MTQ_TOKEN;
   const { nama, semester, kelas } = JSON.parse(event.body || "{}");
 
   if (!nama || !semester || !kelas) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Nama, semester, dan kelas wajib diisi" }),
+      body: JSON.stringify({ error: "Parameter nama, semester, dan kelas wajib diisi." }),
     };
   }
 
-  const filePath = `absensi/${kelas}.json`;
-  const apiUrl = `https://api.github.com/repos/dickymiswardi/usermtq/contents/${filePath}`;
+  const fileName = `kelas_${kelas.split("_")[1]}.json`;
+  const githubApiUrl = `https://api.github.com/repos/dickymiswardi/usermtq/contents/${fileName}`;
 
   try {
-    const getRes = await fetch(apiUrl, {
+    // 🔹 1. Ambil file lama (dari GitHub API)
+    const getRes = await fetch(githubApiUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
+        "User-Agent": "NetlifyFunction",
         Accept: "application/vnd.github.v3+json",
       },
     });
 
-    let santriList = [];
-    let sha = null;
-
-    if (getRes.status === 200) {
-      const json = await getRes.json();
-      sha = json.sha;
-      const content = Buffer.from(json.content, "base64").toString("utf-8");
-      santriList = JSON.parse(content);
+    if (!getRes.ok) {
+      throw new Error(`Gagal mengambil data GitHub: ${getRes.statusText}`);
     }
 
-    // Cari ID terakhir dan tambah 1
-    const lastId = santriList.reduce((max, s) => Math.max(max, s.id || 0), 0);
-    santriList.push({ id: lastId + 1, nama, semester });
+    const fileData = await getRes.json();
+    const contentDecoded = Buffer.from(fileData.content, "base64").toString("utf-8");
+    const santriList = JSON.parse(contentDecoded);
 
+    // 🔹 2. Buat ID baru dan tambahkan santri
+    const nextId = santriList.reduce((max, s) => Math.max(max, s.id), 0) + 1;
+    santriList.push({ id: nextId, nama, semester });
+
+    // 🔹 3. Encode konten baru ke Base64
     const updatedContent = Buffer.from(JSON.stringify(santriList, null, 2)).toString("base64");
 
-    const putRes = await fetch(apiUrl, {
+    // 🔹 4. Kirim PUT ke GitHub API
+    const putRes = await fetch(githubApiUrl, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
+        "User-Agent": "NetlifyFunction",
         Accept: "application/vnd.github.v3+json",
       },
       body: JSON.stringify({
-        message: `Tambah santri ${nama} (semester ${semester})`,
+        message: `Menambahkan santri ${nama} ke ${fileName}`,
         content: updatedContent,
-        sha: sha || undefined,
+        sha: fileData.sha,
       }),
     });
 
     if (!putRes.ok) {
-      throw new Error(`Gagal update file: ${putRes.status}`);
+      const errorText = await putRes.text();
+      throw new Error(`Gagal menyimpan ke GitHub: ${putRes.status} ${errorText}`);
     }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true }),
+      body: JSON.stringify({ success: true, message: "Santri berhasil ditambahkan" }),
     };
   } catch (err) {
     return {
