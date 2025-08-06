@@ -658,33 +658,50 @@ async function hitungTotalAllJuzFromTable() {
   const dari = document.getElementById("rangeDari").value;
   const sampai = document.getElementById("rangeSampai").value;
 
+  const overlay = document.getElementById("juzOverlay");
+
   if (!dari || !sampai) {
     alert("Mohon pilih tanggal Dari dan Sampai.");
     return;
   }
 
-  const overlay = document.getElementById("juzOverlay");
-  overlay.style.display = "flex"; // tampilkan saat proses
+  overlay.style.display = "flex"; // Tampilkan overlay saat proses berjalan
 
   try {
     let totalJuz = 0;
-    for (const row of document.querySelectorAll("#dataBody tr")) {
+    const rows = document.querySelectorAll("#dataBody tr");
+
+    if (rows.length === 0) {
+      alert("Data belum dimuat atau tidak tersedia.");
+      return;
+    }
+
+    for (const row of rows) {
       const tanggal = row.getAttribute("data-tanggal");
+      if (!tanggal) continue; // Lewati jika tidak ada tanggal
+
+      // Cek apakah tanggal dalam rentang yang dipilih
       if (tanggal >= dari && tanggal <= sampai) {
-        const juz = parseFloat(row.querySelector(".total-juz").textContent) || 0;
-        totalJuz += juz;
+        const juzCell = row.querySelector(".total-juz");
+        if (!juzCell) continue; // Lewati jika tidak ada elemen .total-juz
+
+        const juzValue = parseFloat(juzCell.textContent);
+        if (!isNaN(juzValue)) {
+          totalJuz += juzValue;
+        }
       }
     }
 
     alert(`Total Juz antara ${dari} sampai ${sampai}: ${totalJuz.toFixed(2)}`);
   } catch (err) {
-    console.error("Gagal menghitung:", err);
-    alert("Terjadi kesalahan saat menghitung total juz.");
+    console.error("Gagal menghitung total juz:", err);
+    alert("Terjadi kesalahan saat menghitung total juz. Silakan cek console.");
   } finally {
-    // Tutup overlay meskipun error
+    // Selalu tutup overlay meskipun error
     overlay.style.display = "none";
   }
 }
+
 
   try {
     // Ambil semua data absensi rentang tanggal
