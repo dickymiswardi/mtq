@@ -274,6 +274,8 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
         loginError.textContent = "Gagal memuat data user!";
         loginError.style.display = "block";
       }
+      // ...selesai update semua .total-all-juz
+document.getElementById("juzOverlay").style.display = "none";  // Pastikan ini di sini
       overlay.style.display = "none";
     });
 
@@ -649,7 +651,6 @@ const juzTercakup = halamanAwalJuz
 
   overlay.style.display = "flex";
       // Tutup overlay setelah selesai
-document.getElementById("juzOverlay").style.display = "none";
 overlay.style.display = "none";
 
   try {
