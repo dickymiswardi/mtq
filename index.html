@@ -274,8 +274,6 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
         loginError.textContent = "Gagal memuat data user!";
         loginError.style.display = "block";
       }
-      // ...selesai update semua .total-all-juz
-document.getElementById("juzOverlay").style.display = "none";  // Pastikan ini di sini
       overlay.style.display = "none";
     });
 
@@ -415,32 +413,47 @@ document.getElementById("juzOverlay").style.display = "none";  // Pastikan ini d
   const halamanAwal = pagesMap[keyDari] || 1;
   const halamanAkhir = pagesMap[keySampai] || halamanAwal;
 
-// Daftar halaman awal tiap juz
-const halamanAwalJuz = [
-  1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
-  202, 222, 242, 262, 282, 302, 322, 342, 362, 382,
-  402, 422, 442, 462, 482, 502, 522, 542, 562, 582
-];
+  // Daftar halaman awal tiap juz (dalam urutan)
+  const halamanAwalJuz = [
+    1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
+    202, 222, 242, 262, 282, 302, 322, 342, 362, 382,
+    402, 422, 442, 462, 482, 502, 522, 542, 562, 582
+  ];
 
-// Hitung total halaman valid
-let totalHalaman = 0;
-for (let h = halamanAwal; h <= halamanAkhir; h++) {
-  if (h >= 602 && h <= 604) continue; // skip 601–604
-  if (h === 21) continue;             // skip halaman 21
-  totalHalaman++;
-}
+  // Buat array berisi rentang halaman valid
+  const halamanValid = [];
+  for (let h = halamanAwal; h <= halamanAkhir; h++) {
+    if ((h >= 602 && h <= 604) || h === 21) continue;
+    halamanValid.push(h);
+  }
 
-// Hitung total juz (berdasarkan 20 halaman per juz)
-const totalJuz = (totalHalaman / 20).toFixed(2);
+  // Hitung total halaman valid
+  const totalHalaman = halamanValid.length;
 
-// Juz yang dicakup oleh rentang halaman ini
-const juzTercakup = halamanAwalJuz
-  .filter(h => h >= halamanAwal && h <= halamanAkhir && (h < 602 || h > 604))
-  .map((_, i) => i + 1);
+  // Hitung total juz (berdasarkan 20 halaman per juz)
+  const totalJuz = (totalHalaman / 20).toFixed(2);
+
+  // Cari juz-juz yang tercakup berdasarkan halaman valid
+  const juzTercakup = [];
+  for (let i = 0; i < halamanAwalJuz.length; i++) {
+    const awalJuz = halamanAwalJuz[i];
+    const akhirJuz = i < halamanAwalJuz.length - 1 ? halamanAwalJuz[i + 1] - 1 : 604;
+
+    // Skip jika seluruh halaman juz ada di rentang yang tidak valid
+    if (akhirJuz >= 602 && awalJuz <= 604) continue;
+
+    for (let h of halamanValid) {
+      if (h >= awalJuz && h <= akhirJuz) {
+        juzTercakup.push(i + 1);
+        break;
+      }
+    }
+  }
 
   // Kompresi format Juz
   function compressJuzRanges(list) {
     if (list.length === 0) return "";
+    list.sort((a, b) => a - b);
     const ranges = [];
     let start = list[0], end = start;
     for (let i = 1; i < list.length; i++) {
@@ -460,6 +473,7 @@ const juzTercakup = halamanAwalJuz
   row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
   row.querySelector(".total-juz").textContent = totalJuz;
 }
+
     kelasSelect.addEventListener("change", loadSantriData);
     tanggalInput.addEventListener("change", loadSantriData);
 
