@@ -180,7 +180,7 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
-            <th id="totalAllJuzHeader" style="cursor:pointer; text-decoration:underline;">Total All Juz</th>
+            <th id="totalAllJuzHeader" style="cursor:pointer; text-decoration:underline;">KETUNTASAN</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -761,7 +761,7 @@ santriList.forEach(s => {
   const batas = batasSemester[s.semester] || 0;
   const tuntas = totalJuz >= batas && batas > 0;
 
-  cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? 'green' : 'red'}; font-size: 11px;">${tuntas ? 'TUNTAS' : 'BELUM TUNTAS'}</span>`;
+  cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? 'green' : 'red'}; font-size: 11px;">${tuntas ? 'TUNTAS' : 'BELUM'}</span>`;
 });
 
       overlay.style.display = "none";
