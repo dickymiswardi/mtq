@@ -12,20 +12,6 @@
       background: #f4f6f8;
     }
 
-    .dashboard-header {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  flex-wrap: wrap; /* agar responsif */
-  margin: 15px 0;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  font-size: 14px;
-}
-
     .total-all-juz span {
   font-weight: bold;
   background: #e0f2f1;
@@ -47,18 +33,20 @@
     h1, h2 {
       text-align: center;
     }
-    form, .dashboard-header {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      align-items: center;
-    }
-    input, select, button {
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 16px;
-    }
+    form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.dashboard-header {
+  display: flex;
+  flex-direction: row; /* horizontal */
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap; /* responsif */
+}
     button {
       background: #1e88e5;
       color: white;
@@ -168,21 +156,20 @@
     <!-- Dashboard -->
     <div id="dashboard-card" class="card" style="display: none;">
       <h1>Absensi & Hafalan Santri</h1>
-
+      
       <div class="dashboard-header">
-  <div class="form-group">
-    <label for="kelas">Pilih Kelas:</label>
-    <select id="kelas">
-      <option value="kelas_1">Kelas 1</option>
-      <option value="kelas_2">Kelas 2</option>
-    </select>
-  </div>
-  <div class="form-group">
-    <label for="tanggal">Tanggal:</label>
-    <input type="date" id="tanggal" />
-  </div>
-</div>
-
+        <div>
+          <label for="kelas">Pilih Kelas:</label>
+          <select id="kelas">
+            <option value="kelas_1">Kelas 1</option>
+            <option value="kelas_2">Kelas 2</option>
+          </select>
+        </div>
+        <div>
+          <label for="tanggal">Tanggal:</label>
+          <input type="date" id="tanggal" />
+        </div>
+      </div>
       <table id="santri-table">
         <thead>
           <tr>
@@ -217,7 +204,7 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
     <label>Dari: <input type="date" id="rangeDari"></label><br><br>
     <label>Sampai: <input type="date" id="rangeSampai"></label><br><br>
     <button onclick="hitungTotalAllJuzFromTable()">🔄 Hitung Total All Juz</button>
-    <button onclick="document.getElementById('juzOverlay').style.display='none'">❌ Tutup</button>
+    <button onclick="document.getElementById('juzOverlay').style.display='none'">Close</button>
   </div>
 </div>
   
