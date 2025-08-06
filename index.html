@@ -21,8 +21,15 @@
 
 .dashboard-header-row {
   display: flex;
+  flex-direction: row;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.dashboard-header label {
+  font-size: 16px;
 }
 
 .dashboard-header select,
@@ -31,6 +38,20 @@
   font-size: 16px;
   border-radius: 6px;
   border: 1px solid #ccc;
+  min-width: 140px;
+}
+
+/* 🌐 Tambahkan ini untuk mobile */
+@media (max-width: 600px) {
+  .dashboard-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-header label {
+    text-align: left;
+    width: 100%;
+  }
 }
     
     .total-all-juz span {
