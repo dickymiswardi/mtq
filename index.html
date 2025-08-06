@@ -730,6 +730,7 @@ overlay.style.display = "none";
   }));
 
   overlay.style.display = "flex";
+  document.getElementById("juzOverlay").style.display = "none";
 
   fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`)
     .then(res => res.json())
