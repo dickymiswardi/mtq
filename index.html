@@ -414,43 +414,42 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
           santriTableBody.appendChild(row);
 
           const surahDari = row.querySelector(".surah-dari");
-const ayatDari = row.querySelector(".ayat-dari");
-const surahSampai = row.querySelector(".surah-sampai");
-const ayatSampai = row.querySelector(".ayat-sampai");
+          const ayatDari = row.querySelector(".ayat-dari");
+          const surahSampai = row.querySelector(".surah-sampai");
+          const ayatSampai = row.querySelector(".ayat-sampai");
 
-surahDari.value = dari[0];
-surahSampai.value = sampai[0];
+          surahDari.value = dari[0];
+          surahSampai.value = sampai[0];
 
-fillAyatOptions(ayatDari, surahDari.value, dari[1]);
-fillAyatOptions(ayatSampai, surahSampai.value, sampai[1]);
+          fillAyatOptions(ayatDari, surahDari.value, dari[1]);
+          fillAyatOptions(ayatSampai, surahSampai.value, sampai[1]);
 
-surahDari.addEventListener("change", () => {
-  fillAyatOptions(ayatDari, surahDari.value, 1);
-  surahSampai.value = surahDari.value;
-  fillAyatOptions(ayatSampai, surahSampai.value, 1);
-});
+          surahDari.addEventListener("change", () => fillAyatOptions(ayatDari, surahDari.value));
+          surahSampai.addEventListener("change", () => fillAyatOptions(ayatSampai, surahSampai.value));
 
-surahSampai.addEventListener("change", () => {
-  fillAyatOptions(ayatSampai, surahSampai.value, 1);
-});
+          [ayatDari, ayatSampai, surahDari, surahSampai].forEach(el => {
+            el.addEventListener("change", () => updateTotalJuz(row));
+          });
+        });
+      } catch (err) {
+        alert("Gagal memuat data santri / absensi!");
+      }
 
-[ayatDari, ayatSampai, surahDari, surahSampai].forEach(el => {
-  el.addEventListener("change", () => updateTotalJuz(row));
-});
+      overlay.style.display = "none";
+    }
 
-
-function fillAyatOptions(selectEl, surahId, selectedAyat = 1) {
-  const surah = surahList.find(s => s.id == surahId);
-  if (!surah) return;
-  selectEl.innerHTML = "";
-  for (let i = 1; i <= surah.jumlah_ayat; i++) {
-    const opt = document.createElement("option");
-    opt.value = i;
-    opt.textContent = i;
-    if (i == selectedAyat) opt.selected = true;
-    selectEl.appendChild(opt);
-  }
-}
+    function fillAyatOptions(selectEl, surahId, selectedAyat = 1) {
+      const surah = surahList.find(s => s.id == surahId);
+      if (!surah) return;
+      selectEl.innerHTML = "";
+      for (let i = 1; i <= surah.jumlah_ayat; i++) {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = i;
+        if (i == selectedAyat) opt.selected = true;
+        selectEl.appendChild(opt);
+      }
+    }
 
     function updateTotalJuz(row) {
   const surahDari = row.querySelector(".surah-dari").value.trim();
