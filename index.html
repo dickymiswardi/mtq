@@ -336,13 +336,6 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
   loadSantriData();
 }
 
-      // Atur max untuk tanggal range di overlay "Hitung Total All Juz"
-  const rangeDari = document.getElementById("rangeDari");
-  const rangeSampai = document.getElementById("rangeSampai");
-
-  if (rangeDari) rangeDari.max = today;
-  if (rangeSampai) rangeSampai.max = today;
-
 
     logoutBtn.addEventListener("click", () => {
       overlay.style.display = "flex";
