@@ -250,9 +250,8 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
   
   <script>
 
-    document.getElementById("totalAllJuzHeader").addEventListener("click", () => {
-  document.getElementById("juzOverlay").style.display = "flex";
-});
+    document.getElementById("totalAllJuzHeader").addEventListener("click", bukaOverlayTotalAllJuz);
+    
     const loginCard = document.getElementById("login-card");
     const dashboardCard = document.getElementById("dashboard-card");
     const loginForm = document.getElementById("login-form");
@@ -827,6 +826,29 @@ function getDateRangeArray(start, end) {
     current.setDate(current.getDate() + 1);
   }
   return result;
+}
+
+
+
+
+    function bukaOverlayTotalAllJuz() {
+  const today = new Date().toISOString().split("T")[0];
+  const rangeDari = document.getElementById("rangeDari");
+  const rangeSampai = document.getElementById("rangeSampai");
+
+  // Atur tanggal maksimum (tidak bisa pilih masa depan)
+  if (rangeDari) {
+    rangeDari.max = today;
+    if (!rangeDari.value) rangeDari.value = today; // opsional
+  }
+
+  if (rangeSampai) {
+    rangeSampai.max = today;
+    if (!rangeSampai.value) rangeSampai.value = today; // opsional
+  }
+
+  // Tampilkan overlay
+  document.getElementById("juzOverlay").style.display = "flex";
 }
   </script>
 </body>
