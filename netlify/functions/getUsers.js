@@ -1,13 +1,12 @@
-// Netlify Functions: getUsers.js
 export async function handler() {
-  const token = process.env.MTQ_TOKEN; // Token GitHub dari Environment Variable
-  const githubUrl = "https://raw.githubusercontent.com/dickymiswardi/usermtq/main/user.json";
+  const token = process.env.MTQ_TOKEN;
+  const githubApiUrl = "https://api.github.com/repos/dickymiswardi/usermtq/contents/user.json";
 
   try {
-    // Fetch dari repo privat GitHub pakai token
-    const response = await fetch(githubUrl, {
+    const response = await fetch(githubApiUrl, {
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github.v3+json"
       }
     });
 
@@ -15,11 +14,14 @@ export async function handler() {
       throw new Error(`Gagal fetch data: ${response.status}`);
     }
 
-    const data = await response.text();
+    const result = await response.json();
+
+    // Decode base64 ke teks
+    const content = Buffer.from(result.content, 'base64').toString('utf-8');
 
     return {
       statusCode: 200,
-      body: data
+      body: content
     };
   } catch (error) {
     return {
