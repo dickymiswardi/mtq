@@ -1,4 +1,3 @@
-// netlify/functions/getAbsensi.js
 import fetch from "node-fetch";
 
 export async function handler(event) {
@@ -13,24 +12,38 @@ export async function handler(event) {
   }
 
   const fileName = `${kelas}_${tanggal}.json`;
-  const url = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/absensi/${fileName}`;
+  const apiUrl = `https://api.github.com/repos/dickymiswardi/usermtq/contents/absensi/${fileName}`;
 
   try {
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
+    const response = await fetch(apiUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github.v3+json"
+      },
     });
 
     if (response.status === 404) {
-      return { statusCode: 200, body: JSON.stringify([]) }; // Jika belum ada data
+      // Jika file belum ada, balikan array kosong
+      return { statusCode: 200, body: JSON.stringify([]) };
     }
 
     if (!response.ok) {
       throw new Error(`Gagal mengambil data: ${response.status}`);
     }
 
-    const data = await response.text();
-    return { statusCode: 200, body: data };
+    const result = await response.json();
+
+    // Decode base64 ke string JSON
+    const decoded = Buffer.from(result.content, 'base64').toString('utf-8');
+
+    return {
+      statusCode: 200,
+      body: decoded,
+    };
   } catch (error) {
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message }),
+    };
   }
 }
