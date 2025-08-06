@@ -180,10 +180,8 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
-            Dari: <input type="date" id="rangeDari">
-            Sampai: <input type="date" id="rangeSampai">
-            <button onclick="hitungTotalAllJuzFromTable()">🔄 Hitung Total All Juz</button>
             <th>Total All Juz</th>
+            <th id="totalAllJuzHeader" style="cursor:pointer; text-decoration:underline;">Total All Juz</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -198,7 +196,23 @@
     </div>
   </div>
 
+
+<div id="juzOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:center;">
+  <div style="background:white; padding:20px; border-radius:8px; min-width:300px;">
+    <h3>Hitung Total All Juz</h3>
+    <label>Dari: <input type="date" id="rangeDari"></label><br><br>
+    <label>Sampai: <input type="date" id="rangeSampai"></label><br><br>
+    <button onclick="hitungTotalAllJuzFromTable()">🔄 Hitung Total All Juz</button>
+    <button onclick="document.getElementById('juzOverlay').style.display='none'">❌ Tutup</button>
+  </div>
+</div>
+  
   <script>
+
+    document.getElementById("totalAllJuzHeader").addEventListener("click", () => {
+  document.getElementById("juzOverlay").style.display = "flex";
+});
     const loginCard = document.getElementById("login-card");
     const dashboardCard = document.getElementById("dashboard-card");
     const loginForm = document.getElementById("login-form");
