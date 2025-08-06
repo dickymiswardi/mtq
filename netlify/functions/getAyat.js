@@ -1,30 +1,34 @@
-// netlify/functions/getAyat.js
 import fetch from "node-fetch";
 
 export async function handler() {
   const token = process.env.MTQ_TOKEN;
-
-  // URL file getAyat.json di repo privat
-  const url = "https://raw.githubusercontent.com/dickymiswardi/usermtq/main/getAyat.json";
+  const apiUrl = "https://api.github.com/repos/dickymiswardi/usermtq/contents/getAyat.json";
 
   try {
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` }
+    const response = await fetch(apiUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github.v3+json"
+      }
     });
 
     if (!response.ok) throw new Error(`Gagal fetch data: ${response.status}`);
 
-    const data = await response.text();
-    return { 
-      statusCode: 200, 
-      headers: { "Content-Type": "application/json" }, 
-      body: data 
+    const result = await response.json();
+
+    // Decode isi base64 ke JSON string
+    const decoded = Buffer.from(result.content, 'base64').toString('utf-8');
+
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: decoded
     };
   } catch (error) {
-    return { 
-      statusCode: 500, 
-      headers: { "Content-Type": "application/json" }, 
-      body: JSON.stringify({ error: error.message }) 
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: error.message })
     };
   }
 }
