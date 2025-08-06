@@ -243,8 +243,8 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
     <h3>Hitung Total All Juz</h3>
     <label>Dari: <input type="date" id="rangeDari"></label><br><br>
     <label>Sampai: <input type="date" id="rangeSampai"></label><br><br>
-    <button onclick="hitungTotalAllJuzFromTable()">🔄 Hitung Total All Juz</button>
-    <button onclick="document.getElementById('juzOverlay').style.display='none'">❌ Tutup</button>
+    <button onclick="hitungTotalAllJuzFromTable()">Hitung Total All Juz</button>
+    <button onclick="document.getElementById('juzOverlay').style.display='none'">Close</button>
   </div>
 </div>
   
@@ -335,6 +335,14 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
       
   loadSantriData();
 }
+
+      // Atur max untuk tanggal range di overlay "Hitung Total All Juz"
+  const rangeDari = document.getElementById("rangeDari");
+  const rangeSampai = document.getElementById("rangeSampai");
+
+  if (rangeDari) rangeDari.max = today;
+  if (rangeSampai) rangeSampai.max = today;
+
 
     logoutBtn.addEventListener("click", () => {
       overlay.style.display = "flex";
