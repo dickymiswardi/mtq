@@ -194,7 +194,6 @@
         <button type="submit">Login</button>
         <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
-        <button onclick="bukaFormKhusus()">Daftar Khusus Terbatas</button>
       </div>
     </form>
 
@@ -1097,97 +1096,5 @@ function getDateRangeArray(start, end) {
     }
   }
 </script>
-
-
-
-<!-- Overlay Form -->
-<div id="overlayKhusus" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#0008; z-index:999; padding:20px;">
-  <div style="background:#fff; max-width:400px; margin:auto; padding:20px; border-radius:10px;">
-    <h3>Daftar Khusus Terbatas</h3>
-    <input id="khususUsername" placeholder="Username" class="input" /><br/>
-    <input id="khususPassword" type="password" placeholder="Password" class="input" /><br/>
-    <div id="daftarKelasContainer">Memuat kelas...</div>
-
-    <div style="margin-top:10px;">
-      <input id="kelasBaruInput" placeholder="Tambah Kelas Baru (contoh: kelas_9)" />
-      <button onclick="tambahKelas()">Tambah Kelas</button>
-    </div>
-
-    <div style="margin-top:10px;">
-      <button onclick="kirimDaftarKhusus()">Kirim</button>
-      <button onclick="tutupFormKhusus()">Tutup</button>
-    </div>
-  </div>
-</div>
-
-<script>
-function bukaFormKhusus() {
-  document.getElementById('overlayKhusus').style.display = 'block';
-  ambilKelasTersedia();
-}
-
-function tutupFormKhusus() {
-  document.getElementById('overlayKhusus').style.display = 'none';
-}
-
-async function ambilKelasTersedia() {
-  const container = document.getElementById("daftarKelasContainer");
-  container.innerHTML = "Memuat kelas...";
-
-  try {
-    const res = await fetch("https://api.github.com/repos/dickymiswardi/usermtq/contents");
-    const data = await res.json();
-    const kelas = data
-      .filter(f => f.name.startsWith("kelas_") && f.name.endsWith(".json"))
-      .map(f => f.name.replace(".json", ""));
-
-    if (kelas.length === 0) throw new Error("Tidak ada kelas ditemukan.");
-
-    container.innerHTML = `<p><strong>Pilih Kelas:</strong></p>` +
-      kelas.map(k => `<label><input type="checkbox" value="${k}" class="chk-kelas" /> ${k}</label><br/>`).join("");
-  } catch (err) {
-    container.innerHTML = `Gagal memuat kelas. ${err.message}`;
-  }
-}
-
-function tambahKelas() {
-  const nama = document.getElementById("kelasBaruInput").value.trim();
-  if (!nama.startsWith("kelas_")) return alert("Nama kelas harus diawali 'kelas_'");
-
-  const container = document.getElementById("daftarKelasContainer");
-  const html = `<label><input type="checkbox" value="${nama}" class="chk-kelas" checked /> ${nama}</label><br/>`;
-  container.insertAdjacentHTML("beforeend", html);
-  document.getElementById("kelasBaruInput").value = "";
-}
-
-async function kirimDaftarKhusus() {
-  const username = document.getElementById("khususUsername").value.trim();
-  const password = document.getElementById("khususPassword").value.trim();
-  const kelas = Array.from(document.querySelectorAll(".chk-kelas:checked")).map(cb => cb.value);
-
-  if (!username || !password || kelas.length === 0) {
-    return alert("Gagal: Data tidak lengkap.");
-  }
-
-  try {
-    const res = await fetch("/.netlify/functions/daftar-khusus", {
-      method: "POST",
-      body: JSON.stringify({ username, password, kelas }),
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      alert("Berhasil menambahkan user khusus.");
-      tutupFormKhusus();
-    } else {
-      throw new Error(data.message);
-    }
-  } catch (err) {
-    alert("Gagal: " + err.message);
-  }
-}
-</script>
-
-
 </body>
 </html>
