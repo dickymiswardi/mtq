@@ -187,9 +187,9 @@
       <input type="text" id="username" placeholder="Username" required />
       
       <div class="password-group" style="display: flex; align-items: center;">
-        <input type="password" id="password" placeholder="Password" required style="flex: 1;" />
-        <button type="button" id="toggle-password" class="toggle-btn">👁</button>
-      </div>
+  <input type="password" id="password" placeholder="Password" required style="flex: 1;" />
+  <button type="button" id="toggle-password" class="toggle-btn" onclick="togglePassword()">👁</button>
+</div>
 
       <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
         <button type="submit">Login</button>
@@ -200,6 +200,14 @@
     <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
   </div>
 </div>
+
+  <script>
+ togglePasswordBtn.addEventListener("click", () => {
+      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
+      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
+    });
+</script>
   
     <!-- Dashboard -->
     <div id="dashboard-card" class="card" style="display: none;">
@@ -292,12 +300,6 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
       } catch (err) {
         console.error("Gagal load surah/pagesMap:", err);
       }
-    });
-
-    togglePasswordBtn.addEventListener("click", () => {
-      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
-      passwordInput.setAttribute("type", type);
-      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
     });
 
     loginForm.addEventListener("submit", async (e) => {
@@ -886,19 +888,43 @@ function getDateRangeArray(start, end) {
   </script>
 
   <script>
-  async function daftar() {
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value;
+  function togglePassword() {
+    const passwordInput = document.getElementById("password");
+    passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+  }
 
-    if (!username || !password) {
-      alert("Username dan password wajib diisi.");
+  async function daftar() {
+    const adminPassword = prompt("Masukkan password admin:");
+    if (!adminPassword) {
+      alert("Password admin wajib diisi.");
       return;
     }
 
-    const konfirmasi = confirm(`Yakin ingin mendaftar user baru: ${username}?`);
-    if (!konfirmasi) return;
-
     try {
+      const cekRes = await fetch("/.netlify/functions/cek-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: adminPassword }),
+      });
+
+      const cekData = await cekRes.json();
+
+      if (!cekRes.ok) {
+        alert(cekData.message || "Password admin salah.");
+        return;
+      }
+
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!username || !password) {
+        alert("Username dan password wajib diisi.");
+        return;
+      }
+
+      const konfirmasi = confirm(`Yakin ingin mendaftar user baru: ${username}?`);
+      if (!konfirmasi) return;
+
       const res = await fetch("/.netlify/functions/daftar-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -909,12 +935,12 @@ function getDateRangeArray(start, end) {
 
       if (res.ok) {
         alert("🎉 Pendaftaran berhasil!\nSilakan login.");
-        // Optional: Kosongkan form
         document.getElementById("username").value = "";
         document.getElementById("password").value = "";
       } else {
         alert("⚠️ " + (hasil.message || "Gagal mendaftar."));
       }
+
     } catch (err) {
       console.error(err);
       alert("Terjadi kesalahan saat menghubungi server.");
