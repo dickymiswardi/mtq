@@ -302,14 +302,31 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
       }
     });
 
-  
-
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const username = document.getElementById("username").value;
       const password = passwordInput.value;
 
       overlay.style.display = "flex";
+
+      try {
+        const res = await fetch("/.netlify/functions/getUsers");
+        const users = await res.json();
+        const user = users.find(u => u.username === username && u.password === password);
+
+        if (user) {
+          localStorage.setItem("isLoggedIn", true);
+          localStorage.setItem("username", username);
+          showDashboard();
+        } else {
+          loginError.style.display = "block";
+        }
+      } catch (err) {
+        loginError.textContent = "Gagal memuat data user!";
+        loginError.style.display = "block";
+      }
+      overlay.style.display = "none";
+    });
 
     function showDashboard() {
   loginCard.style.display = "none";
