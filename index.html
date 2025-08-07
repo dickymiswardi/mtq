@@ -196,8 +196,11 @@
   <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
   <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
 </div>
+    <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
+  </div>
+</div>
 
-<!-- Overlay Ganti Password -->
+  <!-- Overlay Ganti Password -->
 <div id="change-password-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
   <div style="background:#fff; padding:20px; border-radius:8px; width:300px; position:relative;">
     <h3 style="margin-top:0;">Ganti Password</h3>
@@ -210,10 +213,6 @@
     <button id="save-password-btn" type="button" onclick="submitPasswordChange()" style="width:90%;">Simpan</button>
     <p id="change-password-msg" style="color:red; margin-top:10px;"></p>
     <button onclick="toggleChangePassword()" style="position:absolute; top:5px; right:10px;">✖</button>
-  </div>
-</div>
-
-    <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
   </div>
 </div>
 
