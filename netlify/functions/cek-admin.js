@@ -12,7 +12,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { password } = JSON.parse(event.body);
+    const { password } = JSON.parse(event.body || '{}');
 
     if (!password) {
       return {
@@ -21,7 +21,6 @@ exports.handler = async (event) => {
       };
     }
 
-    // Ambil isi secure.json dari GitHub
     const res = await fetch(GITHUB_API, {
       headers: {
         Authorization: `Bearer ${TOKEN}`,
@@ -38,10 +37,9 @@ exports.handler = async (event) => {
     }
 
     const json = await res.json();
-    const content = Buffer.from(json.content, 'base64').toString();
-    const secure = JSON.parse(content);
+    const decoded = Buffer.from(json.content, 'base64').toString('utf-8');
+    const secure = JSON.parse(decoded);
 
-    // Cocokkan password
     if (secure.password !== password) {
       return {
         statusCode: 401,
@@ -53,6 +51,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       body: JSON.stringify({ message: 'Password admin valid.' }),
     };
+
   } catch (err) {
     return {
       statusCode: 500,
