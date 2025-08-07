@@ -15,14 +15,21 @@ exports.handler = async (event) => {
   try {
     const { adminPassword, username, password, kelasList, kelasBaru } = JSON.parse(event.body || '{}');
 
-    if (!adminPassword || !username || !password || (!kelasList || kelasList.length === 0)) {
+    // Validasi input
+    if (
+      !adminPassword?.trim() ||
+      !username?.trim() ||
+      !password?.trim() ||
+      !Array.isArray(kelasList) ||
+      kelasList.length === 0
+    ) {
       return {
         statusCode: 400,
         body: JSON.stringify({ message: 'Data tidak lengkap.' }),
       };
     }
 
-    // 1. Validasi admin password dengan memanggil fungsi lokal (cek-admin.js)
+    // 1. Validasi admin password dengan fungsi lokal
     const cekRes = await fetch(`${process.env.URL}/.netlify/functions/cek-admin`, {
       method: 'POST',
       body: JSON.stringify({ password: adminPassword }),
@@ -36,7 +43,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // 2. Ambil data user_khusus.json dari GitHub
+    // 2. Ambil file user_khusus.json dari GitHub
     const filePath = 'user_khusus.json';
     const url = `${GITHUB_API_BASE}/repos/${REPO}/contents/${filePath}`;
 
@@ -52,30 +59,37 @@ exports.handler = async (event) => {
 
     if (res.ok) {
       const file = await res.json();
-      const decoded = Buffer.from(file.content, 'base64').toString();
-      content = JSON.parse(decoded);
-      sha = file.sha;
+      try {
+        const decoded = Buffer.from(file.content, 'base64').toString();
+        content = JSON.parse(decoded);
+        sha = file.sha;
+      } catch (err) {
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ message: 'Gagal membaca file user_khusus.json.', error: err.message }),
+        };
+      }
     }
 
-    // 3. Cek jika username sudah terdaftar
-    if (content.find((u) => u.username === username)) {
+    // 3. Cek username sudah ada
+    if (content.find((u) => u.username === username.trim())) {
       return {
         statusCode: 409,
         body: JSON.stringify({ message: 'Username sudah terdaftar.' }),
       };
     }
 
-    // 4. Tambah user baru
+    // 4. Tambahkan user baru
     content.push({
-      username,
-      password,
+      username: username.trim(),
+      password: password.trim(),
       kelas: kelasList,
     });
 
     const updatedContent = Buffer.from(JSON.stringify(content, null, 2)).toString('base64');
 
-    // 5. Simpan kembali user_khusus.json
-    await fetch(url, {
+    // 5. Simpan kembali ke GitHub
+    const updateRes = await fetch(url, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${TOKEN}`,
@@ -88,10 +102,18 @@ exports.handler = async (event) => {
       }),
     });
 
-    // 6. Tambahkan file kelas baru jika diinput
+    if (!updateRes.ok) {
+      const errorText = await updateRes.text();
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ message: 'Gagal menyimpan ke GitHub.', error: errorText }),
+      };
+    }
+
+    // 6. Buat file kelas baru jika diinput
     if (kelasBaru && kelasBaru.trim() !== '') {
-      const kelasBaruPath = `kelas_${kelasBaru.trim()}.json`;
-      const kelasUrl = `${GITHUB_API_BASE}/repos/${REPO}/contents/${kelasBaruPath}`;
+      const kelasFile = `kelas_${kelasBaru.trim()}.json`;
+      const kelasUrl = `${GITHUB_API_BASE}/repos/${REPO}/contents/${kelasFile}`;
 
       const cekKelas = await fetch(kelasUrl, {
         headers: {
@@ -100,6 +122,7 @@ exports.handler = async (event) => {
         },
       });
 
+      // Jika belum ada, buat kelas baru
       if (cekKelas.status === 404) {
         await fetch(kelasUrl, {
           method: 'PUT',
@@ -108,7 +131,7 @@ exports.handler = async (event) => {
             Accept: 'application/vnd.github.v3+json',
           },
           body: JSON.stringify({
-            message: `Buat kelas ${kelasBaru}`,
+            message: `Buat kelas ${kelasBaru.trim()}`,
             content: Buffer.from("[]").toString('base64'),
           }),
         });
@@ -119,10 +142,14 @@ exports.handler = async (event) => {
       statusCode: 200,
       body: JSON.stringify({ message: 'User berhasil ditambahkan.' }),
     };
+
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: 'Terjadi kesalahan server.', error: err.message }),
+      body: JSON.stringify({
+        message: 'Terjadi kesalahan server.',
+        error: err.message,
+      }),
     };
   }
 };
