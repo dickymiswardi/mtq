@@ -427,6 +427,19 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
           surahDari.addEventListener("change", () => fillAyatOptions(ayatDari, surahDari.value));
           surahSampai.addEventListener("change", () => fillAyatOptions(ayatSampai, surahSampai.value));
 
+          // Sinkronisasi otomatis kolom Sampai ketika Dari berubah
+          surahDari.addEventListener("change", () => {
+          // Copy surah dan update ayat
+            surahSampai.value = surahDari.value;
+            fillAyatOptions(ayatSampai, surahSampai.value, ayatDari.value);
+          });
+
+          ayatDari.addEventListener("change", () => {
+        // Copy ayat dari ke ayat sampai
+            ayatSampai.value = ayatDari.value;
+          });
+
+
           [ayatDari, ayatSampai, surahDari, surahSampai].forEach(el => {
             el.addEventListener("change", () => updateTotalJuz(row));
           });
