@@ -249,8 +249,7 @@
   <div class="dashboard-header-row">
     <label for="kelas">Pilih Kelas:</label>
     <select id="kelas">
-      <option value="kelas_1">Kelas 1</option>
-      <option value="kelas_2">Kelas 2</option>
+<select id="kelas"></select>
     </select>
 
     <label for="tanggal">Tanggal:</label>
@@ -1156,44 +1155,64 @@ function prosesDaftarUserKelas() {
 </script>
 
   <script>
-document.addEventListener("DOMContentLoaded", async () => {
-  const kelasSelect = document.getElementById("kelas");
-  const loginUsername = localStorage.getItem("loginUsername");
+  async function setDropdownKelasForUser(username) {
+    try {
+      const res = await fetch('/.netlify/functions/ambil-user');
+      const users = await res.json();
 
-  if (!loginUsername) return;
+      const user = users.find(u => u.username === username);
+      const kelasDropdown = document.getElementById("kelas");
 
-  try {
-    const response = await fetch("/.netlify/functions/ambil-user");
-    const users = await response.json();
+      kelasDropdown.innerHTML = ""; // Kosongkan dulu
 
-    const userData = users.find((u) => u.username === loginUsername);
-
-    const kelasTersedia = [
-      "kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5", "kelas_6"
-    ];
-
-    kelasSelect.innerHTML = ""; // kosongkan dulu
-
-    if (userData && userData.kelas && Array.isArray(userData.kelas)) {
-      userData.kelas.forEach((kelas) => {
-        const option = document.createElement("option");
-        option.value = kelas;
-        option.textContent = kelas.replace("_", " ").toUpperCase();
-        kelasSelect.appendChild(option);
-      });
-    } else {
-      // Tampilkan semua kelas
-      kelasTersedia.forEach((kelas) => {
-        const option = document.createElement("option");
-        option.value = kelas;
-        option.textContent = kelas.replace("_", " ").toUpperCase();
-        kelasSelect.appendChild(option);
-      });
+      if (user && user.akses_kelas && user.akses_kelas.length > 0) {
+        // Tampilkan hanya kelas yang diizinkan
+        user.akses_kelas.forEach(k => {
+          const opt = document.createElement("option");
+          opt.value = k;
+          opt.textContent = k.replace("_", " ").toUpperCase(); // Misal: kelas_1 => KELAS 1
+          kelasDropdown.appendChild(opt);
+        });
+      } else {
+        // Jika tidak punya akses_kelas, tampilkan semua
+        const semua = ["kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5", "kelas_6"];
+        semua.forEach(k => {
+          const opt = document.createElement("option");
+          opt.value = k;
+          opt.textContent = k.replace("_", " ").toUpperCase();
+          kelasDropdown.appendChild(opt);
+        });
+      }
+    } catch (e) {
+      console.error("Gagal memuat data kelas dari user.json:", e);
     }
-  } catch (err) {
-    alert("Gagal mengambil data user: " + err.message);
   }
-});
+
+
+    function login() {
+  const usernameInput = document.getElementById("username").value;
+  const passwordInput = document.getElementById("password").value;
+
+  fetch('/.netlify/functions/ambil-user')
+    .then(res => res.json())
+    .then(users => {
+      const user = users.find(u => u.username === usernameInput && u.password === passwordInput);
+
+      if (user) {
+        // Sukses login
+        document.getElementById("login-card").style.display = "none";
+        document.querySelector(".dashboard-header").style.display = "flex";
+        setDropdownKelasForUser(user.username); // Set dropdown sesuai user
+      } else {
+        alert("Username atau Password salah.");
+      }
+    })
+    .catch(err => {
+      console.error("Login error:", err);
+    });
+}
 </script>
+
+  
 </body>
 </html>
