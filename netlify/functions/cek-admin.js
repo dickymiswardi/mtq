@@ -40,7 +40,7 @@ exports.handler = async (event) => {
     const decoded = Buffer.from(json.content, 'base64').toString('utf-8');
     const secure = JSON.parse(decoded);
 
-    if (secure.password !== password) {
+    if (secure.adminPassword !== password) {
       return {
         statusCode: 401,
         body: JSON.stringify({ message: 'Password admin salah.' }),
