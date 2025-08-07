@@ -1154,5 +1154,46 @@ function prosesDaftarUserKelas() {
   });
 }
 </script>
+
+  <script>
+document.addEventListener("DOMContentLoaded", async () => {
+  const kelasSelect = document.getElementById("kelas");
+  const loginUsername = localStorage.getItem("loginUsername");
+
+  if (!loginUsername) return;
+
+  try {
+    const response = await fetch("/.netlify/functions/ambil-user");
+    const users = await response.json();
+
+    const userData = users.find((u) => u.username === loginUsername);
+
+    const kelasTersedia = [
+      "kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5", "kelas_6"
+    ];
+
+    kelasSelect.innerHTML = ""; // kosongkan dulu
+
+    if (userData && userData.kelas && Array.isArray(userData.kelas)) {
+      userData.kelas.forEach((kelas) => {
+        const option = document.createElement("option");
+        option.value = kelas;
+        option.textContent = kelas.replace("_", " ").toUpperCase();
+        kelasSelect.appendChild(option);
+      });
+    } else {
+      // Tampilkan semua kelas
+      kelasTersedia.forEach((kelas) => {
+        const option = document.createElement("option");
+        option.value = kelas;
+        option.textContent = kelas.replace("_", " ").toUpperCase();
+        kelasSelect.appendChild(option);
+      });
+    }
+  } catch (err) {
+    alert("Gagal mengambil data user: " + err.message);
+  }
+});
+</script>
 </body>
 </html>
