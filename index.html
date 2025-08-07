@@ -1209,8 +1209,40 @@ function prosesDaftarUserKelas() {
       console.error("Login error:", err);
     });
 }
+
+    function setupKelasChangeListener() {
+  const kelasDropdown = document.getElementById("kelas");
+
+  kelasDropdown.addEventListener("change", async () => {
+    const kelasTerpilih = kelasDropdown.value;
+
+    try {
+      const res = await fetch(`/.netlify/functions/getSantri?kelas=${kelasTerpilih}`);
+      const data = await res.json();
+
+      console.log("Data santri:", data); // Debug
+
+      // TODO: tampilkan ke tabel
+      tampilkanDataSantri(data); // <- pastikan fungsi ini ada
+    } catch (err) {
+      console.error("Gagal memuat data santri / absensi!", err);
+      alert("Gagal memuat data santri / absensi!");
+    }
+  });
+}
+
+
+    if (user) {
+  document.getElementById("login-card").style.display = "none";
+  document.querySelector(".dashboard-header").style.display = "flex";
+
+  setDropdownKelasForUser(user.username)
+    .then(() => setupKelasChangeListener()); // <- ini penting agar fetch data saat dropdown berubah
+}
 </script>
 
+
+  
   <script>
 document.addEventListener("DOMContentLoaded", async () => {
   const kelasSelect = document.getElementById("kelas");
