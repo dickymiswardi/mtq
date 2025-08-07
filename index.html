@@ -187,71 +187,19 @@
       <input type="text" id="username" placeholder="Username" required />
       
       <div class="password-group" style="display: flex; align-items: center;">
-  <input type="password" id="password" placeholder="Password" required style="flex: 1;" />
-  <button type="button" id="toggle-password" class="toggle-btn" onclick="togglePassword()">👁</button>
-</div>
+        <input type="password" id="password" placeholder="Password" required style="flex: 1;" />
+        <button type="button" id="toggle-password" class="toggle-btn">👁</button>
+      </div>
 
       <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
-  <button type="submit">Login</button>
-  <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
-  <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
-</div>
+        <button type="submit">Login</button>
+        <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
+      </div>
+    </form>
+
     <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
   </div>
 </div>
-
-  <!-- Overlay Ganti Password -->
-<div id="change-password-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
-  <div style="background:#fff; padding:20px; border-radius:8px; width:300px; position:relative;">
-    <h3 style="margin-top:0;">Ganti Password</h3>
-    <input type="text" id="change-username" placeholder="Username" required style="width:80%; margin-bottom:8px;" />
-    <input type="password" id="old-password" placeholder="Password Lama" required style="width:80%; margin-bottom:8px;" />
-    <input type="password" id="new-password" placeholder="Password Baru" required style="width:80%; margin-bottom:8px;" />
-    <label style="display:block; margin-bottom:10px;">
-    <input type="checkbox" onclick="togglePasswordVisibility()"> Lihat Password
-    </label>
-    <button id="save-password-btn" type="button" onclick="submitPasswordChange()" style="width:90%;">Simpan</button>
-    <p id="change-password-msg" style="color:red; margin-top:10px;"></p>
-    <button onclick="toggleChangePassword()" style="position:absolute; top:5px; right:10px;">✖</button>
-  </div>
-</div>
-
-<script>
-  function togglePassword() {
-    const passwordInput = document.getElementById("password");
-    const toggleBtn = document.getElementById("toggle-password");
-
-    const isPassword = passwordInput.type === "password";
-    passwordInput.type = isPassword ? "text" : "password";
-    toggleBtn.textContent = isPassword ? "🙈" : "👁";
-  }
-</script>
-
-  <script>
-  function login() {
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value.trim();
-
-    if (username === "admin" && password === "1234") {
-      alert("Login berhasil!");
-      // Lanjut ke dashboard
-    } else {
-      document.getElementById("login-error").style.display = "block";
-    }
-  }
-</script>
-
-  
-  <script>
-  function togglePasswordVisibility() {
-    const oldPass = document.getElementById("old-password");
-    const newPass = document.getElementById("new-password");
-
-    const type = oldPass.type === "password" ? "text" : "password";
-    oldPass.type = type;
-    newPass.type = type;
-  }
-</script>
   
     <!-- Dashboard -->
     <div id="dashboard-card" class="card" style="display: none;">
@@ -344,6 +292,12 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
       } catch (err) {
         console.error("Gagal load surah/pagesMap:", err);
       }
+    });
+
+    togglePasswordBtn.addEventListener("click", () => {
+      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
+      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
     });
 
     loginForm.addEventListener("submit", async (e) => {
@@ -932,43 +886,19 @@ function getDateRangeArray(start, end) {
   </script>
 
   <script>
-  function togglePassword() {
-    const passwordInput = document.getElementById("password");
-    passwordInput.type = passwordInput.type === "password" ? "text" : "password";
-  }
-
   async function daftar() {
-    const adminPassword = prompt("Masukkan password admin:");
-    if (!adminPassword) {
-      alert("Password admin wajib diisi.");
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!username || !password) {
+      alert("Username dan password wajib diisi.");
       return;
     }
 
+    const konfirmasi = confirm(`Yakin ingin mendaftar user baru: ${username}?`);
+    if (!konfirmasi) return;
+
     try {
-      const cekRes = await fetch("/.netlify/functions/cek-admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: adminPassword }),
-      });
-
-      const cekData = await cekRes.json();
-
-      if (!cekRes.ok) {
-        alert(cekData.message || "Password admin salah.");
-        return;
-      }
-
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value;
-
-      if (!username || !password) {
-        alert("Username dan password wajib diisi.");
-        return;
-      }
-
-      const konfirmasi = confirm(`Yakin ingin mendaftar user baru: ${username}?`);
-      if (!konfirmasi) return;
-
       const res = await fetch("/.netlify/functions/daftar-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -979,65 +909,16 @@ function getDateRangeArray(start, end) {
 
       if (res.ok) {
         alert("🎉 Pendaftaran berhasil!\nSilakan login.");
+        // Optional: Kosongkan form
         document.getElementById("username").value = "";
         document.getElementById("password").value = "";
       } else {
         alert("⚠️ " + (hasil.message || "Gagal mendaftar."));
       }
-
     } catch (err) {
       console.error(err);
       alert("Terjadi kesalahan saat menghubungi server.");
     }
-  }
-
-
-
-  function toggleChangePassword() {
-    const overlay = document.getElementById("change-password-overlay");
-    overlay.style.display = overlay.style.display === "flex" ? "none" : "flex";
-    document.getElementById("change-password-msg").textContent = "";
-  }
-
-  async function submitPasswordChange() {
-    const username = document.getElementById("change-username").value.trim();
-    const oldPassword = document.getElementById("old-password").value;
-    const newPassword = document.getElementById("new-password").value;
-    const msgEl = document.getElementById("change-password-msg");
-    const saveBtn = document.getElementById("save-password-btn");
-
-    if (!username || !oldPassword || !newPassword) {
-      msgEl.textContent = "Semua kolom wajib diisi.";
-      return;
-    }
-
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Menyimpan...";
-
-    try {
-      const res = await fetch("/.netlify/functions/changePassword", {
-        method: "POST",
-        body: JSON.stringify({ username, oldPassword, newPassword })
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        msgEl.style.color = "green";
-        msgEl.textContent = data.message || "Berhasil mengganti password.";
-        setTimeout(() => {
-          toggleChangePassword(); // tutup overlay
-        }, 1000);
-      } else {
-        msgEl.style.color = "red";
-        msgEl.textContent = data.message || "Gagal mengganti password.";
-      }
-    } catch (err) {
-      msgEl.textContent = "Terjadi kesalahan.";
-    }
-
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Simpan";
   }
 </script>
 
