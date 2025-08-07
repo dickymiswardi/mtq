@@ -196,16 +196,6 @@
         <button type="button" onclick="showChangePasswordForm()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
       </div>
-
-      <!-- Overlay Ganti Password -->
-<div id="change-password-overlay" style="display: none; position: fixed; top: 0; left: 0; 
-  width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; 
-  display: flex; justify-content: center; align-items: center;">
-  <div style="background: white; padding: 30px; border-radius: 8px; width: 300px; position: relative;">
-    <h3 style="margin-top: 0;">Ganti Password</h3>
-    <input type="text" id="change-username" placeholder="Username" required style="width: 100%; margin-bottom: 10px;" />
-    <input type="password" id="old-password" placeholder="Password Lama" required style="width: 100%; margin-bottom: 10px;" />
-    <input type="password" id="new-password" placeholder="Password Baru" required style="width: 100%; margin-bottom: 10px;" />
     
     <button id="submit-password-btn" type="button" onclick="submitPasswordChange()" style="width: 100%; margin-bottom: 10px;">
       Simpan
@@ -1003,6 +993,84 @@ async function submitPasswordChange() {
   }
 }
 </script>
+
+  <script>
+function showChangePasswordForm() {
+  document.getElementById("change-password-overlay").style.display = "flex";
+}
+
+function hideChangePasswordForm() {
+  document.getElementById("change-password-overlay").style.display = "none";
+  document.getElementById("change-password-msg").textContent = ""; // Bersihkan pesan error
+  document.getElementById("change-username").value = "";
+  document.getElementById("old-password").value = "";
+  document.getElementById("new-password").value = "";
+}
+
+async function submitPasswordChange() {
+  const username = document.getElementById("change-username").value.trim();
+  const oldPassword = document.getElementById("old-password").value;
+  const newPassword = document.getElementById("new-password").value;
+  const msgEl = document.getElementById("change-password-msg");
+
+  if (!username || !oldPassword || !newPassword) {
+    msgEl.style.color = "red";
+    msgEl.textContent = "Semua kolom wajib diisi.";
+    return;
+  }
+
+  try {
+    const res = await fetch("/.netlify/functions/changePassword", {
+      method: "POST",
+      body: JSON.stringify({ username, oldPassword, newPassword })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      msgEl.style.color = "green";
+      msgEl.textContent = data.message;
+    } else {
+      msgEl.style.color = "red";
+      msgEl.textContent = data.message || "Gagal mengganti password.";
+    }
+  } catch (err) {
+    msgEl.style.color = "red";
+    msgEl.textContent = "Terjadi kesalahan jaringan.";
+  }
+}
+</script>
+
+  <!-- Overlay Form Ganti Password -->
+<div id="change-password-overlay" style="
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+">
+  <div style="
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    position: relative;
+  ">
+    <h3 style="margin-top: 0;">Ganti Password</h3>
+    <input type="text" id="change-username" placeholder="Username" required style="width:100%; margin-bottom:10px; padding:8px;" />
+    <input type="text" id="old-password" placeholder="Password Lama" required style="width:100%; margin-bottom:10px; padding:8px;" />
+    <input type="text" id="new-password" placeholder="Password Baru" required style="width:100%; margin-bottom:10px; padding:8px;" />
+    
+    <button type="button" onclick="submitPasswordChange()" style="margin-top: 5px;">Simpan</button>
+    <button type="button" onclick="hideChangePasswordForm()" style="margin-top: 5px; float: right;">Tutup</button>
+    <p id="change-password-msg" style="color: red; margin-top: 10px;"></p>
+  </div>
+</div>
 
   <div id="modalSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
   <div style="background:#fff; width:300px; margin:100px auto; padding:20px; border-radius:10px;">
