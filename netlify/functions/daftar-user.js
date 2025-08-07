@@ -9,17 +9,14 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { username, password, kelas } = JSON.parse(event.body);
+    const { username, password } = JSON.parse(event.body);
 
-    if (!username || !password || !kelas) {
+    if (!username || !password) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Username, password, dan kelas wajib diisi.' })
+        body: JSON.stringify({ message: 'Username dan password wajib diisi.' })
       };
     }
-
-    // Pastikan kelas dalam bentuk array
-    const kelasArray = Array.isArray(kelas) ? kelas : [kelas];
 
     // Ambil isi file user.json dari GitHub
     const res = await fetch(GITHUB_API, {
@@ -41,9 +38,8 @@ exports.handler = async (event) => {
       };
     }
 
-    // Tambah user baru dengan kelas
-    users.push({ username, password, kelas: kelasArray });
-
+    // Tambah user baru
+    users.push({ username, password });
     const updatedContent = Buffer.from(JSON.stringify(users, null, 2)).toString('base64');
 
     // Push ke GitHub
