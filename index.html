@@ -194,6 +194,7 @@
         <button type="submit">Login</button>
         <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
+        <button onclick="bukaFormDaftarKelas()">DAFTAR UNTUK KELAS</button>
       </div>
     </form>
 
@@ -214,6 +215,20 @@
   </div>
 </div>
 
+
+<div id="form-daftar-kelas" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000a;">
+  <div style="background:white; margin:5% auto; padding:20px; width:90%; max-width:400px">
+    <h3>Daftar User untuk Kelas</h3>
+    <input type="text" id="usernameBaru" placeholder="Username"><br>
+    <input type="text" id="passwordBaru" placeholder="Password"><br>
+    <div id="ceklist-kelas"></div>
+    <input type="text" id="kelasBaru" placeholder="(Opsional) Tambah Kelas Baru"><br>
+    <input type="password" id="adminPassword" placeholder="Password Admin"><br>
+    <button onclick="prosesDaftarUserKelas()">Proses</button>
+    <button onclick="tutupFormDaftarKelas()">Tutup</button>
+  </div>
+</div>
+    
     <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
   </div>
 </div>
@@ -1095,6 +1110,49 @@ function getDateRangeArray(start, end) {
       alert("Terjadi kesalahan: " + err.message);
     }
   }
+</script>
+
+
+  <script>
+function bukaFormDaftarKelas() {
+  document.getElementById("form-daftar-kelas").style.display = "block";
+  fetch('/.netlify/functions/ambil-kelas')
+    .then(res => res.json())
+    .then(kelasList => {
+      const div = document.getElementById("ceklist-kelas");
+      div.innerHTML = "";
+      kelasList.forEach(k => {
+        div.innerHTML += `<label><input type="checkbox" value="${k}"> ${k}</label><br>`;
+      });
+    });
+}
+
+function tutupFormDaftarKelas() {
+  document.getElementById("form-daftar-kelas").style.display = "none";
+}
+
+function prosesDaftarUserKelas() {
+  const username = document.getElementById("usernameBaru").value;
+  const password = document.getElementById("passwordBaru").value;
+  const kelasBaru = document.getElementById("kelasBaru").value;
+  const adminPassword = document.getElementById("adminPassword").value;
+
+  const akses_kelas = Array.from(document.querySelectorAll('#ceklist-kelas input:checked')).map(cb => cb.value);
+
+  fetch('/.netlify/functions/daftar-user-kelas', {
+    method: "POST",
+    body: JSON.stringify({ username, password, akses_kelas, adminPassword, kelasBaru }),
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert("Berhasil mendaftar user.");
+      tutupFormDaftarKelas();
+    } else {
+      alert("Gagal: " + (data.error || ''));
+    }
+  });
+}
 </script>
 </body>
 </html>
