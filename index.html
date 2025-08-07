@@ -192,20 +192,22 @@
 </div>
 
       <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
-        <button type="submit">Login</button>
-        <button type="button" onclick="showChangePasswordForm()">Ganti Password</button>
-        <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
-      </div>
-    </form>
+  <button type="submit">Login</button>
+  <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
+  <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
+</div>
 
-    <!-- Form Ganti Password -->
-<div id="change-password-form" style="display: none; margin-top: 20px;">
-  <h3>Ganti Password</h3>
-  <input type="text" id="change-username" placeholder="Username" required />
-  <input type="password" id="old-password" placeholder="Password Lama" required />
-  <input type="password" id="new-password" placeholder="Password Baru" required />
-  <button type="button" onclick="submitPasswordChange()">Simpan</button>
-  <p id="change-password-msg" style="color: red;"></p>
+<!-- Overlay Ganti Password -->
+<div id="change-password-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+  <div style="background:#fff; padding:20px; border-radius:8px; width:300px; position:relative;">
+    <h3 style="margin-top:0;">Ganti Password</h3>
+    <input type="text" id="change-username" placeholder="Username" required style="width:100%; margin-bottom:8px;" />
+    <input type="password" id="old-password" placeholder="Password Lama" required style="width:100%; margin-bottom:8px;" />
+    <input type="password" id="new-password" placeholder="Password Baru" required style="width:100%; margin-bottom:8px;" />
+    <button id="save-password-btn" type="button" onclick="submitPasswordChange()" style="width:100%;">Simpan</button>
+    <p id="change-password-msg" style="color:red; margin-top:10px;"></p>
+    <button onclick="toggleChangePassword()" style="position:absolute; top:5px; right:10px;">✖</button>
+  </div>
 </div>
 
     <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
@@ -959,36 +961,53 @@ function getDateRangeArray(start, end) {
   }
 
 
-    function showChangePasswordForm() {
-  document.getElementById("change-password-form").style.display = "block";
-}
 
-async function submitPasswordChange() {
-  const username = document.getElementById("change-username").value.trim();
-  const oldPassword = document.getElementById("old-password").value;
-  const newPassword = document.getElementById("new-password").value;
-  const msgEl = document.getElementById("change-password-msg");
-
-  if (!username || !oldPassword || !newPassword) {
-    msgEl.textContent = "Semua kolom wajib diisi.";
-    return;
+  function toggleChangePassword() {
+    const overlay = document.getElementById("change-password-overlay");
+    overlay.style.display = overlay.style.display === "flex" ? "none" : "flex";
+    document.getElementById("change-password-msg").textContent = "";
   }
 
-  const res = await fetch("/.netlify/functions/changePassword", {
-    method: "POST",
-    body: JSON.stringify({ username, oldPassword, newPassword })
-  });
+  async function submitPasswordChange() {
+    const username = document.getElementById("change-username").value.trim();
+    const oldPassword = document.getElementById("old-password").value;
+    const newPassword = document.getElementById("new-password").value;
+    const msgEl = document.getElementById("change-password-msg");
+    const saveBtn = document.getElementById("save-password-btn");
 
-  const data = await res.json();
+    if (!username || !oldPassword || !newPassword) {
+      msgEl.textContent = "Semua kolom wajib diisi.";
+      return;
+    }
 
-  if (res.ok) {
-    msgEl.style.color = "green";
-    msgEl.textContent = data.message;
-  } else {
-    msgEl.style.color = "red";
-    msgEl.textContent = data.message || "Gagal mengganti password.";
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Menyimpan...";
+
+    try {
+      const res = await fetch("/.netlify/functions/changePassword", {
+        method: "POST",
+        body: JSON.stringify({ username, oldPassword, newPassword })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        msgEl.style.color = "green";
+        msgEl.textContent = data.message || "Berhasil mengganti password.";
+        setTimeout(() => {
+          toggleChangePassword(); // tutup overlay
+        }, 1000);
+      } else {
+        msgEl.style.color = "red";
+        msgEl.textContent = data.message || "Gagal mengganti password.";
+      }
+    } catch (err) {
+      msgEl.textContent = "Terjadi kesalahan.";
+    }
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Simpan";
   }
-}
 </script>
 
   <div id="modalSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
