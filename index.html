@@ -196,51 +196,17 @@
         <button type="button" onclick="showChangePasswordForm()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
       </div>
-    
-    <button id="submit-password-btn" type="button" onclick="submitPasswordChange()" style="width: 100%; margin-bottom: 10px;">
-      Simpan
-    </button>
-
-      <!-- Overlay Form Ganti Password -->
-<div id="change-password-overlay" style="
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 1000;
-  justify-content: center;
-  align-items: center;
-">
-  <div style="
-    background: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    position: relative;
-  ">
-    <h3 style="margin-top: 0;">Ganti Password</h3>
-    <input type="text" id="change-username" placeholder="Username" required style="width:100%; margin-bottom:10px; padding:8px;" />
-    <input type="text" id="old-password" placeholder="Password Lama" required style="width:100%; margin-bottom:10px; padding:8px;" />
-    <input type="text" id="new-password" placeholder="Password Baru" required style="width:100%; margin-bottom:10px; padding:8px;" />
-    
-    <button type="button" onclick="submitPasswordChange()" style="margin-top: 5px;">Simpan</button>
-    <button type="button" onclick="hideChangePasswordForm()" style="margin-top: 5px; float: right;">Tutup</button>
-    <p id="change-password-msg" style="color: red; margin-top: 10px;"></p>
-  </div>
-</div>
     </form>
 
-    
-    <p id="change-password-msg" style="color: red; margin: 0;"></p>
-    
-    <button onclick="toggleChangePassword()" 
-      style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 18px;">×</button>
-  </div>
+    <!-- Form Ganti Password -->
+<div id="change-password-form" style="display: none; margin-top: 20px;">
+  <h3>Ganti Password</h3>
+  <input type="text" id="change-username" placeholder="Username" required />
+  <input type="password" id="old-password" placeholder="Password Lama" required />
+  <input type="password" id="new-password" placeholder="Password Baru" required />
+  <button type="button" onclick="submitPasswordChange()">Simpan</button>
+  <p id="change-password-msg" style="color: red;"></p>
 </div>
-
 
     <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
   </div>
@@ -991,19 +957,10 @@ function getDateRangeArray(start, end) {
       alert("Terjadi kesalahan saat menghubungi server.");
     }
   }
-</script>
 
-  <script>
-function showChangePasswordForm() {
-  document.getElementById("change-password-overlay").style.display = "flex";
-}
 
-function hideChangePasswordForm() {
-  document.getElementById("change-password-overlay").style.display = "none";
-  document.getElementById("change-password-msg").textContent = ""; // Bersihkan pesan error
-  document.getElementById("change-username").value = "";
-  document.getElementById("old-password").value = "";
-  document.getElementById("new-password").value = "";
+    function showChangePasswordForm() {
+  document.getElementById("change-password-form").style.display = "block";
 }
 
 async function submitPasswordChange() {
@@ -1013,29 +970,23 @@ async function submitPasswordChange() {
   const msgEl = document.getElementById("change-password-msg");
 
   if (!username || !oldPassword || !newPassword) {
-    msgEl.style.color = "red";
     msgEl.textContent = "Semua kolom wajib diisi.";
     return;
   }
 
-  try {
-    const res = await fetch("/.netlify/functions/changePassword", {
-      method: "POST",
-      body: JSON.stringify({ username, oldPassword, newPassword })
-    });
+  const res = await fetch("/.netlify/functions/changePassword", {
+    method: "POST",
+    body: JSON.stringify({ username, oldPassword, newPassword })
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    if (res.ok) {
-      msgEl.style.color = "green";
-      msgEl.textContent = data.message;
-    } else {
-      msgEl.style.color = "red";
-      msgEl.textContent = data.message || "Gagal mengganti password.";
-    }
-  } catch (err) {
+  if (res.ok) {
+    msgEl.style.color = "green";
+    msgEl.textContent = data.message;
+  } else {
     msgEl.style.color = "red";
-    msgEl.textContent = "Terjadi kesalahan jaringan.";
+    msgEl.textContent = data.message || "Gagal mengganti password.";
   }
 }
 </script>
