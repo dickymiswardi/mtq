@@ -962,37 +962,55 @@ function getDateRangeArray(start, end) {
   }
 
 
-    function showChangePasswordForm() {
-  document.getElementById("change-password-form").style.display = "block";
-}
-
-async function submitPasswordChange() {
-  const username = document.getElementById("change-username").value.trim();
-  const oldPassword = document.getElementById("old-password").value;
-  const newPassword = document.getElementById("new-password").value;
-  const msgEl = document.getElementById("change-password-msg");
-
-  if (!username || !oldPassword || !newPassword) {
-    msgEl.textContent = "Semua kolom wajib diisi.";
-    return;
+  function toggleChangePassword() {
+    const overlay = document.getElementById("change-password-overlay");
+    overlay.style.display = overlay.style.display === "flex" ? "none" : "flex";
+    document.getElementById("change-password-msg").textContent = "";
   }
 
-  const res = await fetch("/.netlify/functions/changePassword", {
-    method: "POST",
-    body: JSON.stringify({ username, oldPassword, newPassword })
-  });
+  async function submitPasswordChange() {
+    const username = document.getElementById("change-username").value.trim();
+    const oldPassword = document.getElementById("old-password").value;
+    const newPassword = document.getElementById("new-password").value;
+    const msgEl = document.getElementById("change-password-msg");
+    const saveBtn = document.getElementById("save-password-btn");
 
-  const data = await res.json();
+    if (!username || !oldPassword || !newPassword) {
+      msgEl.textContent = "Semua kolom wajib diisi.";
+      return;
+    }
 
-  if (res.ok) {
-    msgEl.style.color = "green";
-    msgEl.textContent = data.message;
-  } else {
-    msgEl.style.color = "red";
-    msgEl.textContent = data.message || "Gagal mengganti password.";
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Menyimpan...";
+
+    try {
+      const res = await fetch("/.netlify/functions/changePassword", {
+        method: "POST",
+        body: JSON.stringify({ username, oldPassword, newPassword })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        msgEl.style.color = "green";
+        msgEl.textContent = data.message || "Berhasil mengganti password.";
+        setTimeout(() => {
+          toggleChangePassword(); // tutup overlay
+        }, 1000);
+      } else {
+        msgEl.style.color = "red";
+        msgEl.textContent = data.message || "Gagal mengganti password.";
+      }
+    } catch (err) {
+      msgEl.textContent = "Terjadi kesalahan.";
+    }
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Simpan";
   }
-}
 </script>
+
+  
 
   <div id="modalSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
   <div style="background:#fff; width:300px; margin:100px auto; padding:20px; border-radius:10px;">
