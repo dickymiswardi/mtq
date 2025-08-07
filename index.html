@@ -193,7 +193,7 @@
       <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
         <button type="submit">Login</button>
         <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
-        <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
+        <button type="button" onclick="toggleDaftar()">Daftar</button>
       </div>
     </form>
 
@@ -210,6 +210,26 @@
     <button id="save-password-btn" type="button" onclick="submitPasswordChange()" style="width:90%;">Simpan</button>
     <p id="change-password-msg" style="color:red; margin-top:10px;"></p>
     <button onclick="toggleChangePassword()" style="position:absolute; top:5px; right:10px;">✖</button>
+  </div>
+</div>
+
+
+
+    <!-- Overlay Daftar User Baru -->
+<div id="daftar-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+  <div style="background:#fff; padding:20px; border-radius:8px; width:300px; position:relative;">
+    <h3 style="margin-top:0;">Daftar User</h3>
+    <input type="text" id="daftar-username" placeholder="Username" required style="width:100%; margin-bottom:8px;" />
+    <input type="password" id="daftar-password" placeholder="Password" required style="width:100%; margin-bottom:8px;" />
+
+    <p>Pilih Kelas:</p>
+    <label><input type="checkbox" name="kelas" value="kelas_1"> Kelas 1</label><br/>
+    <label><input type="checkbox" name="kelas" value="kelas_2"> Kelas 2</label><br/>
+    <label><input type="checkbox" name="kelas" value="kelas_3"> Kelas 3</label><br/>
+
+    <button type="button" onclick="submitDaftar()" style="margin-top:10px;">Simpan</button>
+    <p id="daftar-msg" style="color:red; margin-top:10px;"></p>
+    <button onclick="toggleDaftar()" style="position:absolute; top:5px; right:10px;">✖</button>
   </div>
 </div>
 
@@ -1094,6 +1114,47 @@ function getDateRangeArray(start, end) {
       alert("Terjadi kesalahan: " + err.message);
     }
   }
+</script>
+
+  <script>
+function toggleDaftar() {
+  const el = document.getElementById("daftar-overlay");
+  el.style.display = (el.style.display === "flex") ? "none" : "flex";
+  el.style.display === "flex" && el.scrollIntoView({ behavior: "smooth" });
+}
+
+// Submit form daftar ke Netlify function
+async function submitDaftar() {
+  const username = document.getElementById("daftar-username").value.trim();
+  const password = document.getElementById("daftar-password").value.trim();
+  const kelas = [...document.querySelectorAll('input[name="kelas"]:checked')].map(cb => cb.value);
+
+  const msg = document.getElementById("daftar-msg");
+  msg.textContent = "";
+
+  if (!username || !password || kelas.length === 0) {
+    msg.textContent = "Semua field wajib diisi dan pilih minimal satu kelas.";
+    return;
+  }
+
+  try {
+    const res = await fetch("/.netlify/functions/daftar-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password, kelas })
+    });
+
+    const result = await res.json();
+    if (res.ok) {
+      alert("Pendaftaran berhasil!");
+      toggleDaftar();
+    } else {
+      msg.textContent = result.message || "Gagal daftar.";
+    }
+  } catch (err) {
+    msg.textContent = "Terjadi kesalahan server.";
+  }
+}
 </script>
 </body>
 </html>
