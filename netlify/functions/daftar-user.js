@@ -9,12 +9,12 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { username, password } = JSON.parse(event.body);
+    const { username, password, kelas } = JSON.parse(event.body);
 
-    if (!username || !password) {
+    if (!username || !password || !Array.isArray(kelas) || kelas.length === 0) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Username dan password wajib diisi.' })
+        body: JSON.stringify({ message: 'Username, password, dan kelas wajib diisi.' })
       };
     }
 
@@ -38,8 +38,8 @@ exports.handler = async (event) => {
       };
     }
 
-    // Tambah user baru
-    users.push({ username, password });
+    // Tambah user baru dengan akses kelas
+    users.push({ username, password, kelas });
     const updatedContent = Buffer.from(JSON.stringify(users, null, 2)).toString('base64');
 
     // Push ke GitHub
