@@ -1012,6 +1012,15 @@ function getDateRangeArray(start, end) {
     saveBtn.disabled = false;
     saveBtn.textContent = "Simpan";
   }
+
+    function togglePasswordVisibility() {
+    const oldPass = document.getElementById("old-password");
+    const newPass = document.getElementById("new-password");
+
+    const type = oldPass.type === "password" ? "text" : "password";
+    oldPass.type = type;
+    newPass.type = type;
+  }
 </script>
 
   
