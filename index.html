@@ -187,9 +187,9 @@
       <input type="text" id="username" placeholder="Username" required />
       
       <div class="password-group" style="display: flex; align-items: center;">
-        <input type="password" id="password" placeholder="Password" required style="flex: 1;" />
-        <button type="button" id="toggle-password" class="toggle-btn" onclick="togglePassword()">👁</button>
-      </div>
+  <input type="password" id="password" placeholder="Password" required style="flex: 1;" />
+  <button type="button" id="toggle-password" class="toggle-btn" onclick="togglePassword()">👁</button>
+</div>
 
       <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
         <button type="submit">Login</button>
@@ -200,6 +200,17 @@
     <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
   </div>
 </div>
+
+  <script>
+  function togglePassword() {
+    const passwordInput = document.getElementById("password");
+    const toggleBtn = document.getElementById("toggle-password");
+
+    const isHidden = passwordInput.type === "password";
+    passwordInput.type = isHidden ? "text" : "password";
+    toggleBtn.textContent = isHidden ? "🙈" : "👁";
+  }
+</script>
   
     <!-- Dashboard -->
     <div id="dashboard-card" class="card" style="display: none;">
@@ -942,19 +953,6 @@ function getDateRangeArray(start, end) {
     } catch (err) {
       console.error(err);
       alert("Terjadi kesalahan saat menghubungi server.");
-    }
-  }
-    
-  function togglePassword() {
-    const passwordInput = document.getElementById('password');
-    const toggleBtn = document.getElementById('toggle-password');
-
-    if (passwordInput.type === 'password') {
-      passwordInput.type = 'text';
-      toggleBtn.textContent = '🙈'; // Bisa diganti sesuai ikon lain
-    } else {
-      passwordInput.type = 'password';
-      toggleBtn.textContent = '👁';
     }
   }
 </script>
