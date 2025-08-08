@@ -1302,8 +1302,11 @@ async function buatAkunBaru() {
       document.querySelectorAll('#kelasCheckboxContainer input:checked')
               .forEach(cb => cb.checked = false);
 
-      // ❗ Tutup modal overlay
-      document.getElementById("modalDaftarUser").style.display = "none";
+      // Tunggu 1 detik lalu tutup overlay
+      setTimeout(() => {
+        document.getElementById("overlayDaftarUser").style.display = "none";
+        successEl.textContent = "";
+      }, 1000); // 1000ms = 1 detik
     } else {
       errorEl.textContent = result.message || "❌ Gagal membuat akun.";
     }
@@ -1313,5 +1316,6 @@ async function buatAkunBaru() {
   }
 }
 </script>
+
 </body>
 </html>
