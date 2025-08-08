@@ -1178,7 +1178,7 @@ function getDateRangeArray(start, end) {
   }
 
   const loadingEl = document.getElementById("loadingTambahSantri");
-  loadingEl.style.display = "block";
+  if (loadingEl) loadingEl.style.display = "block";
 
   try {
     const res = await fetch("/.netlify/functions/tambahSantri", {
@@ -1188,22 +1188,21 @@ function getDateRangeArray(start, end) {
     });
 
     const data = await res.json();
-    loadingEl.style.display = "none";
+    if (loadingEl) loadingEl.style.display = "none";
 
     if (res.ok) {
       alert("Santri berhasil ditambahkan!");
       tutupModal();
-      setTimeout(() => {
-        location.reload();
-      }, 200); // jeda kecil agar DOM sempat ditutup
+      setTimeout(() => location.reload(), 200); // tambahkan delay agar DOM siap
     } else {
       alert("Gagal menambahkan: " + data.error);
     }
   } catch (err) {
-    loadingEl.style.display = "none";
+    if (loadingEl) loadingEl.style.display = "none";
     alert("Terjadi kesalahan: " + err.message);
   }
 }
+
 </script>
 
   <script>
