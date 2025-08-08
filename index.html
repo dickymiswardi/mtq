@@ -11,6 +11,7 @@
       margin: 0;
       background: #f4f6f8;
     }
+
 .dashboard-header {
   display: flex;
   flex-direction: column;
@@ -184,7 +185,6 @@
     <h1>Login Pengajar</h1>
     <form id="login-form" onsubmit="event.preventDefault(); login();">
       <input type="text" id="username" placeholder="Username" required />
-      
       <div class="password-group" style="display: flex; align-items: center;">
   <input type="password" id="password" placeholder="Password" required style="flex: 1;" />
   <button type="button" id="toggle-password" class="toggle-btn" onclick="togglePassword()">👁</button>
