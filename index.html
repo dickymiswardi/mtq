@@ -185,6 +185,7 @@
     <h1>Login Pengajar</h1>
     <form id="login-form" onsubmit="event.preventDefault(); login();">
       <input type="text" id="username" placeholder="Username" required />
+      
       <div class="password-group" style="display: flex; align-items: center;">
   <input type="password" id="password" placeholder="Password" required style="flex: 1;" />
   <button type="button" id="toggle-password" class="toggle-btn" onclick="togglePassword()">👁</button>
@@ -194,18 +195,9 @@
         <button type="submit">Login</button>
         <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
-        <button onclick="bukaFormDaftar()">DAFTAR KHUSUS</button>
       </div>
     </form>
 
-<!-- Overlay Form -->
-<div id="formDaftar" style="display:none;">
-  <input id="usernameBaru" placeholder="Username" />
-  <input id="passwordBaru" placeholder="Password" type="password" />
-  <div id="daftarKelasCheckbox"></div>
-  <button onclick="submitDaftarKhusus()">DAFTAR</button>
-</div>
-    
     <!-- Overlay Ganti Password -->
 <div id="change-password-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
   <div style="background:#fff; padding:20px; border-radius:8px; width:300px; position:relative;">
@@ -1104,65 +1096,6 @@ function getDateRangeArray(start, end) {
       alert("Terjadi kesalahan: " + err.message);
     }
   }
-</script>
-
-  <script>
-async function bukaFormDaftar() {
-  const pass = prompt("Masukkan Password Admin:");
-  const res = await fetch('/.netlify/functions/cek-admin', {
-    method: 'POST',
-    body: JSON.stringify({ password: pass })
-  });
-
-  const hasil = await res.json();
-  if (!hasil.success) {
-    alert('Password salah!');
-    return;
-  }
-
-  // Ambil daftar kelas
-  const data = await fetch('/.netlify/functions/ambil-kelas');
-  const kelas = await data.json();
-
-  const container = document.getElementById('daftarKelasCheckbox');
-  container.innerHTML = '';
-  kelas.forEach(k => {
-    const cb = document.createElement('div');
-    cb.innerHTML = `<label><input type="checkbox" value="${k}" /> ${k}</label>`;
-    container.appendChild(cb);
-  });
-
-  // Tambah input kelas baru
-  const tambah = document.createElement('div');
-  tambah.innerHTML = `<input id="kelasBaruInput" placeholder="Tambah kelas baru? (opsional)" />`;
-  container.appendChild(tambah);
-
-  document.getElementById('formDaftar').style.display = 'block';
-}
-
-async function submitDaftarKhusus() {
-  const username = document.getElementById('usernameBaru').value;
-  const password = document.getElementById('passwordBaru').value;
-  const kelasBaru = document.getElementById('kelasBaruInput').value;
-
-  const kelas = Array.from(document.querySelectorAll('#daftarKelasCheckbox input[type="checkbox"]:checked'))
-    .map(cb => cb.value);
-
-  if (kelasBaru) kelas.push(kelasBaru);
-
-  const res = await fetch('/.netlify/functions/daftar-khusus', {
-    method: 'POST',
-    body: JSON.stringify({ username, password, kelas })
-  });
-
-  const hasil = await res.json();
-  if (hasil.success) {
-    alert('Berhasil mendaftarkan user!');
-    document.getElementById('formDaftar').style.display = 'none';
-  } else {
-    alert('Gagal daftar.');
-  }
-}
 </script>
 </body>
 </html>
