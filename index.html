@@ -194,38 +194,8 @@
         <button type="submit">Login</button>
         <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
-        <button type="button" onclick="bukaDaftarKhusus()">DAFTAR KHUSUS</button>
       </div>
     </form>
-
-
-    <!-- Overlay Verifikasi Admin -->
-<div id="verifikasiAdminOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000;">
-  <div style="background:white; margin:10% auto; padding:20px; width:300px; border-radius:10px;">
-    <h3>Verifikasi Admin</h3>
-    <input type="password" id="adminPassword" placeholder="Masukkan password admin" />
-    <br><br>
-    <button onclick="verifikasiAdmin()">Verifikasi</button>
-    <button onclick="tutupOverlayAdmin()">Batal</button>
-  </div>
-</div>
-
-<!-- Overlay Form Daftar -->
-<div id="daftarKhususOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000;">
-  <div style="background:white; margin:5% auto; padding:20px; width:350px; border-radius:10px;">
-    <h3>Daftar Khusus</h3>
-    <form id="formDaftarKhusus" onsubmit="submitDaftarKhusus(event)">
-      <input type="text" id="usernameKhusus" placeholder="Username" required /><br><br>
-      <input type="password" id="passwordKhusus" placeholder="Password" required /><br><br>
-
-      <label for="kelasKhusus">Pilih Kelas:</label><br>
-      <select id="kelasKhusus" multiple size="5" required></select><br><br>
-
-      <button type="submit">Simpan</button>
-      <button type="button" onclick="tutupOverlayKhusus()">Batal</button>
-    </form>
-  </div>
-</div>
 
     <!-- Overlay Ganti Password -->
 <div id="change-password-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
@@ -1126,94 +1096,5 @@ function getDateRangeArray(start, end) {
     }
   }
 </script>
-  <script>
-    const verifikasiOverlay = document.getElementById("verifikasiAdminOverlay");
-const daftarKhususOverlay = document.getElementById("daftarKhususOverlay");
-const kelasSelect = document.getElementById("kelasKhusus");
-
-function bukaDaftarKhusus() {
-  verifikasiOverlay.style.display = "block";
-}
-
-function tutupOverlayAdmin() {
-  verifikasiOverlay.style.display = "none";
-}
-
-function tutupOverlayKhusus() {
-  daftarKhususOverlay.style.display = "none";
-}
-
-async function verifikasiAdmin() {
-  const password = document.getElementById("adminPassword").value.trim();
-  if (!password) return alert("Password harus diisi!");
-
-  const res = await fetch("/.netlify/functions/cek-admin", {
-    method: "POST",
-    body: JSON.stringify({ password })
-  });
-
-  const hasil = await res.json();
-
-  if (res.ok) {
-    verifikasiOverlay.style.display = "none";
-    await tampilkanFormDaftarKhusus();
-  } else {
-    alert(hasil.message || "Verifikasi gagal.");
-  }
-}
-
-async function tampilkanFormDaftarKhusus() {
-  // Ambil daftar kelas dari GitHub via API getSantri.js
-  const kelasList = ["kelas_1", "kelas_2", "kelas_3"];
-  kelasSelect.innerHTML = "";
-
-  for (const kelas of kelasList) {
-    try {
-      const res = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-      if (res.ok) {
-        const option = document.createElement("option");
-        option.value = kelas;
-        option.textContent = kelas;
-        kelasSelect.appendChild(option);
-      }
-    } catch (err) {
-      console.error("Gagal mengambil kelas:", kelas);
-    }
-  }
-
-  daftarKhususOverlay.style.display = "block";
-}
-
-async function submitDaftarKhusus(e) {
-  e.preventDefault();
-  const username = document.getElementById("usernameKhusus").value.trim();
-  const password = document.getElementById("passwordKhusus").value.trim();
-  const kelasDipilih = Array.from(kelasSelect.selectedOptions).map(opt => opt.value);
-
-  if (!username || !password || kelasDipilih.length === 0) {
-    return alert("Semua field wajib diisi.");
-  }
-
-  const data = {
-    username,
-    password,
-    akses_kelas: kelasDipilih
-  };
-
-  const res = await fetch("/.netlify/functions/daftar-user", {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
-
-  const hasil = await res.json();
-
-  if (res.ok) {
-    alert("Berhasil mendaftarkan user!");
-    tutupOverlayKhusus();
-  } else {
-    alert(hasil.message || "Gagal menyimpan.");
-  }
-}
-  </script>
 </body>
 </html>
