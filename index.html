@@ -248,9 +248,10 @@
         <button type="button" onclick="munculkanValidasiAdmin()">Daftar User Kelas</button>
         <button type="button" onclick="bukaModalTambahKelas()">Tambah Kelas</button>
       </div>
+    </form>
 
 
-      <div id="modalTambahKelasPassword" class="modal" style="display:none;">
+    <div id="modalTambahKelasPassword" class="modal" style="display:none;">
   <div class="modal-content">
     <h3>Verifikasi Admin</h3>
     <input type="password" id="inputPasswordTambahKelas" placeholder="Password Admin" />
@@ -303,7 +304,8 @@
     <p id="daftarSuccess" style="color:green;"></p>
   </div>
 </div>
-    </form>
+
+    
     
     <!-- Overlay Ganti Password -->
 <div id="change-password-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
@@ -1490,6 +1492,15 @@ async function submitTambahKelasBaru() {
     } catch (err) {
       loadingEl.style.display = "none";
       alert("Terjadi kesalahan: " + err.message);
+    }
+  }
+</script>
+
+  <script>
+  function tutupModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.style.display = "none";
     }
   }
 </script>
