@@ -1131,16 +1131,16 @@ function getDateRangeArray(start, end) {
 
   
 
-  <!-- Modal Tambah Santri -->
+  <!-- MODAL TAMBAH SANTRI -->
 <div id="modalSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
-  <div style="background:#fff; width:300px; margin:100px auto; padding:20px; border-radius:10px; position:relative;">
+  <div style="background:#fff; width:300px; margin:100px auto; padding:20px; border-radius:10px;">
     <h2>Tambah Santri</h2>
-
-    <label>Nama:</label><br />
-    <input type="text" id="inputNama" style="width:100%; margin-bottom:10px;" /><br />
-
-    <label>Semester:</label><br />
-    <select id="inputSemester" style="width:100%; margin-bottom:10px;">
+    
+    <label>Nama:</label>
+    <input type="text" id="inputNama" style="width:80%; margin-bottom:10px;" />
+    
+    <label>Semester:</label>
+    <select id="inputSemester" style="width:80%;">
       <option value="1">1</option>
       <option value="2">2</option>
       <option value="3">3</option>
@@ -1149,7 +1149,9 @@ function getDateRangeArray(start, end) {
       <option value="6">6</option>
     </select>
 
-    <div style="display:flex; justify-content:space-between; margin-top:10px;">
+    <input type="hidden" id="kelas" value="A1" /> <!-- Pastikan ada ini, atau ubah sesuai data dinamis -->
+
+    <div style="margin-top:10px; display:flex; justify-content:space-between;">
       <button onclick="simpanSantriBaru()">Simpan</button>
       <button onclick="tutupModal()">Close</button>
     </div>
@@ -1160,27 +1162,28 @@ function getDateRangeArray(start, end) {
   </div>
 </div>
 
-<!-- Tombol trigger (bisa kamu tempatkan di mana saja) -->
-<!-- <button onclick="bukaModalSantri()">Tambah Santri</button> -->
-
+<!-- SCRIPT -->
 <script>
+  // Menampilkan modal
   function bukaModalSantri() {
     const modal = document.getElementById("modalSantri");
     if (modal) modal.style.display = "block";
   }
 
+  // Menutup modal dan reset isian
   function tutupModal() {
     const modal = document.getElementById("modalSantri");
     const namaInput = document.getElementById("inputNama");
-    const semesterInput = document.getElementById("inputSemester");
+    const semesterSelect = document.getElementById("inputSemester");
     const loadingEl = document.getElementById("loadingTambahSantri");
 
     if (modal) modal.style.display = "none";
     if (namaInput) namaInput.value = "";
-    if (semesterInput) semesterInput.value = "1";
+    if (semesterSelect) semesterSelect.value = "1";
     if (loadingEl) loadingEl.style.display = "none";
   }
 
+  // Menyimpan santri baru
   async function simpanSantriBaru() {
     const nama = document.getElementById("inputNama")?.value.trim();
     const semester = document.getElementById("inputSemester")?.value;
@@ -1206,9 +1209,9 @@ function getDateRangeArray(start, end) {
 
       if (res.ok) {
         tutupModal();
-        setTimeout(() => location.reload(), 200); // reload dengan jeda
+        setTimeout(() => location.reload(), 300); // sedikit delay agar DOM stabil
       } else {
-        alert("Gagal menambahkan: " + data.error);
+        alert("Gagal menambahkan: " + (data.error || "Unknown error"));
       }
     } catch (err) {
       if (loadingEl) loadingEl.style.display = "none";
@@ -1216,6 +1219,7 @@ function getDateRangeArray(start, end) {
     }
   }
 </script>
+
 
 
   <script>
