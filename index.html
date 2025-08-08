@@ -327,13 +327,6 @@
 </div>
 
   <script>
-
-    loginError.style.display = "block"; // Tampilkan pesan error
-
-setTimeout(() => {
-  loginError.style.display = "none"; // Sembunyikan setelah 3 detik
-}, 3000);
-
  togglePasswordBtn.addEventListener("click", () => {
       const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
       passwordInput.setAttribute("type", type);
