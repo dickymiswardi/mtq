@@ -176,6 +176,15 @@
     }
   </style>
 </head>
+  <div id="modalAdmin" style="display:none;">
+  <div>
+    <h3>Masukkan Password Admin</h3>
+    <input type="password" id="inputPasswordAdmin" placeholder="Password Admin" />
+    <button onclick="verifikasiAdmin()">Verifikasi</button>
+    <button onclick="tutupModal()">Batal</button>
+    <p id="errorAdmin" style="color:red;"></p>
+  </div>
+</div>
 <body>
   <div id="overlay"><span>⏳ Loading...</span></div>
 
@@ -194,6 +203,7 @@
         <button type="submit">Login</button>
         <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
+        <button id="btnDaftarKhusus">Daftar Khusus</button>
       </div>
     </form>
 
@@ -1096,5 +1106,63 @@ function getDateRangeArray(start, end) {
     }
   }
 </script>
+
+  <script>
+    document.getElementById("btnDaftarKhusus").addEventListener("click", () => {
+  document.getElementById("modalAdmin").style.display = "block";
+});
+
+function tutupModal() {
+  document.getElementById("modalAdmin").style.display = "none";
+  document.getElementById("errorAdmin").textContent = "";
+  document.getElementById("inputPasswordAdmin").value = "";
+}
+
+async function verifikasiAdmin() {
+  const password = document.getElementById("inputPasswordAdmin").value;
+
+  const res = await fetch('/.netlify/functions/cek-admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password })
+  });
+
+  const data = await res.json();
+
+  if (res.status === 200) {
+    tutupModal();
+    bukaFormDaftarKhusus(); // panggil fungsi setelah berhasil
+  } else {
+    document.getElementById("errorAdmin").textContent = data.message || "Gagal verifikasi.";
+  }
+}
+  </script>
+  <script>
+    function bukaFormDaftarKhusus() {
+  alert("Akses admin berhasil! Menampilkan form khusus...");
+  // Misalnya tampilkan form khusus:
+  document.getElementById("formDaftarKhusus").style.display = "block";
+}
+  </script>
+  <script>
+    document.getElementById("daftarKhususForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const data = {
+    username: formData.get("username"),
+    password: formData.get("password"),
+    kelas: [formData.get("kelas")]
+  };
+
+  const res = await fetch('/.netlify/functions/daftar-user', {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+
+  const result = await res.json();
+  alert(result.message || "Terjadi kesalahan.");
+});
+  </script>
 </body>
 </html>
