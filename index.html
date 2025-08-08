@@ -339,6 +339,7 @@
     <!-- Dashboard -->
     <div id="dashboard-card" class="card" style="display: none;">
       <h1>Mutaba'ah Hafalan Santri</h1>
+      <h2>Selamat datang, <span id="namaUser"></span>!</h2>
 
       <div class="dashboard-header">
   <div class="dashboard-header-row">
@@ -418,6 +419,18 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
 
   
   <script>
+
+    function login() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  // Asumsikan verifikasi berhasil
+  document.getElementById("login-card").style.display = "none";
+  document.getElementById("dashboard-card").style.display = "block";
+
+  // Tampilkan nama user
+  document.getElementById("namaUser").textContent = username;
+}
 
     document.getElementById("totalAllJuzHeader").addEventListener("click", bukaOverlayTotalAllJuz);
     
