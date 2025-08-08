@@ -178,6 +178,22 @@
 </head>
 <body>
   <div id="overlay"><span>⏳ Loading...</span></div>
+  <!-- Overlay Daftar User -->
+<div id="daftarOverlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000;">
+  <div style="background:white; margin:5% auto; padding:20px; width:300px; border-radius:10px; position:relative;">
+    <h3>Daftar Akun Baru</h3>
+    <form id="formDaftar" onsubmit="submitDaftar(event)">
+      <input type="text" id="daftarUsername" placeholder="Username" required /><br /><br />
+      <input type="password" id="daftarPassword" placeholder="Password" required /><br /><br />
+      
+      <label for="kelasSelect">Pilih Kelas:</label><br />
+      <select id="kelasSelectDaftar" multiple size="4" required></select><br /><br />
+      
+      <button type="submit">Simpan</button>
+      <button type="button" onclick="tutupOverlayDaftar()">Batal</button>
+    </form>
+  </div>
+</div>
 
 <div class="container">
   <!-- Halaman Login -->
@@ -194,6 +210,7 @@
         <button type="submit">Login</button>
         <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
+        <button onclick="bukaOverlayDaftar()">Daftar2</button>
       </div>
     </form>
 
@@ -1093,6 +1110,59 @@ function getDateRangeArray(start, end) {
     } catch (err) {
       loadingEl.style.display = "none";
       alert("Terjadi kesalahan: " + err.message);
+    }
+  }
+</script>
+  <script>
+  const daftarOverlay = document.getElementById("daftarOverlay");
+  const kelasSelectDaftar = document.getElementById("kelasSelectDaftar");
+
+  // Contoh data kelas (bisa di-fetch dari file .json nanti)
+  const semuaKelas = ["kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5"];
+
+  function bukaOverlayDaftar() {
+    kelasSelectDaftar.innerHTML = "";
+    semuaKelas.forEach(k => {
+      const option = document.createElement("option");
+      option.value = k;
+      option.textContent = k;
+      kelasSelectDaftar.appendChild(option);
+    });
+    daftarOverlay.style.display = "block";
+  }
+
+  function tutupOverlayDaftar() {
+    daftarOverlay.style.display = "none";
+  }
+
+  async function submitDaftar(event) {
+    event.preventDefault();
+    const username = document.getElementById("daftarUsername").value.trim();
+    const password = document.getElementById("daftarPassword").value.trim();
+    const selectedKelas = Array.from(kelasSelectDaftar.selectedOptions).map(opt => opt.value);
+
+    if (!username || !password || selectedKelas.length === 0) {
+      alert("Semua field harus diisi.");
+      return;
+    }
+
+    const newUser = {
+      username,
+      password,
+      akses_kelas: selectedKelas
+    };
+
+    // Kirim ke API untuk simpan (ubah ke URL Netlify Functions Anda)
+    const response = await fetch("/.netlify/functions/daftar-khusus", {
+      method: "POST",
+      body: JSON.stringify(newUser),
+    });
+
+    if (response.ok) {
+      alert("Berhasil daftar user baru!");
+      tutupOverlayDaftar();
+    } else {
+      alert("Gagal menyimpan: " + (await response.text()));
     }
   }
 </script>
