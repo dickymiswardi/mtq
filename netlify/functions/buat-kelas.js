@@ -1,62 +1,52 @@
-const { Octokit } = require("@octokit/core");
+const fetch = require("node-fetch");
+
+const GITHUB_API_BASE = "https://api.github.com";
+const REPO = "dickymiswardi/usermtq";
+const TOKEN = process.env.MTQ_TOKEN;
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      body: "Method Not Allowed",
+    };
   }
 
-  const token = process.env.MTQ_TOKEN;
-  const repo = 'dickymiswardi/usermtq';
-  const octokit = new Octokit({ auth: token });
+  const { namaFile } = JSON.parse(event.body || "{}");
 
-  try {
-    const body = JSON.parse(event.body);
-    const nama = body.nama.replace(/\s+/g, '').toLowerCase();
+  if (!namaFile) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "namaFile harus disertakan" }),
+    };
+  }
 
-    if (!nama) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: 'Nama kelas tidak valid' })
-      };
-    }
+  const path = `absensi/${namaFile}`;
+  const content = JSON.stringify([]); // isi awal kosong
+  const encodedContent = Buffer.from(content).toString("base64");
 
-    const path = `absensi/kelas_${nama}.json`;
-    const defaultContent = JSON.stringify([], null, 2);
-    const base64Content = Buffer.from(defaultContent).toString('base64');
+  const res = await fetch(`${GITHUB_API_BASE}/repos/${REPO}/contents/${path}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: `Membuat file ${namaFile}`,
+      content: encodedContent,
+    }),
+  });
 
-    // Cek jika file sudah ada
-    try {
-      await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
-        owner: 'dickymiswardi',
-        repo: 'usermtq',
-        path
-      });
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: 'Kelas sudah ada' })
-      };
-    } catch (err) {
-      // file not found = boleh buat
-    }
-
-    // Buat file baru
-    await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
-      owner: 'dickymiswardi',
-      repo: 'usermtq',
-      path,
-      message: `Buat file kelas_${nama}.json`,
-      content: base64Content
-    });
-
+  if (res.ok) {
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Kelas berhasil dibuat' })
+      body: JSON.stringify({ success: true }),
     };
-
-  } catch (err) {
+  } else {
+    const err = await res.json();
     return {
-      statusCode: 500,
-      body: JSON.stringify({ message: 'Gagal membuat kelas', error: err.message })
+      statusCode: res.status,
+      body: JSON.stringify({ error: err.message }),
     };
   }
 };
