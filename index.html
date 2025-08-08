@@ -1295,11 +1295,14 @@ async function buatAkunBaru() {
 
     if (res.status === 200) {
       successEl.textContent = "✅ Akun berhasil dibuat.";
+
       // Reset form
       document.getElementById("newUsername").value = "";
       document.getElementById("newPassword").value = "";
       document.querySelectorAll('#kelasCheckboxContainer input:checked')
               .forEach(cb => cb.checked = false);
+
+      // ❗ Tutup modal overlay
       document.getElementById("modalDaftarUser").style.display = "none";
     } else {
       errorEl.textContent = result.message || "❌ Gagal membuat akun.";
