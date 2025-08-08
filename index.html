@@ -1131,13 +1131,16 @@ function getDateRangeArray(start, end) {
 
   
 
-  <div id="modalSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
-  <div style="background:#fff; width:300px; margin:100px auto; padding:20px; border-radius:10px;">
+  <!-- Modal Tambah Santri -->
+<div id="modalSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
+  <div style="background:#fff; width:300px; margin:100px auto; padding:20px; border-radius:10px; position:relative;">
     <h2>Tambah Santri</h2>
-    <label>Nama:</label>
-    <input type="text" id="inputNama" style="width:80%; margin-bottom:10px;" />
-    <label>Semester:</label>
-    <select id="inputSemester" style="width:80%;">
+
+    <label>Nama:</label><br />
+    <input type="text" id="inputNama" style="width:100%; margin-bottom:10px;" /><br />
+
+    <label>Semester:</label><br />
+    <select id="inputSemester" style="width:100%; margin-bottom:10px;">
       <option value="1">1</option>
       <option value="2">2</option>
       <option value="3">3</option>
@@ -1145,65 +1148,75 @@ function getDateRangeArray(start, end) {
       <option value="5">5</option>
       <option value="6">6</option>
     </select>
-    <div style="margin-top:10px; display:flex; justify-content:space-between;">
+
+    <div style="display:flex; justify-content:space-between; margin-top:10px;">
       <button onclick="simpanSantriBaru()">Simpan</button>
       <button onclick="tutupModal()">Close</button>
     </div>
+
     <div id="loadingTambahSantri" style="display:none; margin-top:10px; color:blue;">
       ⏳ Menyimpan...
     </div>
   </div>
 </div>
 
-  <script>
+<!-- Tombol trigger (bisa kamu tempatkan di mana saja) -->
+<!-- <button onclick="bukaModalSantri()">Tambah Santri</button> -->
+
+<script>
   function bukaModalSantri() {
-    document.getElementById("modalSantri").style.display = "block";
+    const modal = document.getElementById("modalSantri");
+    if (modal) modal.style.display = "block";
   }
 
   function tutupModal() {
-    document.getElementById("modalSantri").style.display = "none";
-    document.getElementById("inputNama").value = "";
-    document.getElementById("inputSemester").value = "1";
-    document.getElementById("loadingTambahSantri").style.display = "none";
+    const modal = document.getElementById("modalSantri");
+    const namaInput = document.getElementById("inputNama");
+    const semesterInput = document.getElementById("inputSemester");
+    const loadingEl = document.getElementById("loadingTambahSantri");
+
+    if (modal) modal.style.display = "none";
+    if (namaInput) namaInput.value = "";
+    if (semesterInput) semesterInput.value = "1";
+    if (loadingEl) loadingEl.style.display = "none";
   }
 
   async function simpanSantriBaru() {
-  const nama = document.getElementById("inputNama").value.trim();
-  const semester = document.getElementById("inputSemester").value;
-  const kelas = document.getElementById("kelas").value;
+    const nama = document.getElementById("inputNama")?.value.trim();
+    const semester = document.getElementById("inputSemester")?.value;
+    const kelas = document.getElementById("kelas")?.value;
 
-  if (!nama) {
-    alert("Nama tidak boleh kosong.");
-    return;
-  }
-
-  const loadingEl = document.getElementById("loadingTambahSantri");
-  if (loadingEl) loadingEl.style.display = "block";
-
-  try {
-    const res = await fetch("/.netlify/functions/tambahSantri", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nama, semester, kelas })
-    });
-
-    const data = await res.json();
-    if (loadingEl) loadingEl.style.display = "none";
-
-    if (res.ok) {
-      alert("Santri berhasil ditambahkan!");
-      tutupModal();
-      setTimeout(() => location.reload(), 200); // tambahkan delay agar DOM siap
-    } else {
-      alert("Gagal menambahkan: " + data.error);
+    if (!nama) {
+      alert("Nama tidak boleh kosong.");
+      return;
     }
-  } catch (err) {
-    if (loadingEl) loadingEl.style.display = "none";
-    alert("Terjadi kesalahan: " + err.message);
-  }
-}
 
+    const loadingEl = document.getElementById("loadingTambahSantri");
+    if (loadingEl) loadingEl.style.display = "block";
+
+    try {
+      const res = await fetch("/.netlify/functions/tambahSantri", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nama, semester, kelas })
+      });
+
+      const data = await res.json();
+      if (loadingEl) loadingEl.style.display = "none";
+
+      if (res.ok) {
+        tutupModal();
+        setTimeout(() => location.reload(), 200); // reload dengan jeda
+      } else {
+        alert("Gagal menambahkan: " + data.error);
+      }
+    } catch (err) {
+      if (loadingEl) loadingEl.style.display = "none";
+      alert("Terjadi kesalahan: " + err.message);
+    }
+  }
 </script>
+
 
   <script>
 function munculkanValidasiAdmin() {
