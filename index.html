@@ -322,10 +322,18 @@
 </div>
 
     <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
+    
   </div>
 </div>
 
   <script>
+
+    loginError.style.display = "block"; // Tampilkan pesan error
+
+setTimeout(() => {
+  loginError.style.display = "none"; // Sembunyikan setelah 3 detik
+}, 3000);
+
  togglePasswordBtn.addEventListener("click", () => {
       const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
       passwordInput.setAttribute("type", type);
@@ -415,8 +423,6 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
   
   <script>
 
-    
-
     document.getElementById("totalAllJuzHeader").addEventListener("click", bukaOverlayTotalAllJuz);
     
     const loginCard = document.getElementById("login-card");
@@ -432,16 +438,6 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
     const santriTableBody = document.querySelector("#santri-table tbody");
     const saveBtn = document.getElementById("save-btn");
     const downloadBtn = document.getElementById("download-btn");
-
-    function tampilkanLoginError() {
-  const errorEl = document.getElementById("login-error");
-  errorEl.style.display = "block";
-
-  // Sembunyikan setelah 3 detik
-  setTimeout(() => {
-    errorEl.style.display = "none";
-  }, 3000);
-}
 
     let surahList = [];
     let pagesMap = {};
