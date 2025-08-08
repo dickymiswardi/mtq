@@ -1304,9 +1304,13 @@ async function buatAkunBaru() {
 
       // Tunggu 1 detik lalu tutup overlay
       setTimeout(() => {
-        document.getElementById("overlayDaftarUser").style.display = "none";
+        // Coba cari modal berdasarkan id dulu
+        const modal = document.getElementById("overlayDaftarUser") ||
+                      document.querySelector(".overlay.daftar-user");
+        if (modal) modal.style.display = "none";
+
         successEl.textContent = "";
-      }, 1000); // 1000ms = 1 detik
+      }, 1000);
     } else {
       errorEl.textContent = result.message || "❌ Gagal membuat akun.";
     }
