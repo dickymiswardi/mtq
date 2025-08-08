@@ -1451,5 +1451,43 @@ async function submitTambahKelasBaru() {
     }
   }
 </script>
+
+<script>
+
+  function aturAksesKelas(userData) {
+  const select = document.getElementById("kelas");
+  const semuaOption = select.options;
+
+  if (userData.kelas && Array.isArray(userData.kelas)) {
+    // Hanya aktifkan kelas yang boleh diakses user
+    for (let i = 0; i < semuaOption.length; i++) {
+      const option = semuaOption[i];
+      if (userData.kelas.includes(option.value)) {
+        option.disabled = false;
+      } else {
+        option.disabled = true;
+      }
+    }
+
+    // Jika option yang terpilih saat ini disabled, ubah ke yang diperbolehkan
+    if (select.options[select.selectedIndex].disabled) {
+      const firstEnabled = Array.from(semuaOption).find(opt => !opt.disabled);
+      if (firstEnabled) {
+        select.value = firstEnabled.value;
+      }
+    }
+
+  } else {
+    // Jika user tidak punya properti "kelas", semua kelas diaktifkan
+    for (let i = 0; i < semuaOption.length; i++) {
+      semuaOption[i].disabled = false;
+    }
+  }
+}
+
+  // Setelah login berhasil
+localStorage.setItem("userData", JSON.stringify(userData));
+aturAksesKelas(userData); // atur akses berdasarkan data user
+</script>
 </body>
 </html>
