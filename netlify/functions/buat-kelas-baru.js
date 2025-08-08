@@ -15,15 +15,18 @@ exports.handler = async (event) => {
   try {
     const { namaFile } = JSON.parse(event.body || "{}");
 
+    // Validasi format file: kelas_angka.json
     if (!namaFile || !/^kelas_\d+\.json$/.test(namaFile)) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: "Format nama file tidak valid. Gunakan format kelas_{angka}.json" }),
+        body: JSON.stringify({
+          message: "Format nama file tidak valid. Gunakan format kelas_{angka}.json",
+        }),
       };
     }
 
-    const path = `absensi/${namaFile}`;
-    const content = Buffer.from("[]").toString("base64"); // isi awal: array kosong []
+    const path = `${namaFile}`; // Simpan di root (bukan di folder /absensi)
+    const content = Buffer.from("[]").toString("base64"); // isi awal file
 
     // Cek apakah file sudah ada
     const checkRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${path}`, {
