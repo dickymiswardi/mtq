@@ -195,55 +195,34 @@
         <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
         <button type="button" onclick="munculkanValidasiAdmin()">Daftar User Kelas</button>
-        <button type="button" onclick="munculkanValidasiTambahKelas()">➕ Tambah Kelas</button>
+        <button type="button" onclick="bukaModalTambahKelas()">➕ Tambah Kelas</button>
       </div>
     </form>
 
-    <div id="modalTambahKelasAdmin" class="modal" style="display:none;">
+   <div id="modalTambahKelasPassword" class="modal" style="display:none;">
   <div class="modal-content">
-    <h3>Masukkan Password Admin</h3>
-    <input type="password" id="passwordTambahKelas" placeholder="Password Admin" />
-    <button onclick="cekPasswordTambahKelas()">Lanjut</button>
-    <button onclick="tutupModal('modalTambahKelasAdmin')">Batal</button>
-    <p id="errorTambahKelas" style="color:red;"></p>
+    <h3>Verifikasi Admin</h3>
+    <input type="password" id="inputPasswordTambahKelas" placeholder="Password Admin" />
+    <button onclick="verifikasiAdminTambahKelas()">Lanjut</button>
+    <button onclick="tutupModal('modalTambahKelasPassword')">Batal</button>
+    <p id="statusPasswordTambahKelas" style="color:red;"></p>
   </div>
 </div>
 
-    <div id="modalTambahKelasBaru" class="modal" style="display:none;">
+
+    <div id="modalFormTambahKelas" class="modal" style="display:none;">
   <div class="modal-content">
-    <h3>Buat Kelas Baru</h3>
+    <h3>Tambah Kelas Baru</h3>
     <p>Kelas yang sudah ada:</p>
-    <ul id="daftarKelasTersedia"></ul>
-    <input type="number" id="inputNomorKelasBaru" placeholder="Nomor kelas (cth: 7)" />
-    <button onclick="buatKelasBaru()">Buat</button>
-    <button onclick="tutupModal('modalTambahKelasBaru')">Batal</button>
-    <p id="statusBuatKelas" style="color:red;"></p>
+    <ul id="listKelasTersedia"></ul>
+    <input type="number" id="inputNomorKelasBaruTambah" placeholder="Contoh: 7" />
+    <button onclick="submitTambahKelasBaru()">Buat</button>
+    <button onclick="tutupModal('modalFormTambahKelas')">Batal</button>
+    <p id="statusTambahKelasBaru" style="color:red;"></p>
   </div>
 </div>
 
-    <style>
-.modal {
-  position: fixed;
-  z-index: 999;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 320px;
-}
-.modal-content input {
-  width: 100%;
-  padding: 6px;
-  margin: 6px 0;
-}
-</style>
+    
 
 <!-- Modal Validasi Admin -->
 <div id="modalAdmin" class="modal" style="display:none;">
@@ -278,16 +257,23 @@
 .modal {
   position: fixed;
   z-index: 999;
-  left: 0; top: 0;
+  top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(0,0,0,0.4);
-  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
 }
 .modal-content {
   background: white;
   padding: 20px;
   border-radius: 10px;
-  width: 300px;
+  width: 320px;
+}
+.modal-content input {
+  width: 100%;
+  padding: 6px;
+  margin: 6px 0;
 }
 </style>
 
@@ -1358,84 +1344,81 @@ async function buatAkunBaru() {
 </script>
 
   <script>
-let adminPasswordGlobal = ""; // disimpan jika valid
+let passwordTambahKelas = "";
 
-function munculkanValidasiTambahKelas() {
-  document.getElementById("modalTambahKelasAdmin").style.display = "flex";
+function bukaModalTambahKelas() {
+  document.getElementById("modalTambahKelasPassword").style.display = "flex";
 }
 
 function tutupModal(id) {
   document.getElementById(id).style.display = "none";
 }
 
-async function cekPasswordTambahKelas() {
-  const password = document.getElementById("passwordTambahKelas").value;
-  const status = document.getElementById("errorTambahKelas");
-  status.textContent = "⏳ Memverifikasi...";
+async function verifikasiAdminTambahKelas() {
+  const passInput = document.getElementById("inputPasswordTambahKelas").value;
+  const status = document.getElementById("statusPasswordTambahKelas");
+  status.textContent = "⏳ Mengecek...";
 
   const res = await fetch("/.netlify/functions/cek-admin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password })
+    body: JSON.stringify({ password: passInput })
   });
 
   const result = await res.json();
   if (res.ok) {
-    status.textContent = "";
-    adminPasswordGlobal = password;
-    tutupModal("modalTambahKelasAdmin");
-    tampilkanFormTambahKelas();
+    passwordTambahKelas = passInput;
+    tutupModal("modalTambahKelasPassword");
+    tampilkanFormTambahKelasBaru();
   } else {
     status.textContent = result.message || "❌ Password salah.";
   }
 }
 
-async function tampilkanFormTambahKelas() {
-  const list = document.getElementById("daftarKelasTersedia");
-  list.innerHTML = "<li>🔄 Memuat daftar kelas...</li>";
-  document.getElementById("inputNomorKelasBaru").value = "";
-  document.getElementById("statusBuatKelas").textContent = "";
+async function tampilkanFormTambahKelasBaru() {
+  const list = document.getElementById("listKelasTersedia");
+  const status = document.getElementById("statusTambahKelasBaru");
+  document.getElementById("inputNomorKelasBaruTambah").value = "";
+  list.innerHTML = "<li>🔄 Mengambil data kelas...</li>";
+  status.textContent = "";
 
   try {
     const res = await fetch("/.netlify/functions/ambil-kelas");
-    const kelasList = await res.json();
-
+    const kelas = await res.json();
     list.innerHTML = "";
-    kelasList.forEach(k => {
+    kelas.forEach(nama => {
       const li = document.createElement("li");
-      li.textContent = k;
+      li.textContent = nama;
       list.appendChild(li);
     });
 
-    document.getElementById("modalTambahKelasBaru").style.display = "flex";
+    document.getElementById("modalFormTambahKelas").style.display = "flex";
   } catch (err) {
-    list.innerHTML = "<li>❌ Gagal memuat kelas.</li>";
+    list.innerHTML = "<li>❌ Gagal mengambil daftar kelas.</li>";
   }
 }
 
-async function buatKelasBaru() {
-  const kelas = document.getElementById("inputNomorKelasBaru").value.trim();
-  const status = document.getElementById("statusBuatKelas");
+async function submitTambahKelasBaru() {
+  const nomor = document.getElementById("inputNomorKelasBaruTambah").value.trim();
+  const status = document.getElementById("statusTambahKelasBaru");
 
-  if (!kelas) {
+  if (!nomor) {
     status.textContent = "❗ Nomor kelas harus diisi.";
     return;
   }
 
-  status.textContent = "⏳ Membuat kelas...";
-
+  status.textContent = "⏳ Mengirim permintaan...";
   const res = await fetch("/.netlify/functions/buat-kelas-baru", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ namaFile: `kelas_${kelas}.json` })
+    body: JSON.stringify({ namaFile: `kelas_${nomor}.json` })
   });
 
   const result = await res.json();
-
   if (res.ok) {
     status.style.color = "green";
     status.textContent = "✅ Kelas berhasil dibuat.";
-    setTimeout(() => tutupModal("modalTambahKelasBaru"), 1500);
+    setTimeout(() => tutupModal("modalFormTambahKelas"), 1500);
   } else {
     status.style.color = "red";
     status.textContent = result.message || "❌ Gagal membuat kelas.";
