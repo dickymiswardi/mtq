@@ -1295,22 +1295,11 @@ async function buatAkunBaru() {
 
     if (res.status === 200) {
       successEl.textContent = "✅ Akun berhasil dibuat.";
-
       // Reset form
       document.getElementById("newUsername").value = "";
       document.getElementById("newPassword").value = "";
       document.querySelectorAll('#kelasCheckboxContainer input:checked')
               .forEach(cb => cb.checked = false);
-
-      // Tunggu 1 detik lalu tutup overlay
-      setTimeout(() => {
-        // Coba cari modal berdasarkan id dulu
-        const modal = document.getElementById("overlayDaftarUser") ||
-                      document.querySelector(".overlay.daftar-user");
-        if (modal) modal.style.display = "none";
-
-        successEl.textContent = "";
-      }, 1000);
     } else {
       errorEl.textContent = result.message || "❌ Gagal membuat akun.";
     }
@@ -1320,6 +1309,5 @@ async function buatAkunBaru() {
   }
 }
 </script>
-
 </body>
 </html>
