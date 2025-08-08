@@ -1300,6 +1300,7 @@ async function buatAkunBaru() {
       document.getElementById("newPassword").value = "";
       document.querySelectorAll('#kelasCheckboxContainer input:checked')
               .forEach(cb => cb.checked = false);
+      document.getElementById("modalDaftarUser").style.display = "none";
     } else {
       errorEl.textContent = result.message || "❌ Gagal membuat akun.";
     }
