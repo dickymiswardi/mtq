@@ -1168,40 +1168,42 @@ function getDateRangeArray(start, end) {
   }
 
   async function simpanSantriBaru() {
-    const nama = document.getElementById("inputNama").value.trim();
-    const semester = document.getElementById("inputSemester").value;
-    const kelas = document.getElementById("kelas").value;
+  const nama = document.getElementById("inputNama").value.trim();
+  const semester = document.getElementById("inputSemester").value;
+  const kelas = document.getElementById("kelas").value;
 
-    if (!nama) {
-      alert("Nama tidak boleh kosong.");
-      return;
-    }
-
-    const loadingEl = document.getElementById("loadingTambahSantri");
-    loadingEl.style.display = "block";
-
-    try {
-      const res = await fetch("/.netlify/functions/tambahSantri", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nama, semester, kelas })
-      });
-
-      const data = await res.json();
-      loadingEl.style.display = "none";
-
-      if (res.ok) {
-        alert("Santri berhasil ditambahkan!");
-        tutupModal();
-        location.reload();
-      } else {
-        alert("Gagal menambahkan: " + data.error);
-      }
-    } catch (err) {
-      loadingEl.style.display = "none";
-      alert("Terjadi kesalahan: " + err.message);
-    }
+  if (!nama) {
+    alert("Nama tidak boleh kosong.");
+    return;
   }
+
+  const loadingEl = document.getElementById("loadingTambahSantri");
+  loadingEl.style.display = "block";
+
+  try {
+    const res = await fetch("/.netlify/functions/tambahSantri", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nama, semester, kelas })
+    });
+
+    const data = await res.json();
+    loadingEl.style.display = "none";
+
+    if (res.ok) {
+      alert("Santri berhasil ditambahkan!");
+      tutupModal();
+      setTimeout(() => {
+        location.reload();
+      }, 200); // jeda kecil agar DOM sempat ditutup
+    } else {
+      alert("Gagal menambahkan: " + data.error);
+    }
+  } catch (err) {
+    loadingEl.style.display = "none";
+    alert("Terjadi kesalahan: " + err.message);
+  }
+}
 </script>
 
   <script>
