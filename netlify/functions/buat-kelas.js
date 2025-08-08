@@ -14,15 +14,15 @@ exports.handler = async (event) => {
 
   const { namaFile } = JSON.parse(event.body || "{}");
 
-  if (!namaFile) {
+  if (!namaFile || !namaFile.startsWith("kelas_") || !namaFile.endsWith(".json")) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "namaFile harus disertakan" }),
+      body: JSON.stringify({ error: "namaFile harus dalam format kelas_{}.json" }),
     };
   }
 
-  const path = `absensi/${namaFile}`;
-  const content = JSON.stringify([]); // isi awal kosong
+  const path = `${namaFile}`; // letakkan di root, jika di folder: ganti jadi 'absensi/${namaFile}'
+  const content = JSON.stringify([]); // file awal kosong
   const encodedContent = Buffer.from(content).toString("base64");
 
   const res = await fetch(`${GITHUB_API_BASE}/repos/${REPO}/contents/${path}`, {
