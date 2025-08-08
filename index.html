@@ -12,6 +12,25 @@
       background: #f4f6f8;
     }
 
+
+    .modal {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background-color: white;
+  margin: 15% auto;
+  padding: 20px;
+  border-radius: 8px;
+  width: 300px;
+  text-align: center;
+}
+
 .dashboard-header {
   display: flex;
   flex-direction: column;
@@ -195,8 +214,32 @@
         <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
         <button type="button" onclick="munculkanValidasiAdmin()">Daftar User Kelas</button>
+        <button type="button" onclick="cekPasswordAdminUntukKelas()">🛠️ Buat Kelas</button>
       </div>
     </form>
+
+    <div id="modalPasswordAdmin" class="modal">
+  <div class="modal-content">
+    <h3>Masukkan Password Admin</h3>
+    <input type="password" id="inputPasswordAdmin" placeholder="Password Admin" />
+    <button onclick="verifikasiPasswordAdmin()">Lanjutkan</button>
+    <p id="pesanPasswordAdmin"></p>
+  </div>
+</div>
+
+    <div id="modalBuatKelas" class="modal">
+  <div class="modal-content">
+    <h3>Daftar Kelas</h3>
+    <ul id="daftarKelas"></ul>
+    <hr>
+    <input type="text" id="inputNamaKelasBaru" placeholder="Nama kelas baru (tanpa 'kelas_')" />
+    <button onclick="tambahKelasBaru()">+ Tambah Kelas</button>
+    <p id="pesanKelas"></p>
+    <button onclick="tutupModalKelas()">Tutup</button>
+  </div>
+</div>
+
+    
 
 <!-- Modal Validasi Admin -->
 <div id="modalAdmin" class="modal" style="display:none;">
@@ -220,7 +263,7 @@
     <div id="kelasCheckboxContainer">🔄 Memuat daftar kelas...</div><br>
 
     <button onclick="buatAkunBaru()">Create Account</button>
-    <button onclick="tutupModal('modalDaftar')">Batal</button>
+    <button onclick="tutupModal('modalDaftar')">Close</button>
     <p id="daftarError" style="color:red;"></p>
     <p id="daftarSuccess" style="color:green;"></p>
   </div>
@@ -1236,7 +1279,7 @@ async function ambilDaftarKelas() {
   container.innerHTML = "🔄 Memuat daftar kelas...";
 
   try {
-    const res = await fetch("/.netlify/functions/ambil-kelas");
+    const res = await fetch("/.netlify/functions/data-kelas");
     const kelasList = await res.json();
 
     if (!Array.isArray(kelasList) || kelasList.length === 0) {
@@ -1309,5 +1352,96 @@ async function buatAkunBaru() {
   }
 }
 </script>
+
+  <script>
+    function cekPasswordAdminUntukKelas() {
+  document.getElementById('modalPasswordAdmin').style.display = 'block';
+  document.getElementById('inputPasswordAdmin').value = '';
+  document.getElementById('pesanPasswordAdmin').innerText = '';
+}
+
+async function verifikasiPasswordAdmin() {
+  const password = document.getElementById('inputPasswordAdmin').value;
+  const pesan = document.getElementById('pesanPasswordAdmin');
+
+  try {
+    const res = await fetch('/.netlify/functions/cek-admin', {
+      method: 'POST',
+      body: JSON.stringify({ adminPassword: password }),
+    });
+
+    const hasil = await res.json();
+
+    if (res.ok && hasil.status === 'success') {
+      // Tutup modal password
+      document.getElementById('modalPasswordAdmin').style.display = 'none';
+      tampilkanModalKelas(); // Tampilkan modal buat kelas
+    } else {
+      pesan.innerText = '❌ Password salah';
+    }
+  } catch (e) {
+    pesan.innerText = '❌ Error saat verifikasi.';
+  }
+}
+
+async function tampilkanModalKelas() {
+  document.getElementById('modalBuatKelas').style.display = 'block';
+  await isiDaftarKelas();
+}
+
+function tutupModalKelas() {
+  document.getElementById('modalBuatKelas').style.display = 'none';
+  document.getElementById('inputNamaKelasBaru').value = '';
+  document.getElementById('pesanKelas').innerText = '';
+}
+
+// Ambil daftar kelas dari Netlify Function data-kelas.js
+async function isiDaftarKelas() {
+  const ul = document.getElementById('daftarKelas');
+  ul.innerHTML = '<li>⏳ Memuat kelas...</li>';
+  
+  try {
+    const res = await fetch('/.netlify/functions/data-kelas');
+    const data = await res.json();
+    ul.innerHTML = '';
+    data.forEach(kelas => {
+      const li = document.createElement('li');
+      li.textContent = `kelas_${kelas}.json`;
+      ul.appendChild(li);
+    });
+  } catch (err) {
+    ul.innerHTML = '<li>⚠️ Gagal memuat daftar kelas</li>';
+  }
+}
+
+// Fungsi tambah kelas baru
+async function tambahKelasBaru() {
+  const namaKelas = document.getElementById('inputNamaKelasBaru').value.trim();
+  const pesan = document.getElementById('pesanKelas');
+
+  if (!namaKelas) {
+    pesan.innerText = '⚠️ Nama kelas tidak boleh kosong.';
+    return;
+  }
+
+  try {
+    const res = await fetch('/.netlify/functions/buat-kelas', {
+      method: 'POST',
+      body: JSON.stringify({ nama: namaKelas }),
+    });
+
+    const hasil = await res.json();
+
+    if (res.ok) {
+      pesan.innerText = `✅ kelas_${namaKelas}.json berhasil dibuat.`;
+      await isiDaftarKelas(); // Refresh
+    } else {
+      pesan.innerText = `❌ Gagal: ${hasil.message || 'Terjadi kesalahan.'}`;
+    }
+  } catch (e) {
+    pesan.innerText = '❌ Error saat membuat kelas.';
+  }
+}
+  </script>
 </body>
 </html>
