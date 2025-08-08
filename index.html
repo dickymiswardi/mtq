@@ -12,6 +12,58 @@
       background: #f4f6f8;
     }
 
+
+    .modal {
+  position: fixed;
+  z-index: 999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px; /* Tambahan: agar konten modal tidak nempel di tepi */
+  box-sizing: border-box;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 300px; /* Batasi ukuran maksimum di desktop */
+  box-sizing: border-box;
+}
+
+/* Responsif tambahan (opsional) */
+@media (max-width: 400px) {
+  .modal-content {
+    padding: 15px;
+    font-size: 14px;
+  }
+}
+
+
+    .login-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+@media (max-width: 600px) {
+  .login-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .login-actions button {
+    width: 100%;
+  }
+}
+
 .dashboard-header {
   display: flex;
   flex-direction: column;
@@ -190,7 +242,7 @@
   <button type="button" id="toggle-password" class="toggle-btn" onclick="togglePassword()">👁</button>
 </div>
 
-      <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
+      <div class="login-actions">
         <button type="submit">Login</button>
         <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
@@ -251,25 +303,6 @@
     <p id="daftarSuccess" style="color:green;"></p>
   </div>
 </div>
-
-<!-- Tambahkan styling sederhana -->
-<style>
-.modal {
-  position: fixed;
-  z-index: 999;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.4);
-  display: flex; align-items: center; justify-content: center;
-}
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 400px;
-}
-</style>
-
     
     <!-- Overlay Ganti Password -->
 <div id="change-password-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
