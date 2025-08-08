@@ -466,9 +466,7 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
         if (user) {
           localStorage.setItem("isLoggedIn", true);
           localStorage.setItem("username", username);
-          localStorage.setItem("kelasDiizinkan", JSON.stringify(user.kelas || []));
           showDashboard();
-          aturDropdownKelas(user);   
         } else {
           loginError.style.display = "block";
         }
@@ -478,41 +476,6 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
       }
       overlay.style.display = "none";
     });
-
-
-
-    function aturDropdownKelas(user) {
-  const dropdown = document.getElementById("kelas");
-  const semuaKelas = ["kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5", "kelas_6"];
-
-  // Kosongkan semua opsi dulu
-  dropdown.innerHTML = "";
-
-  // Jika user punya properti kelas (akses terbatas)
-  const kelasDiizinkan = Array.isArray(user.kelas) ? user.kelas : semuaKelas;
-
-  semuaKelas.forEach(kls => {
-    const option = document.createElement("option");
-    option.value = kls;
-    option.textContent = kls.replace("_", " ").toUpperCase();
-
-    // Disable jika tidak termasuk kelas yang boleh
-    if (!kelasDiizinkan.includes(kls)) {
-      option.disabled = true;
-    }
-
-    dropdown.appendChild(option);
-  });
-
-  // Pilih salah satu yang aktif
-  const pertamaAktif = Array.from(dropdown.options).find(opt => !opt.disabled);
-  if (pertamaAktif) {
-    dropdown.value = pertamaAktif.value;
-  }
-}
-
-
-    
 
     function showDashboard() {
   loginCard.style.display = "none";
