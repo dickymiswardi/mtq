@@ -306,32 +306,6 @@
 </div>
 
 
-    <div id="modalSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
-  <div style="background:#fff; width:300px; margin:100px auto; padding:20px; border-radius:10px;">
-    <h2>Tambah Santri</h2>
-    <label>Nama:</label>
-    <input type="text" id="inputNama" style="width:80%; margin-bottom:10px;" />
-    <label>Semester:</label>
-    <select id="inputSemester" style="width:80%;">
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5">5</option>
-      <option value="6">6</option>
-    </select>
-    <div style="margin-top:10px; display:flex; justify-content:space-between;">
-      <button onclick="simpanSantriBaru()">Simpan</button>
-      <button onclick="tutupModal()">Close</button>
-    </div>
-    <div id="loadingTambahSantri" style="display:none; margin-top:10px; color:blue;">
-      ⏳ Menyimpan...
-    </div>
-  </div>
-</div>
-
-    
-    
     <!-- Overlay Ganti Password -->
 <div id="change-password-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
   <div style="background:#fff; padding:20px; border-radius:8px; width:300px; position:relative;">
@@ -406,6 +380,31 @@
     </div>
   </div>
 
+
+  <div id="modalSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
+  <div style="background:#fff; width:300px; margin:100px auto; padding:20px; border-radius:10px;">
+    <h2>Tambah Santri</h2>
+    <label>Nama:</label>
+    <input type="text" id="inputNama" style="width:80%; margin-bottom:10px;" />
+    <label>Semester:</label>
+    <select id="inputSemester" style="width:80%;">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+    </select>
+    <div style="margin-top:10px; display:flex; justify-content:space-between;">
+      <button onclick="simpanSantriBaru()">Simpan</button>
+      <button onclick="tutupModal('modalSantri')">Close</button>
+    </div>
+    <div id="loadingTambahSantri" style="display:none; margin-top:10px; color:blue;">
+      ⏳ Menyimpan...
+    </div>
+  </div>
+</div>
+
 <div id="juzOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
 background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:center;">
   <div style="background:white; padding:20px; border-radius:8px; min-width:300px;">
@@ -416,6 +415,7 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
     <button onclick="document.getElementById('juzOverlay').style.display='none'">Close</button>
   </div>
 </div>
+
   
   <script>
 
@@ -1499,6 +1499,14 @@ async function submitTambahKelasBaru() {
       modal.style.display = "none";
     }
   }
+
+    function tutupModal(id) {
+  if (!id) return; // jika tidak ada ID, keluar saja
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
 </script>
 </body>
 </html>
