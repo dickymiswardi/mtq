@@ -339,6 +339,7 @@
     <!-- Dashboard -->
     <div id="dashboard-card" class="card" style="display: none;">
       <h1>Mutaba'ah Hafalan Santri</h1>
+      <p id="welcomeUser" style="font-weight:bold; font-size:18px; color:green; margin-bottom:10px;"></p>
 
       <div class="dashboard-header">
   <div class="dashboard-header-row">
@@ -458,6 +459,27 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
       e.preventDefault();
       const username = document.getElementById("username").value;
       const password = passwordInput.value;
+
+
+      // Contoh login validasi dasar, sesuaikan dengan yang kamu punya
+  const storedUsers = JSON.parse(localStorage.getItem("users")) || [];
+
+  const user = storedUsers.find(u => u.username === username && u.password === password);
+
+  if (user) {
+    // Sembunyikan login card, tampilkan dashboard
+    document.getElementById("login-card").style.display = "none";
+    document.getElementById("dashboard-card").style.display = "block";
+
+    // Tampilkan nama user
+    document.getElementById("welcomeUser").textContent = `Welcome, ${username}!`;
+
+    // Reset error (kalau ada)
+    document.getElementById("login-error").style.display = "none";
+  } else {
+    document.getElementById("login-error").style.display = "block";
+  }
+}
 
       overlay.style.display = "flex";
 
