@@ -194,8 +194,55 @@
         <button type="submit">Login</button>
         <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar</button>
+        <button type="button" onclick="munculkanValidasiAdmin()">Daftar User Kelas</button>
       </div>
     </form>
+
+<!-- Modal Validasi Admin -->
+<div id="modalAdmin" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h3>Masukkan Password Admin</h3>
+    <input type="password" id="adminPasswordInput" placeholder="Password Admin">
+    <button onclick="cekPasswordAdmin()">Lanjut</button>
+    <button onclick="tutupModal('modalAdmin')">Batal</button>
+    <p id="adminError" style="color:red;"></p>
+  </div>
+</div>
+
+<!-- Modal Form Daftar Akun -->
+<div id="modalDaftar" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h3>Daftar User Kelas</h3>
+    <label>Username: <input type="text" id="newUsername"></label><br>
+    <label>Password: <input type="password" id="newPassword"></label>
+    <label><input type="checkbox" onclick="toggleLihatPassword()"> Lihat Password</label><br><br>
+
+    <div id="kelasCheckboxContainer">🔄 Memuat daftar kelas...</div><br>
+
+    <button onclick="buatAkunBaru()">Create Account</button>
+    <button onclick="tutupModal('modalDaftar')">Batal</button>
+    <p id="daftarError" style="color:red;"></p>
+    <p id="daftarSuccess" style="color:green;"></p>
+  </div>
+</div>
+
+<!-- Tambahkan styling sederhana -->
+<style>
+.modal {
+  position: fixed;
+  z-index: 999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px;
+}
+</style>
 
     <!-- Overlay Ganti Password -->
 <div id="change-password-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
@@ -1095,6 +1142,172 @@ function getDateRangeArray(start, end) {
       alert("Terjadi kesalahan: " + err.message);
     }
   }
+</script>
+
+  <script>
+function munculkanValidasiAdmin() {
+  document.getElementById("modalAdmin").style.display = "flex";
+  document.getElementById("adminPasswordInput").value = "";
+  document.getElementById("adminError").textContent = "";
+}
+
+// Fungsi untuk cek password admin
+async function cekPasswordAdmin() {
+  const password = document.getElementById("adminPasswordInput").value;
+
+  if (!password) {
+    document.getElementById("adminError").textContent = "Password wajib diisi.";
+    return;
+  }
+
+  const response = await fetch('/.netlify/functions/cek-admin', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ password })
+  });
+
+  const result = await response.json();
+
+  if (response.status === 200) {
+    tutupModal("modalAdmin");
+    bukaFormDaftar(password); // password disimpan sementara
+  } else {
+    document.getElementById("adminError").textContent = result.message || "Gagal validasi.";
+  }
+}
+
+// Buka modal daftar setelah validasi admin sukses
+let adminPasswordGlobal = "";
+function bukaFormDaftar(adminPass) {
+  adminPasswordGlobal = adminPass;
+  document.getElementById("modalDaftar").style.display = "flex";
+  document.getElementById("daftarError").textContent = "";
+  document.getElementById("daftarSuccess").textContent = "";
+  ambilDaftarKelas(); // Load daftar kelas dari GitHub
+}
+
+// Tutup modal
+function tutupModal(id) {
+  document.getElementById(id).style.display = "none";
+}
+
+// Toggle lihat password
+function toggleLihatPassword() {
+  const pwField = document.getElementById("newPassword");
+  pwField.type = pwField.type === "password" ? "text" : "password";
+}
+</script>
+
+  <script>
+async function ambilDaftarKelas() {
+  const container = document.getElementById("kelasCheckboxContainer");
+  container.innerHTML = "🔄 Memuat daftar kelas...";
+
+  try {
+    const res = await fetch("https://api.github.com/repos/dickymiswardi/usermtq/contents");
+    const data = await res.json();
+
+    // Filter nama file seperti: kelas_1.json
+    const kelasFiles = data.filter(file => /^kelas_\d+\.json$/.test(file.name));
+
+    if (kelasFiles.length === 0) {
+      container.innerHTML = "❌ Tidak ada file kelas_{}.json ditemukan.";
+      return;
+    }
+
+    container.innerHTML = ""; // Bersihkan
+
+    kelasFiles.forEach(file => {
+      const kelas = file.name.replace(".json", ""); // contoh: kelas_1
+      const label = document.createElement("label");
+      label.innerHTML = `<input type="checkbox" value="${kelas}"> ${kelas}<br>`;
+      container.appendChild(label);
+    });
+  } catch (err) {
+    container.innerHTML = "❌ Gagal memuat kelas.";
+    console.error("Gagal fetch kelas:", err);
+  }
+}
+</script>
+  
+  <script>
+    async function ambilDaftarKelas() {
+  const container = document.getElementById("kelasCheckboxContainer");
+  container.innerHTML = "🔄 Memuat daftar kelas...";
+
+  try {
+    const res = await fetch("/.netlify/functions/ambil-kelas");
+    const kelasList = await res.json();
+
+    if (!Array.isArray(kelasList) || kelasList.length === 0) {
+      container.innerHTML = "❌ Tidak ada kelas ditemukan.";
+      return;
+    }
+
+    container.innerHTML = ""; // Bersihkan
+
+    kelasList.forEach(kelas => {
+      const label = document.createElement("label");
+      label.innerHTML = `<input type="checkbox" value="${kelas}"> ${kelas}<br>`;
+      container.appendChild(label);
+    });
+  } catch (err) {
+    container.innerHTML = "❌ Gagal memuat kelas.";
+    console.error("Gagal fetch kelas:", err);
+  }
+}
+  </script>
+
+  <script>
+async function buatAkunBaru() {
+  const username = document.getElementById("newUsername").value.trim();
+  const password = document.getElementById("newPassword").value.trim();
+  const kelasChecked = Array.from(
+    document.querySelectorAll('#kelasCheckboxContainer input:checked')
+  ).map(cb => cb.value);
+
+  const errorEl = document.getElementById("daftarError");
+  const successEl = document.getElementById("daftarSuccess");
+
+  errorEl.textContent = "";
+  successEl.textContent = "";
+
+  if (!username || !password || kelasChecked.length === 0) {
+    errorEl.textContent = "Semua kolom dan kelas wajib diisi.";
+    return;
+  }
+
+  const payload = {
+    username,
+    password,
+    kelas: kelasChecked,
+    adminPassword: adminPasswordGlobal
+  };
+
+  try {
+    const res = await fetch('/.netlify/functions/daftar-khusus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+
+    if (res.status === 200) {
+      successEl.textContent = "✅ Akun berhasil dibuat.";
+      // Reset form
+      document.getElementById("newUsername").value = "";
+      document.getElementById("newPassword").value = "";
+      document.querySelectorAll('#kelasCheckboxContainer input:checked')
+              .forEach(cb => cb.checked = false);
+    } else {
+      errorEl.textContent = result.message || "❌ Gagal membuat akun.";
+    }
+  } catch (err) {
+    console.error("Gagal kirim data:", err);
+    errorEl.textContent = "Terjadi kesalahan jaringan.";
+  }
+}
 </script>
 </body>
 </html>
