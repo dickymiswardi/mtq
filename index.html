@@ -34,6 +34,22 @@
   font-size: 16px;
 }
 
+    .password-login-group {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* jarak antara password dan tombol login */
+}
+
+.password-login-group button {
+  white-space: nowrap; /* biar tulisan "Login" nggak pecah */
+}
+
+    
+#username {
+  width: 250px; /* atur lebar sesuai kebutuhan */
+  max-width: 100%; /* biar tetap responsif di layar kecil */
+  box-sizing: border-box; /* supaya padding ikut hitung lebar */
+}
 
    .modal {
   position: fixed;
@@ -263,6 +279,7 @@
     <input type="password" id="password" placeholder="Password" required />
     <span class="toggle-password" onclick="togglePassword()">👁</span>
   </div>
+  <button type="submit">Login</button>
 </div>
 
       <div class="login-actions">
