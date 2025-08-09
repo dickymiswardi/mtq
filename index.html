@@ -600,7 +600,14 @@ function aturDropdownKelas(user) {
   kelasSelect.addEventListener("change", loadDataSantri);
 
   // === Header total juz click ===
-  totalAllJuzHeader.addEventListener("click", bukaOverlayTotalAllJuz);
+  window.addEventListener("DOMContentLoaded", () => {
+  const totalAllJuzHeader = document.getElementById("totalAllJuzHeader");
+  if (totalAllJuzHeader) {
+    totalAllJuzHeader.addEventListener("click", bukaOverlayTotalAllJuz);
+  } else {
+    console.warn("Elemen #totalAllJuzHeader tidak ditemukan!");
+  }
+});
     
 
     function showDashboard() {
