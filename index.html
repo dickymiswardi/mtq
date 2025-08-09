@@ -1625,55 +1625,6 @@ async function submitTambahKelasBaru() {
 }
 </script>
 
-  <script>
-    const loadedFonts = new Set();
-
-function loadFontForPage(pageNum) {
-  const fontName = `QCF_P${String(pageNum).padStart(3, '0')}`;
-  if (loadedFonts.has(fontName)) return;
-
-  const fontUrl = `https://github.com/dickymiswardi/quran/raw/refs/heads/main/fonts/${fontName}.TTF`;
-  const style = document.createElement('style');
-  style.id = `font-${fontName}`;
-  style.textContent = `
-    @font-face {
-      font-family: '${fontName}';
-      src: url('${fontUrl}') format('truetype');
-      font-weight: normal;
-      font-style: normal;
-    }
-  `;
-  document.head.appendChild(style);
-  loadedFonts.add(fontName);
-}
-
-function renderAyat(ayatObj) {
-  const { key, text, page } = ayatObj;
-  loadFontForPage(page);
-
-  const span = document.createElement('span');
-  span.textContent = text;
-  span.style.fontFamily = `QCF_P${String(page).padStart(3, '0')}`;
-  span.style.display = 'block';
-  span.style.marginBottom = '12px';
-  return span;
-}
-
-function bukaModalQuran(quranData) {
-  const container = document.getElementById('modalAyatContainer');
-  container.innerHTML = '';
-
-  quranData.forEach(ayatObj => {
-    const ayatElem = renderAyat(ayatObj);
-    container.appendChild(ayatElem);
-  });
-
-  document.getElementById('modalQuran').style.display = 'block';
-}
-
-function tutupModal(id) {
-  document.getElementById(id).style.display = 'none';
-}
-  </script>
+  
 </body>
 </html>
