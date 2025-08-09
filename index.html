@@ -437,24 +437,35 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
   let pagesMap = {};
 
   // === Fungsi atur dropdown kelas ===
-  function aturDropdownKelas(user) {
-    const semuaKelas = ["kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5", "kelas_6"];
-    kelasSelect.innerHTML = "";
+function aturDropdownKelas(user) {
+  const semuaKelas = ["kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5", "kelas_6"];
 
-    const kelasDiizinkan = user?.kelas?.length ? user.kelas : semuaKelas;
+  // Mapping custom nama
+  const namaKelasCustom = {
+    kelas_1: "Kelompok Lebah",
+    kelas_2: "Kelompok Semut",
+    kelas_3: "Kelompok Burung",
+    kelas_4: "Kelompok Ikan",
+    kelas_5: "Kelompok Harimau",
+    kelas_6: "Kelompok Gajah"
+  };
 
-    semuaKelas.forEach(kls => {
-      const opt = document.createElement("option");
-      opt.value = kls;
-      opt.textContent = kls.replace("kelas_", "Kelas ");
-      opt.disabled = !kelasDiizinkan.includes(kls);
-      kelasSelect.appendChild(opt);
-    });
+  kelasSelect.innerHTML = "";
 
-    // Pilih kelas aktif pertama
-    const pertamaAktif = Array.from(kelasSelect.options).find(o => !o.disabled);
-    if (pertamaAktif) kelasSelect.value = pertamaAktif.value;
-  }
+  const kelasDiizinkan = user?.kelas?.length ? user.kelas : semuaKelas;
+
+  semuaKelas.forEach(kls => {
+    const opt = document.createElement("option");
+    opt.value = kls;
+    opt.textContent = namaKelasCustom[kls] || kls; // pakai custom kalau ada
+    opt.disabled = !kelasDiizinkan.includes(kls);
+    kelasSelect.appendChild(opt);
+  });
+
+  // Pilih kelas aktif pertama
+  const pertamaAktif = Array.from(kelasSelect.options).find(o => !o.disabled);
+  if (pertamaAktif) kelasSelect.value = pertamaAktif.value;
+}
 
   // === Tampilkan dashboard ===
   function showDashboard() {
