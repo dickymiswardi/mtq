@@ -986,8 +986,11 @@ function aturDropdownKelas(user) {
 });
 
 
-// Ambil semua data juz absensi rentang tanggal
-  async function hitungTotalAllJuzFromTable() {
+const overlay = document.getElementById("juzOverlay");
+const kelasSelect = document.getElementById("kelasSelect");
+const santriTableBody = document.querySelector("#santriTable tbody"); // sesuaikan dengan ID tabelmu
+
+async function hitungTotalAllJuzFromTable() {
   const kelas = kelasSelect.value;
   const dari = document.getElementById("rangeDari").value;
   const sampai = document.getElementById("rangeSampai").value;
@@ -997,39 +1000,38 @@ function aturDropdownKelas(user) {
     return;
   }
 
-  overlay.style.display = "flex";
-      // Tutup overlay setelah selesai
-overlay.style.display = "none";
-
-
   try {
-    // Ambil semua data absensi rentang tanggal
+    overlay.style.display = "flex";
+
     const res = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+
     const allData = await res.json();
 
     const rows = santriTableBody.querySelectorAll("tr");
-    const rekap = {}; // { id: {totalJuz, semester} }
+    const rekap = {};
 
-    // Rekap total per santri
-    allData.forEach(item => {
-      const id = item.id;
-      if (!rekap[id]) {
-        rekap[id] = {
-          totalJuz: 0,
-          semester: item.semester || null,
-        };
-      }
-      rekap[id].totalJuz += parseFloat(item.totalJuz || 0);
+    // Initialize totalJuz per santri
+    rows.forEach(row => {
+      const id = parseInt(row.children[0].textContent);
+      rekap[id] = 0;
     });
 
-    // Update ke tabel kolom "Total All Juz"
+    // Hitung totalJuz dari data
+    allData.forEach(item => {
+      const id = parseInt(item.id);
+      const totalJuz = parseFloat(item.totalJuz) || 0;
+      if (rekap.hasOwnProperty(id)) {
+        rekap[id] += totalJuz;
+      }
+    });
+
+    // Update kolom "Total All Juz"
     rows.forEach(row => {
       const id = parseInt(row.children[0].textContent);
       const cell = row.querySelector(".total-all-juz");
-      if (rekap[id]) {
-        cell.textContent = rekap[id].totalJuz.toFixed(2);
-      } else {
-        cell.textContent = "0.00";
+      if (cell) {
+        cell.textContent = rekap[id].toFixed(2);
       }
     });
 
@@ -1037,52 +1039,11 @@ overlay.style.display = "none";
   } catch (err) {
     console.error(err);
     alert("❌ Gagal memproses Total All Juz.");
+  } finally {
+    overlay.style.display = "none";
   }
-
-  overlay.style.display = "none";
 }
 
-    function hitungTotalAllJuzFromTable() {
-  const rows = santriTableBody.querySelectorAll("tr");
-  const kelas = kelasSelect.value;
-
-  const dari = document.getElementById("rangeDari").value;
-  const sampai = document.getElementById("rangeSampai").value;
-
-  if (!dari || !sampai) {
-    alert("Pilih rentang tanggal terlebih dahulu.");
-    return;
-  }
-
-  const dateRange = getDateRangeArray(dari, sampai);
-
-  // Ambil ID & Nama Santri dari Tabel
-  const santriList = Array.from(rows).map(row => ({
-    id: parseInt(row.children[0].textContent),
-    nama: row.children[1].textContent.trim(),
-    semester: parseInt(row.querySelector(".semester").value),
-    rowEl: row
-  }));
-
-  overlay.style.display = "flex";
-  document.getElementById("juzOverlay").style.display = "none";
-
-  fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`)
-    .then(res => res.json())
-    .then(data => {
-      const totalMap = {}; // id => total juz
-
-      santriList.forEach(s => {
-        totalMap[s.id] = 0;
-      });
-
-      data.forEach(item => {
-        const id = parseInt(item.id);
-        const juz = parseFloat(item.totalJuz || 0);
-        if (!isNaN(juz) && totalMap.hasOwnProperty(id)) {
-          totalMap[id] += juz;
-        }
-      });
 
       // Batas TUNTAS per semester
 const batasSemester = { 1: 8, 2: 13, 3: 18, 4: 23, 5: 28, 6: 30 };
@@ -1590,7 +1551,8 @@ async function submitTambahKelasBaru() {
 </script>
 
   <script>
-    window.addEventListener("load", () => {
+   window.addEventListener("load", () => {
+  // Set default tanggal hari ini di input
   const today = new Date().toISOString().slice(0, 10);
   const dariInput = document.getElementById("rangeDari");
   const sampaiInput = document.getElementById("rangeSampai");
@@ -1598,9 +1560,7 @@ async function submitTambahKelasBaru() {
   if (dariInput && !dariInput.value) dariInput.value = today;
   if (sampaiInput && !sampaiInput.value) sampaiInput.value = today;
 
-  if (typeof hitungTotalAllJuzFromTable === "function") {
-    hitungTotalAllJuzFromTable();
-  }
+  hitungTotalAllJuzFromTable();
 });
   </script>
 </body>
