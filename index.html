@@ -12,6 +12,40 @@
       background: #f4f6f8;
     }
 
+    .password-login-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+}
+
+.password-login-wrapper input {
+  flex: 1;
+  padding-right: 35px; /* ruang untuk icon 👁 */
+  box-sizing: border-box;
+}
+
+.toggle-password {
+  position: relative;
+  margin-left: -35px; /* letakkan icon di dalam input */
+  cursor: pointer;
+  user-select: none;
+  font-size: 16px;
+}
+
+.login-btn-inline {
+  background: #1e88e5;
+  color: white;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.login-btn-inline:hover {
+  background: #1565c0;
+}
+
 #username {
   width: 266px; /* atur lebar sesuai kebutuhan */
   max-width: 100%; /* biar tetap responsif di layar kecil */
@@ -239,20 +273,21 @@
   <div id="login-card" class="card">
     <h1>Login Pengajar</h1>
     <form id="login-form" onsubmit="event.preventDefault(); login();">
-      <input type="text" id="username" placeholder="Username" required />
-      <div class="password-group" style="display: flex; align-items: center;">
-  <input type="password" id="password" placeholder="Password" required style="flex: 1;" />
-  <button type="button" id="toggle-password" class="toggle-btn" onclick="togglePassword()">👁</button>
-</div>
+  <input type="text" id="username" placeholder="Username" required />
 
-      <div class="login-actions">
-        <button type="submit">Login</button>
-        <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
-        <button type="button" id="daftar-btn" onclick="daftar()">Daftar Admin</button>
-        <button type="button" onclick="munculkanValidasiAdmin()">Daftar User Kelas</button>
-        <button type="button" onclick="bukaModalTambahKelas()">Tambah Kelas</button>
-      </div>
-    </form>
+  <div class="password-login-wrapper">
+    <input type="password" id="password" placeholder="Password" required />
+    <span class="toggle-password" onclick="togglePassword()">👁</span>
+    <button type="submit" class="login-btn-inline">Login</button>
+  </div>
+
+  <div class="login-actions">
+    <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
+    <button type="button" id="daftar-btn" onclick="daftar()">Daftar Admin</button>
+    <button type="button" onclick="munculkanValidasiAdmin()">Daftar User Kelas</button>
+    <button type="button" onclick="bukaModalTambahKelas()">Tambah Kelas</button>
+  </div>
+</form>
 
 
     <div id="modalTambahKelasPassword" class="modal" style="display:none;">
