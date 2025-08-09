@@ -1531,14 +1531,11 @@ async function submitTambahKelasBaru() {
 </script>
 
   <script>
-     // === Toggle password (supaya tidak error) ===
-  if (togglePasswordBtn) {
-    togglePasswordBtn.addEventListener("click", () => {
-      const type = passwordInput.type === "password" ? "text" : "password";
-      passwordInput.type = type;
+ togglePasswordBtn.addEventListener("click", () => {
+      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
       togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
     });
-  }
-  </script>
+</script>
 </body>
 </html>
