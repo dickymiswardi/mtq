@@ -1601,41 +1601,53 @@ async function submitTambahKelasBaru() {
 let quranData = {};
 let ayahPageMap = {};
 
+// Ambil file Quran & mapping halaman sekali saat load
 Promise.all([
   fetch('https://raw.githubusercontent.com/videomurottal/tadabbur/refs/heads/main/quran_uthmani_quran_com.json')
     .then(res => res.json())
-    .then(data => quranData = data),
+    .then(data => { quranData = data; }),
 
   fetch('https://raw.githubusercontent.com/dickymiswardi/tadabbur/refs/heads/main/ayah_page_map.json')
     .then(res => res.json())
-    .then(data => ayahPageMap = data)
+    .then(data => { ayahPageMap = data; })
 ]).catch(err => console.error('Gagal memuat data:', err));
 
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
     const row = e.target.closest('tr');
-    const surahDari = row.querySelector('.surah-dari').value;
-    const ayatDari = row.querySelector('.ayat-dari').value;
-    const surahSampai = row.querySelector('.surah-sampai').value;
-    const ayatSampai = row.querySelector('.ayat-sampai').value;
 
-    // Ambil halaman awal
+    // Ambil nilai langsung dari dropdown
+    const surahDari = parseInt(row.querySelector('.surah-dari').value);
+    const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
+    const surahSampai = parseInt(row.querySelector('.surah-sampai').value);
+    const ayatSampai = parseInt(row.querySelector('.ayat-sampai').value);
+
+    // Cari halaman awal dari ayat pertama
     const page = ayahPageMap[`${surahDari}:${ayatDari}`];
+    if (!page) {
+      alert('Halaman tidak ditemukan di mapping!');
+      return;
+    }
+
     const pageStr = String(page).padStart(3, '0');
     const fontUrl = `https://github.com/dickymiswardi/quran/raw/refs/heads/main/fonts/QCF_P${pageStr}.TTF`;
 
-    // Load font ke browser
-    const font = new FontFace('QCFPageFont', `url(${fontUrl})`);
-    await font.load();
-    document.fonts.add(font);
+    // Load font halaman pertama
+    try {
+      const font = new FontFace('QCFPageFont', `url(${fontUrl})`);
+      await font.load();
+      document.fonts.add(font);
+    } catch (err) {
+      console.error('Gagal memuat font Quran:', err);
+    }
 
-    // Ambil ayat sesuai range
+    // Kumpulkan ayat sesuai range
     let resultAyat = [];
-    for (let s = Number(surahDari); s <= Number(surahSampai); s++) {
-      const start = (s === Number(surahDari)) ? Number(ayatDari) : 1;
-      const end = (s === Number(surahSampai)) ? Number(ayatSampai) : 300;
+    for (let s = surahDari; s <= surahSampai; s++) {
+      const ayatMulai = (s === surahDari) ? ayatDari : 1;
+      const ayatAkhir = (s === surahSampai) ? ayatSampai : 300; // cukup besar
 
-      for (let a = start; a <= end; a++) {
+      for (let a = ayatMulai; a <= ayatAkhir; a++) {
         const key = `${s}:${a}`;
         if (quranData[key]) {
           resultAyat.push(quranData[key].replace(/\|/g, ' '));
@@ -1643,7 +1655,7 @@ document.addEventListener('click', async function(e) {
       }
     }
 
-    // Tampilkan overlay
+    // Tampilkan di overlay dengan font halaman awal
     const quranText = document.getElementById('quran-text');
     quranText.style.fontFamily = 'QCFPageFont';
     quranText.innerText = resultAyat.join('\n');
