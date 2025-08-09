@@ -601,9 +601,6 @@ function aturDropdownKelas(user) {
 
   // === Header total juz click ===
   totalAllJuzHeader.addEventListener("click", bukaOverlayTotalAllJuz);
-
-
-
     
 
     function showDashboard() {
@@ -1533,5 +1530,13 @@ async function submitTambahKelasBaru() {
   }
 }
 </script>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+  const headerKetuntasan = document.getElementById("totalAllJuzHeader");
+  headerKetuntasan.addEventListener("click", () => {
+    // kode buka modal
+  });
+});
+  </script>
 </body>
 </html>
