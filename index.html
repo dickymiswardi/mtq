@@ -12,13 +12,20 @@
       background: #f4f6f8;
     }
 
-    #santri-table th:first-child,
-#santri-table td:first-child {
+/* Header tabel No. tetap biasa, background transparan */
+#santri-table thead th:first-child {
+  position: static;      /* default */
+  background: transparent;
+  z-index: auto;
+}
+
+/* Kolom No di tbody yang sticky */
+#santri-table tbody td:first-child {
   position: sticky;
   left: 0;
   background: white;
   z-index: 5;
-  border-right: 1px solid #ccc; /* opsional, biar ada garis pembatas */
+  border-right: 1px solid #ccc;
 }
 
     .password-wrapper {
