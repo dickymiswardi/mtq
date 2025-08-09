@@ -12,39 +12,25 @@
       background: #f4f6f8;
     }
 
-    .login-form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh; /* agar vertikal center */
-  gap: 15px;
-}
-
-.password-login-wrapper {
+    .password-login-wrapper {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
+  width: 35%;
 }
 
-.password-field {
-  position: relative;
+.password-login-wrapper input {
   flex: 1;
-}
-
-.password-field input {
-  width: 250px;
-  padding-right: 35px;
+  padding-right: 35px; /* ruang untuk icon 👁 */
   box-sizing: border-box;
 }
 
 .toggle-password {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
+  margin-left: -35px; /* letakkan icon di dalam input */
   cursor: pointer;
   user-select: none;
+  font-size: 16px;
 }
 
 .login-btn-inline {
@@ -58,13 +44,6 @@
 
 .login-btn-inline:hover {
   background: #1565c0;
-}
-
-.login-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
 }
 
 
@@ -294,15 +273,12 @@
   <!-- Halaman Login -->
   <div id="login-card" class="card">
     <h1>Login Pengajar</h1>
-    <form id="login-form" onsubmit="event.preventDefault(); login();" class="login-form">
-  
+    <form id="login-form" onsubmit="event.preventDefault(); login();">
   <input type="text" id="username" placeholder="Username" required />
 
   <div class="password-login-wrapper">
-    <div class="password-field">
-      <input type="password" id="password" placeholder="Password" required />
-      <span class="toggle-password" onclick="togglePassword()">👁</span>
-    </div>
+    <input type="password" id="password" placeholder="Password" required />
+    <span class="toggle-password" onclick="togglePassword()">👁</span>
     <button type="submit" class="login-btn-inline">Login</button>
   </div>
 
@@ -313,6 +289,7 @@
     <button type="button" onclick="bukaModalTambahKelas()">Tambah Kelas</button>
   </div>
 </form>
+
 
 
 
