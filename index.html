@@ -1597,7 +1597,7 @@ async function submitTambahKelasBaru() {
   }
 </script>
 
-  <script>
+<script>
 let quranData = {};
 
 // Ambil file Quran sekali saat load
@@ -1610,23 +1610,22 @@ document.addEventListener('click', function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
     const row = e.target.closest('tr');
 
-    // Misal: kolom ke-4 = Setoran Dari, ke-5 = Setoran Sampai
-    const dari = row.children[3].innerText.trim(); // format: 1:1
-    const sampai = row.children[4].innerText.trim(); // format: 1:7
-
-    const [surahDari, ayatDari] = dari.split(':').map(Number);
-    const [surahSampai, ayatSampai] = sampai.split(':').map(Number);
+    // Ambil nilai langsung dari dropdown
+    const surahDari = parseInt(row.querySelector('.surah-dari').value);
+    const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
+    const surahSampai = parseInt(row.querySelector('.surah-sampai').value);
+    const ayatSampai = parseInt(row.querySelector('.ayat-sampai').value);
 
     let resultAyat = [];
 
     for (let s = surahDari; s <= surahSampai; s++) {
       const ayatMulai = (s === surahDari) ? ayatDari : 1;
-      const ayatAkhir = (s === surahSampai) ? ayatSampai : 300; // 300 agar cukup besar
+      const ayatAkhir = (s === surahSampai) ? ayatSampai : 300; // angka besar biar cukup
 
       for (let a = ayatMulai; a <= ayatAkhir; a++) {
         const key = `${s}:${a}`;
         if (quranData[key]) {
-          resultAyat.push(`${quranData[key].replace(/\|/g, ' ')}`);
+          resultAyat.push(quranData[key].replace(/\|/g, ' '));
         }
       }
     }
@@ -1635,7 +1634,8 @@ document.addEventListener('click', function(e) {
     document.getElementById('overlay-quran').style.display = 'flex';
   }
 });
-  </script>
+</script>
+
   
 
   <script>
