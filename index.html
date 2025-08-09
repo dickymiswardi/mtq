@@ -324,6 +324,13 @@
 </div>
 
     <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
+    <script>
+ togglePasswordBtn.addEventListener("click", () => {
+      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
+      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
+    });
+</script>
     
   </div>
 </div>
@@ -1528,14 +1535,6 @@ async function submitTambahKelasBaru() {
     modal.style.display = "none";
   }
 }
-</script>
-
-  <script>
- togglePasswordBtn.addEventListener("click", () => {
-      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
-      passwordInput.setAttribute("type", type);
-      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
-    });
 </script>
 </body>
 </html>
