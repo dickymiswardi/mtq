@@ -1600,10 +1600,11 @@ async function submitTambahKelasBaru() {
 <script>
 let quranData = {};
 let ayahPageMap = {};
+let dataSiap = null;
 
 // Ambil file Quran & mapping halaman sekali saat load
-Promise.all([
-  fetch('https://raw.githubusercontent.com/videomurottal/tadabbur/refs/heads/main/quran_uthmani_quran_com.json')
+dataSiap = Promise.all([
+  fetch('https://raw.githubusercontent.com/dickymiswardi/mtq/refs/heads/main/symbol1.json')
     .then(res => res.json())
     .then(data => { quranData = data; }),
 
@@ -1614,6 +1615,10 @@ Promise.all([
 
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
+
+    // Pastikan data Quran & mapping sudah siap
+    await dataSiap;
+
     const row = e.target.closest('tr');
 
     // Ambil nilai langsung dari dropdown
@@ -1645,7 +1650,7 @@ document.addEventListener('click', async function(e) {
     let resultAyat = [];
     for (let s = surahDari; s <= surahSampai; s++) {
       const ayatMulai = (s === surahDari) ? ayatDari : 1;
-      const ayatAkhir = (s === surahSampai) ? ayatSampai : 300; // cukup besar
+      const ayatAkhir = (s === surahSampai) ? ayatSampai : 300;
 
       for (let a = ayatMulai; a <= ayatAkhir; a++) {
         const key = `${s}:${a}`;
@@ -1659,10 +1664,12 @@ document.addEventListener('click', async function(e) {
     const quranText = document.getElementById('quran-text');
     quranText.style.fontFamily = 'QCFPageFont';
     quranText.innerText = resultAyat.join('\n');
+
     document.getElementById('overlay-quran').style.display = 'flex';
   }
 });
 </script>
+  
 
 
   
