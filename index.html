@@ -1207,13 +1207,6 @@ function renderAyatKeModal(ayatArray) {
   });
 }
 
-
-   document.querySelectorAll('.btn-tampilkan-quran').forEach(btn => {
-  btn.addEventListener('click', async (e) => {
-    const row = e.target.closest('tr');
-    const setoranDari = row.querySelector('.surah-dari').value + ':' + row.querySelector('.ayat-dari').value;
-    const setoranSampai = row.querySelector('.surah-sampai').value + ':' + row.querySelector('.ayat-sampai').value;
-
     // Panggil API backend
     try {
       const res = await fetch(`/.netlify/functions/getQuranRange?from=${setoranDari}&to=${setoranSampai}`);
@@ -1672,5 +1665,27 @@ async function submitTambahKelasBaru() {
 }
 </script>
 
+
+  <script>
+    terus ini ditaruh di mana? // Setelah deklarasi santriTableBody dan lainnya
+santriTableBody.addEventListener('click', async (e) => {
+  if (!e.target.classList.contains('btn-tampilkan-quran')) return;
+
+  const row = e.target.closest('tr');
+  const setoranDari = row.querySelector('.surah-dari').value + ':' + row.querySelector('.ayat-dari').value;
+  const setoranSampai = row.querySelector('.surah-sampai').value + ':' + row.querySelector('.ayat-sampai').value;
+
+  try {
+    const res = await fetch(`/.netlify/functions/getQuranRange?from=${setoranDari}&to=${setoranSampai}`);
+    if (!res.ok) throw new Error("Gagal mengambil data Quran");
+    const data = await res.json();
+
+    renderAyatKeModal(data);
+    document.getElementById('modalQuran').style.display = 'flex';
+  } catch (err) {
+    alert(err.message);
+  }
+});
+  </script>
 </body>
 </html>
