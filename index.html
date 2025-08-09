@@ -15,7 +15,7 @@
 
     .password-wrapper {
   position: relative;
-  width: 50%;
+  width: 100%;
 }
 
 .password-wrapper input {
@@ -42,6 +42,11 @@
 
 .password-login-group button {
   white-space: nowrap; /* biar tulisan "Login" nggak pecah */
+}
+
+    #username {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 
@@ -267,12 +272,7 @@
   <div id="login-card" class="card">
     <h1>Login Pengajar</h1>
     <form id="login-form" onsubmit="event.preventDefault(); login();">
-      <div class="username-group" style="display: flex; align-items: center;">
-        <div class="username-wrapper">
       <input type="text" id="username" placeholder="Username" required />
-      </div>
-      <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
-      </div>
       <div class="password-group" style="display: flex; align-items: center;">
    <div class="password-wrapper">
     <input type="password" id="password" placeholder="Password" required />
@@ -282,6 +282,7 @@
 </div>
 
       <div class="login-actions">
+        <button type="button" onclick="toggleChangePassword()">Ganti Password</button>
         <button type="button" id="daftar-btn" onclick="daftar()">Daftar Admin</button>
         <button type="button" onclick="munculkanValidasiAdmin()">Daftar User Kelas</button>
         <button type="button" onclick="bukaModalTambahKelas()">Tambah Kelas</button>
