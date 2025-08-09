@@ -324,16 +324,17 @@
 </div>
 
     <p id="login-error" style="color: red; display: none;">Username atau password salah!</p>
-    <script>
+    
+  </div>
+</div>
+
+<script>
  togglePasswordBtn.addEventListener("click", () => {
       const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
       passwordInput.setAttribute("type", type);
       togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
     });
 </script>
-    
-  </div>
-</div>
   
     <!-- Dashboard -->
     <div id="dashboard-card" class="card" style="display: none;">
