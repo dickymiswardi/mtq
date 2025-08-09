@@ -410,6 +410,7 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
+            <th>Cek Quran</th>
             <th id="totalAllJuzHeader" style="cursor:pointer; text-decoration:underline;">Ketuntasan</th>
           </tr>
         </thead>
@@ -450,6 +451,19 @@
     </div>
   </div>
 </div>
+
+
+  <div id="overlay-quran" style="display:none; position:fixed; top:0; left:0;
+     width:100%; height:100%; background:rgba(0,0,0,0.5);
+     z-index:10000; justify-content:center; align-items:center;">
+  <div style="background:white; padding:20px; border-radius:8px;
+       max-width:600px; max-height:80%; overflow:auto;">
+    <h3>Ayat Al-Qur'an</h3>
+    <div id="quran-text" style="white-space:pre-wrap; line-height:2; direction:rtl; font-size:20px;"></div>
+    <br>
+    <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
+  </div>
+  </div>
 
 <div id="juzOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
 background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:center;">
@@ -687,6 +701,7 @@ function aturDropdownKelas(user) {
               <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
             </select>
             </td>
+            <td><button class="lihat-quran-btn">Lihat Quran</button></td>
             <td class="total-all-juz">0</td>
           `;
 
@@ -1581,6 +1596,47 @@ async function submitTambahKelasBaru() {
     }
   }
 </script>
+
+  <script>
+let quranData = {};
+
+// Ambil file Quran sekali saat load
+fetch('https://raw.githubusercontent.com/videomurottal/tadabbur/refs/heads/main/quran_uthmani_quran_com.json')
+  .then(res => res.json())
+  .then(data => { quranData = data; })
+  .catch(err => console.error('Gagal memuat Quran:', err));
+
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('lihat-quran-btn')) {
+    const row = e.target.closest('tr');
+
+    // Misal: kolom ke-4 = Setoran Dari, ke-5 = Setoran Sampai
+    const dari = row.children[3].innerText.trim(); // format: 1:1
+    const sampai = row.children[4].innerText.trim(); // format: 1:7
+
+    const [surahDari, ayatDari] = dari.split(':').map(Number);
+    const [surahSampai, ayatSampai] = sampai.split(':').map(Number);
+
+    let resultAyat = [];
+
+    for (let s = surahDari; s <= surahSampai; s++) {
+      const ayatMulai = (s === surahDari) ? ayatDari : 1;
+      const ayatAkhir = (s === surahSampai) ? ayatSampai : 300; // 300 agar cukup besar
+
+      for (let a = ayatMulai; a <= ayatAkhir; a++) {
+        const key = `${s}:${a}`;
+        if (quranData[key]) {
+          resultAyat.push(`${quranData[key].replace(/\|/g, ' ')}`);
+        }
+      }
+    }
+
+    document.getElementById('quran-text').innerText = resultAyat.join('\n');
+    document.getElementById('overlay-quran').style.display = 'flex';
+  }
+});
+  </script>
+  
 
   <script>
   function tutupModal(id) {
