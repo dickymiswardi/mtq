@@ -428,15 +428,6 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
   let surahList = [];
   let pagesMap = {};
 
-  // === Toggle password (supaya tidak error) ===
-  if (togglePasswordBtn) {
-    togglePasswordBtn.addEventListener("click", () => {
-      const type = passwordInput.type === "password" ? "text" : "password";
-      passwordInput.type = type;
-      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
-    });
-  }
-
   // === Fungsi atur dropdown kelas ===
   function aturDropdownKelas(user) {
     const semuaKelas = ["kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5", "kelas_6"];
@@ -1538,5 +1529,16 @@ async function submitTambahKelasBaru() {
   }
 }
 </script>
+
+  <script>
+     // === Toggle password (supaya tidak error) ===
+  if (togglePasswordBtn) {
+    togglePasswordBtn.addEventListener("click", () => {
+      const type = passwordInput.type === "password" ? "text" : "password";
+      passwordInput.type = type;
+      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
+    });
+  }
+  </script>
 </body>
 </html>
