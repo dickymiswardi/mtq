@@ -403,6 +403,7 @@
             <th>Total Juz</th>
             <th>Semester</th>
             <th id="totalAllJuzHeader" style="cursor:pointer; text-decoration:underline;">Ketuntasan</th>
+            <th>Lihat Quran</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -680,9 +681,37 @@ function aturDropdownKelas(user) {
             </select>
             </td>
             <td class="total-all-juz">0</td>
+            <td>
+            <button class="lihat-quran-btn">Lihat Quran</button>
           `;
 
           santriTableBody.appendChild(row);
+
+          // event listener tombol "Lihat Quran"
+  const lihatBtn = row.querySelector(".lihat-quran-btn");
+  lihatBtn.addEventListener("click", async () => {
+    const dariSurah = row.querySelector(".surah-dari").value;
+    const dariAyat = row.querySelector(".ayat-dari").value;
+    const sampaiSurah = row.querySelector(".surah-sampai").value;
+    const sampaiAyat = row.querySelector(".ayat-sampai").value;
+
+    const from = `${dariSurah}:${dariAyat}`;
+    const to = `${sampaiSurah}:${sampaiAyat}`;
+
+    try {
+      overlay.style.display = "flex"; // bisa pakai loading overlay
+      const res = await fetch(`/.netlify/functions/getQuranRange?from=${from}&to=${to}`);
+      if (!res.ok) throw new Error("Gagal mengambil data Quran");
+      const quranData = await res.json();
+
+      bukaModalQuran(quranData);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      overlay.style.display = "none";
+    }
+  });
+});
 
           const surahDari = row.querySelector(".surah-dari");
           const ayatDari = row.querySelector(".ayat-dari");
@@ -1588,5 +1617,64 @@ async function submitTambahKelasBaru() {
   }
 }
 </script>
+
+  <div id="modalQuran" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+background:rgba(0,0,0,0.7); z-index:10000; overflow:auto; padding:20px;">
+  <div style="background:#fff; max-width:800px; margin:0 auto; padding:20px; border-radius:10px; font-size:28px; direction: rtl;">
+    <button onclick="tutupModal('modalQuran')" style="float:right;">Close ✖️</button>
+    <div id="modalAyatContainer"></div>
+  </div>
+</div>
+
+  <script>
+    const loadedFonts = new Set();
+
+function loadFontForPage(pageNum) {
+  const fontName = `QCF_P${String(pageNum).padStart(3, '0')}`;
+  if (loadedFonts.has(fontName)) return;
+
+  const fontUrl = `https://github.com/dickymiswardi/quran/raw/refs/heads/main/fonts/${fontName}.TTF`;
+  const style = document.createElement('style');
+  style.id = `font-${fontName}`;
+  style.textContent = `
+    @font-face {
+      font-family: '${fontName}';
+      src: url('${fontUrl}') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+  `;
+  document.head.appendChild(style);
+  loadedFonts.add(fontName);
+}
+
+function renderAyat(ayatObj) {
+  const { key, text, page } = ayatObj;
+  loadFontForPage(page);
+
+  const span = document.createElement('span');
+  span.textContent = text;
+  span.style.fontFamily = `QCF_P${String(page).padStart(3, '0')}`;
+  span.style.display = 'block';
+  span.style.marginBottom = '12px';
+  return span;
+}
+
+function bukaModalQuran(quranData) {
+  const container = document.getElementById('modalAyatContainer');
+  container.innerHTML = '';
+
+  quranData.forEach(ayatObj => {
+    const ayatElem = renderAyat(ayatObj);
+    container.appendChild(ayatElem);
+  });
+
+  document.getElementById('modalQuran').style.display = 'block';
+}
+
+function tutupModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+  </script>
 </body>
 </html>
