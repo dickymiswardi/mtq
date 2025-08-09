@@ -1591,15 +1591,13 @@ async function submitTambahKelasBaru() {
 
   <script>
     window.addEventListener("load", () => {
-  // Set default tanggal hari ini di input date
   const today = new Date().toISOString().slice(0, 10);
   const dariInput = document.getElementById("rangeDari");
   const sampaiInput = document.getElementById("rangeSampai");
 
-  if (dariInput) dariInput.value = today;
-  if (sampaiInput) sampaiInput.value = today;
+  if (dariInput && !dariInput.value) dariInput.value = today;
+  if (sampaiInput && !sampaiInput.value) sampaiInput.value = today;
 
-  // Panggil fungsi hitung langsung tanpa membuka modal
   if (typeof hitungTotalAllJuzFromTable === "function") {
     hitungTotalAllJuzFromTable();
   }
