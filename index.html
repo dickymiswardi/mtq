@@ -1103,6 +1103,31 @@ async function hitungTotalAllJuzFromTable() {
   }
 }
 
+   window.addEventListener("DOMContentLoaded", () => {
+  setTanggalSampaiHariIni();
+
+  // Cek tanggal mulai di localStorage
+  const savedStartDate = localStorage.getItem("startDateAllJuz");
+  if (savedStartDate) {
+    inputDari.value = savedStartDate;
+    juzOverlay.style.display = "none"; // tutup modal
+    hitungTotalAllJuzFromTable();
+  } else {
+    // Kalau belum ada, tampilkan modal untuk input tanggal mulai
+    inputDari.value = "";
+    juzOverlay.style.display = "flex";
+  }
+});
+
+// Saat user klik tombol konfirmasi, simpan tanggal mulai ke localStorage
+btnKonfirmasi.addEventListener("click", () => {
+  if (inputDari.value) {
+    localStorage.setItem("startDateAllJuz", inputDari.value);
+  }
+  hitungTotalAllJuzFromTable();
+  juzOverlay.style.display = "none";
+});
+
   </script>
 
   <script>
