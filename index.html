@@ -327,14 +327,6 @@
     
   </div>
 </div>
-
-  <script>
- togglePasswordBtn.addEventListener("click", () => {
-      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
-      passwordInput.setAttribute("type", type);
-      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
-    });
-</script>
   
     <!-- Dashboard -->
     <div id="dashboard-card" class="card" style="display: none;">
@@ -415,8 +407,8 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
 </div>
 
   
-  <script>
-  // Ambil elemen-elemen penting
+ <script>
+  // === Deklarasi elemen ===
   const loginCard = document.getElementById("login-card");
   const dashboardCard = document.getElementById("dashboard-card");
   const loginForm = document.getElementById("login-form");
@@ -430,18 +422,22 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
   const santriTableBody = document.querySelector("#santri-table tbody");
   const saveBtn = document.getElementById("save-btn");
   const downloadBtn = document.getElementById("download-btn");
+  const totalAllJuzHeader = document.getElementById("totalAllJuzHeader");
   const namaUserSpan = document.getElementById("namaUser");
 
   let surahList = [];
   let pagesMap = {};
 
-  // Fungsi menampilkan dashboard
-  function showDashboard() {
-    loginCard.style.display = "none";
-    dashboardCard.style.display = "block";
+  // === Toggle password (supaya tidak error) ===
+  if (togglePasswordBtn) {
+    togglePasswordBtn.addEventListener("click", () => {
+      const type = passwordInput.type === "password" ? "text" : "password";
+      passwordInput.type = type;
+      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
+    });
   }
 
-  // Fungsi atur dropdown kelas
+  // === Fungsi atur dropdown kelas ===
   function aturDropdownKelas(user) {
     const semuaKelas = ["kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5", "kelas_6"];
     kelasSelect.innerHTML = "";
@@ -456,33 +452,18 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
       kelasSelect.appendChild(opt);
     });
 
+    // Pilih kelas aktif pertama
     const pertamaAktif = Array.from(kelasSelect.options).find(o => !o.disabled);
     if (pertamaAktif) kelasSelect.value = pertamaAktif.value;
   }
 
-  // Saat halaman pertama kali dimuat
-  window.addEventListener("DOMContentLoaded", async () => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
+  // === Tampilkan dashboard ===
+  function showDashboard() {
+    loginCard.style.display = "none";
+    dashboardCard.style.display = "block";
+  }
 
-    if (isLoggedIn) {
-      showDashboard();
-      const storedKelas = JSON.parse(localStorage.getItem("kelasDiizinkan") || "[]");
-      aturDropdownKelas({ kelas: storedKelas });
-      namaUserSpan.textContent = localStorage.getItem("username") || "";
-    }
-
-    try {
-      const resSurah = await fetch("/.netlify/functions/getAyat");
-      surahList = await resSurah.json();
-
-      const resPages = await fetch("/.netlify/functions/getPagesMap");
-      pagesMap = await resPages.json();
-    } catch (err) {
-      console.error("Gagal load surah/pagesMap:", err);
-    }
-  });
-
-  // Proses login
+  // === Login form ===
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const username = document.getElementById("username").value;
@@ -499,10 +480,11 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
         localStorage.setItem("isLoggedIn", true);
         localStorage.setItem("username", username);
         localStorage.setItem("kelasDiizinkan", JSON.stringify(user.kelas || []));
-
         namaUserSpan.textContent = username;
+
         aturDropdownKelas(user);
         showDashboard();
+        loadDataSantri(); // langsung load data sesuai kelas terpilih
       } else {
         loginError.style.display = "block";
       }
@@ -513,6 +495,54 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
 
     overlay.style.display = "none";
   });
+
+  // === Load data santri ===
+  async function loadDataSantri() {
+    const kelas = kelasSelect.value;
+    if (!kelas) return; // jaga-jaga
+
+    try {
+      const res = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+      if (!res.ok) throw new Error("Gagal memuat data santri");
+      const data = await res.json();
+      console.log("Data santri:", data);
+      // TODO: render ke tabel
+    } catch (err) {
+      console.error(err);
+      alert("Gagal memuat data santri / absensi!");
+    }
+  }
+
+  // === Saat halaman dibuka ===
+  window.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const resSurah = await fetch("/.netlify/functions/getAyat");
+      surahList = await resSurah.json();
+
+      const resPages = await fetch("/.netlify/functions/getPagesMap");
+      pagesMap = await resPages.json();
+    } catch (err) {
+      console.error("Gagal load surah/pagesMap:", err);
+    }
+
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    if (isLoggedIn) {
+      const storedKelas = JSON.parse(localStorage.getItem("kelasDiizinkan") || "[]");
+      const storedUsername = localStorage.getItem("username") || "";
+      namaUserSpan.textContent = storedUsername;
+
+      aturDropdownKelas({ kelas: storedKelas });
+      showDashboard();
+      loadDataSantri();
+    }
+  });
+
+  // === Event ganti kelas ===
+  kelasSelect.addEventListener("change", loadDataSantri);
+
+  // === Header total juz click ===
+  totalAllJuzHeader.addEventListener("click", bukaOverlayTotalAllJuz);
+
 
 
     
