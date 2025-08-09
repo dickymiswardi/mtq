@@ -12,25 +12,39 @@
       background: #f4f6f8;
     }
 
-    .password-login-wrapper {
+    .login-form {
   display: flex;
-  align-items: center;
-  gap: 5px;
-  width: 35%;
+  flex-direction: column;
+  align-items: top;
+  justify-content: center;
+  min-height: 100vh; /* agar vertikal center */
+  gap: 15px;
 }
 
-.password-login-wrapper input {
+.password-login-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.password-field {
+  position: relative;
   flex: 1;
-  padding-right: 35px; /* ruang untuk icon 👁 */
+}
+
+.password-field input {
+  width: 250px;
+  padding-right: 35px;
   box-sizing: border-box;
 }
 
 .toggle-password {
-  position: relative;
-  margin-left: -35px; /* letakkan icon di dalam input */
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
   cursor: pointer;
   user-select: none;
-  font-size: 16px;
 }
 
 .login-btn-inline {
@@ -45,6 +59,14 @@
 .login-btn-inline:hover {
   background: #1565c0;
 }
+
+.login-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
 
 
 #username {
@@ -273,12 +295,13 @@
   <!-- Halaman Login -->
   <div id="login-card" class="card">
     <h1>Login Pengajar</h1>
-    <form id="login-form" onsubmit="event.preventDefault(); login();">
+    <form id="login-form" onsubmit="event.preventDefault(); login();" class="login-form">
   <input type="text" id="username" placeholder="Username" required />
-
   <div class="password-login-wrapper">
-    <input type="password" id="password" placeholder="Password" required />
-    <span class="toggle-password" onclick="togglePassword()">👁</span>
+    <div class="password-field">
+      <input type="password" id="password" placeholder="Password" required />
+      <span class="toggle-password" onclick="togglePassword()">👁</span>
+    </div>
     <button type="submit" class="login-btn-inline">Login</button>
   </div>
 
@@ -289,6 +312,7 @@
     <button type="button" onclick="bukaModalTambahKelas()">Tambah Kelas</button>
   </div>
 </form>
+
 
 
 
