@@ -403,7 +403,7 @@
             <th>Total Juz</th>
             <th>Semester</th>
             <th id="totalAllJuzHeader" style="cursor:pointer; text-decoration:underline;">Ketuntasan</th>
-            <th>Lihat Quran</th>
+            <th>Tampilkan Quran</th>  <!-- kolom baru -->
           </tr>
         </thead>
         <tbody></tbody>
@@ -452,6 +452,14 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
     <label>Sampai: <input type="date" id="rangeSampai"></label><br><br>
     <button onclick="hitungTotalAllJuzFromTable()">Hitung Total All Juz</button>
     <button onclick="document.getElementById('juzOverlay').style.display='none'">Close</button>
+  </div>
+</div>
+
+  <div id="modalQuran" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; justify-content:center; align-items:center;">
+  <div style="background:#fff; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; padding:20px; border-radius:10px; position:relative;">
+    <button id="closeModalQuran" style="position:absolute; top:10px; right:10px;">✖️ Close</button>
+    <h3>Ayat Quran</h3>
+    <div id="modalAyatContainer" style="font-size:28px; line-height:1.6; direction: rtl; text-align: right; font-family: 'QCF_P001', serif;"></div>
   </div>
 </div>
 
@@ -651,67 +659,41 @@ function aturDropdownKelas(user) {
           const sampai = (dataAbsensi.sampai || "1:1").split(":");
 
           row.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${santri.nama}</td>
-            <td>
-              <select class="absensi">
-                <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
-                <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
-                <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
-              </select>
-            </td>
-            <td>
-              <select class="surah-dari">${surahOptions}</select>
-              <select class="ayat-dari"></select>
-            </td>
-            <td>
-              <select class="surah-sampai">${surahOptions}</select>
-              <select class="ayat-sampai"></select>
-            </td>
-            <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
-            <td class="total-juz">${dataAbsensi.totalJuz || 0}</td>
-            <td>
-            <select class="semester">
-              <option value="1" ${santri.semester == 1 ? 'selected' : ''}>Semester 1</option>
-              <option value="2" ${santri.semester == 2 ? 'selected' : ''}>Semester 2</option>
-              <option value="3" ${santri.semester == 3 ? 'selected' : ''}>Semester 3</option>
-              <option value="4" ${santri.semester == 4 ? 'selected' : ''}>Semester 4</option>
-              <option value="5" ${santri.semester == 5 ? 'selected' : ''}>Semester 5</option>
-              <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
-            </select>
-            </td>
-            <td class="total-all-juz">0</td>
-            <td>
-            <button class="lihat-quran-btn">Lihat Quran</button>
-          `;
-
+  <td>${i + 1}</td>
+  <td>${santri.nama}</td>
+  <td>
+    <select class="absensi">
+      <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
+      <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
+      <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
+    </select>
+  </td>
+  <td>
+    <select class="surah-dari">${surahOptions}</select>
+    <select class="ayat-dari"></select>
+  </td>
+  <td>
+    <select class="surah-sampai">${surahOptions}</select>
+    <select class="ayat-sampai"></select>
+  </td>
+  <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
+  <td class="total-juz">${dataAbsensi.totalJuz || 0}</td>
+  <td>
+    <select class="semester">
+      <option value="1" ${santri.semester == 1 ? 'selected' : ''}>Semester 1</option>
+      <option value="2" ${santri.semester == 2 ? 'selected' : ''}>Semester 2</option>
+      <option value="3" ${santri.semester == 3 ? 'selected' : ''}>Semester 3</option>
+      <option value="4" ${santri.semester == 4 ? 'selected' : ''}>Semester 4</option>
+      <option value="5" ${santri.semester == 5 ? 'selected' : ''}>Semester 5</option>
+      <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
+    </select>
+  </td>
+  <td class="total-all-juz">0</td>
+  <td>
+    <button class="btn-tampilkan-quran">Tampilkan Quran</button>
+  </td>
+`;
           santriTableBody.appendChild(row);
-
-          // event listener tombol "Lihat Quran"
-  const lihatBtn = row.querySelector(".lihat-quran-btn");
-  lihatBtn.addEventListener("click", async () => {
-    const dariSurah = row.querySelector(".surah-dari").value;
-    const dariAyat = row.querySelector(".ayat-dari").value;
-    const sampaiSurah = row.querySelector(".surah-sampai").value;
-    const sampaiAyat = row.querySelector(".ayat-sampai").value;
-
-    const from = `${dariSurah}:${dariAyat}`;
-    const to = `${sampaiSurah}:${sampaiAyat}`;
-
-    try {
-      overlay.style.display = "flex"; // bisa pakai loading overlay
-      const res = await fetch(`/.netlify/functions/getQuranRange?from=${from}&to=${to}`);
-      if (!res.ok) throw new Error("Gagal mengambil data Quran");
-      const quranData = await res.json();
-
-      bukaModalQuran(quranData);
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      overlay.style.display = "none";
-    }
-  });
-});
 
           const surahDari = row.querySelector(".surah-dari");
           const ayatDari = row.querySelector(".ayat-dari");
@@ -1183,6 +1165,78 @@ function getDateRangeArray(start, end) {
   document.getElementById("juzOverlay").style.display = "flex";
 }
 
+
+   function loadFontForPage(pageNum) {
+  const fontName = `QCF_P${String(pageNum).padStart(3, '0')}`;
+  const fontUrl = `https://github.com/dickymiswardi/quran/raw/refs/heads/main/fonts/${fontName}.TTF`;
+
+  if (document.getElementById(`font-${fontName}`)) return; // sudah ter-load
+
+  const style = document.createElement('style');
+  style.id = `font-${fontName}`;
+  style.textContent = `
+    @font-face {
+      font-family: '${fontName}';
+      src: url('${fontUrl}') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+
+   function renderAyat(ayatObj) {
+  const { key, text, page } = ayatObj;
+  loadFontForPage(page);
+  const fontName = `QCF_P${String(page).padStart(3, '0')}`;
+
+  const span = document.createElement('span');
+  span.textContent = text;
+  span.style.fontFamily = fontName;
+  span.style.display = 'block';
+  span.style.marginBottom = '8px';
+  return span;
+}
+
+function renderAyatKeModal(ayatArray) {
+  const container = document.getElementById('modalAyatContainer');
+  container.innerHTML = '';
+  ayatArray.forEach(ayatObj => {
+    container.appendChild(renderAyat(ayatObj));
+  });
+}
+
+
+   document.querySelectorAll('.btn-tampilkan-quran').forEach(btn => {
+  btn.addEventListener('click', async (e) => {
+    const row = e.target.closest('tr');
+    const setoranDari = row.querySelector('.surah-dari').value + ':' + row.querySelector('.ayat-dari').value;
+    const setoranSampai = row.querySelector('.surah-sampai').value + ':' + row.querySelector('.ayat-sampai').value;
+
+    // Panggil API backend
+    try {
+      const res = await fetch(`/.netlify/functions/getQuranRange?from=${setoranDari}&to=${setoranSampai}`);
+      if (!res.ok) throw new Error("Gagal mengambil data Quran");
+      const data = await res.json();
+
+      renderAyatKeModal(data);
+
+      // Tampilkan modal
+      document.getElementById('modalQuran').style.display = 'flex';
+
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+});
+
+   document.getElementById('closeModalQuran').addEventListener('click', () => {
+  document.getElementById('modalQuran').style.display = 'none';
+});
+
+
+
   </script>
 
   <script>
@@ -1618,63 +1672,5 @@ async function submitTambahKelasBaru() {
 }
 </script>
 
-  <div id="modalQuran" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
-background:rgba(0,0,0,0.7); z-index:10000; overflow:auto; padding:20px;">
-  <div style="background:#fff; max-width:800px; margin:0 auto; padding:20px; border-radius:10px; font-size:28px; direction: rtl;">
-    <button onclick="tutupModal('modalQuran')" style="float:right;">Close ✖️</button>
-    <div id="modalAyatContainer"></div>
-  </div>
-</div>
-
-  <script>
-    const loadedFonts = new Set();
-
-function loadFontForPage(pageNum) {
-  const fontName = `QCF_P${String(pageNum).padStart(3, '0')}`;
-  if (loadedFonts.has(fontName)) return;
-
-  const fontUrl = `https://github.com/dickymiswardi/quran/raw/refs/heads/main/fonts/${fontName}.TTF`;
-  const style = document.createElement('style');
-  style.id = `font-${fontName}`;
-  style.textContent = `
-    @font-face {
-      font-family: '${fontName}';
-      src: url('${fontUrl}') format('truetype');
-      font-weight: normal;
-      font-style: normal;
-    }
-  `;
-  document.head.appendChild(style);
-  loadedFonts.add(fontName);
-}
-
-function renderAyat(ayatObj) {
-  const { key, text, page } = ayatObj;
-  loadFontForPage(page);
-
-  const span = document.createElement('span');
-  span.textContent = text;
-  span.style.fontFamily = `QCF_P${String(page).padStart(3, '0')}`;
-  span.style.display = 'block';
-  span.style.marginBottom = '12px';
-  return span;
-}
-
-function bukaModalQuran(quranData) {
-  const container = document.getElementById('modalAyatContainer');
-  container.innerHTML = '';
-
-  quranData.forEach(ayatObj => {
-    const ayatElem = renderAyat(ayatObj);
-    container.appendChild(ayatElem);
-  });
-
-  document.getElementById('modalQuran').style.display = 'block';
-}
-
-function tutupModal(id) {
-  document.getElementById(id).style.display = 'none';
-}
-  </script>
 </body>
 </html>
