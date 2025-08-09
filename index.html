@@ -442,6 +442,18 @@
     </div>
   </div>
 </div>
+
+<div id="juzOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:center;">
+  <div style="background:white; padding:20px; border-radius:8px; min-width:300px;">
+    <h3>Hitung Total All Juz</h3>
+    <label>Dari: <input type="date" id="rangeDari"></label><br><br>
+    <label>Sampai: <input type="date" id="rangeSampai"></label><br><br>
+    <button onclick="hitungTotalAllJuzFromTable()">Hitung Total All Juz</button>
+    <button onclick="document.getElementById('juzOverlay').style.display='none'">Close</button>
+  </div>
+</div>
+
   
  <script>
   // === Deklarasi elemen ===
@@ -1075,17 +1087,39 @@ overlay.style.display = "none";
       // Batas TUNTAS per semester
 const batasSemester = { 1: 8, 2: 13, 3: 18, 4: 23, 5: 28, 6: 30 };
 
-<div id="juzOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
-background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:center;">
-  <div style="background:white; padding:20px; border-radius:8px; min-width:300px;">
-    <h3>Hitung Total All Juz</h3>
-    <label>Dari: <input type="date" id="rangeDari"></label><br><br>
-    <label>Sampai: <input type="date" id="rangeSampai"></label><br><br>
-    <button onclick="hitungTotalAllJuzFromTable()">Hitung Total All Juz</button>
-    <button onclick="document.getElementById('juzOverlay').style.display='none'">Close</button>
-  </div>
-</div>
+// Tampilkan hasil
+santriList.forEach(s => {
+  const totalJuz = parseFloat(totalMap[s.id] || 0).toFixed(2);
+  const cell = s.rowEl.querySelector(".total-all-juz");
 
+  const batas = batasSemester[s.semester] || 0;
+  const tuntas = totalJuz >= batas && batas > 0;
+
+  cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? 'green' : 'red'}; font-size: 11px;">${tuntas ? 'TUNTAS' : 'BELUM'}</span>`;
+});
+
+      overlay.style.display = "none";
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Gagal menghitung total All Juz.");
+      overlay.style.display = "none";
+    });
+}
+
+// Fungsi bantu buat array tanggal
+function getDateRangeArray(start, end) {
+  const result = [];
+  const current = new Date(start);
+  const endDate = new Date(end);
+
+  while (current <= endDate) {
+    const iso = current.toISOString().split('T')[0];
+    result.push(iso);
+    current.setDate(current.getDate() + 1);
+  }
+  return result;
+}
 
 
 
