@@ -454,23 +454,6 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
   </div>
 </div>
 
-  <script>
-    window.addEventListener("load", () => {
-  // Set default tanggal hari ini di input overlay
-  const today = new Date().toISOString().slice(0, 10);
-  const dariInput = document.getElementById("rangeDari");
-  const sampaiInput = document.getElementById("rangeSampai");
-
-  if (dariInput) dariInput.value = today;
-  if (sampaiInput) sampaiInput.value = today;
-
-  // Panggil fungsi hitung langsung setelah input tanggal terisi
-  if (typeof hitungTotalAllJuzFromTable === "function") {
-    hitungTotalAllJuzFromTable();
-  }
-});
-  </script>
-
   
  <script>
   // === Deklarasi elemen ===
@@ -1605,5 +1588,20 @@ async function submitTambahKelasBaru() {
   }
 }
 </script>
+
+  <script>
+    window.addEventListener("load", () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const dariInput = document.getElementById("rangeDari");
+  const sampaiInput = document.getElementById("rangeSampai");
+
+  if (dariInput) dariInput.value = today;
+  if (sampaiInput) sampaiInput.value = today;
+
+  if (typeof hitungTotalAllJuzFromTable === "function") {
+    hitungTotalAllJuzFromTable();
+  }
+});
+  </script>
 </body>
 </html>
