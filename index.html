@@ -1588,20 +1588,5 @@ async function submitTambahKelasBaru() {
   }
 }
 </script>
-  <script>
-    
-    window.addEventListener("load", () => {
-  // Set default tanggal hari ini di input
-  const today = new Date().toISOString().slice(0, 10);
-  const dariInput = document.getElementById("rangeDari");
-  const sampaiInput = document.getElementById("rangeSampai");
-
-  if (dariInput && !dariInput.value) dariInput.value = today;
-  if (sampaiInput && !sampaiInput.value) sampaiInput.value = today;
-
-  hitungTotalAllJuzFromTable();
-});
-
-  </script>
 </body>
 </html>
