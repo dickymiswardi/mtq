@@ -828,13 +828,15 @@ function aturDropdownKelas(user) {
       const ayatSampai = row.querySelector(".ayat-sampai").value;
       const totalJuz = row.querySelector(".total-juz").textContent;
       const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
+      const juzTerbaca = row.querySelector(".totalAllJuzHeader").textContent;
         
         data.push({
           id, nama, absensi, semester,
           dari: `${surahDari}:${ayatDari}`,
           sampai: `${surahSampai}:${ayatSampai}`,
           totalJuz,
-          juzTerbaca
+          juzTerbaca,
+          totalAllJuzHeader
         });
       });
 
@@ -851,19 +853,19 @@ function aturDropdownKelas(user) {
         if (result.success) {
           saveBtn.textContent = "✅ Tersimpan";
           setTimeout(() => {
-            saveBtn.textContent = "Simpan";
+            saveBtn.textContent = "Simpan Data Mutaba'ah";
             saveBtn.disabled = false;
           }, 2000);
         } else {
           alert("❌ Gagal menyimpan data!");
           saveBtn.disabled = false;
-          saveBtn.textContent = "Simpan";
+          saveBtn.textContent = "Simpan Data Mutaba'ah";
         }
       } catch (err) {
         alert("⚠️ Error menyimpan data!");
         console.error(err);
         saveBtn.disabled = false;
-        saveBtn.textContent = "Simpan";
+        saveBtn.textContent = "Simpan Data Mutaba'ah";
       }
     });
 
