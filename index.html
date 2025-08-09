@@ -986,8 +986,12 @@ function aturDropdownKelas(user) {
 });
 
 
-// Ambil semua data juz absensi rentang tanggal
-  async function hitungTotalAllJuzFromTable() {
+// Pastikan variabel ini sudah di-definisi di scope global
+const overlay = document.getElementById("juzOverlay");
+const santriTableBody = document.querySelector("#santriTable tbody"); // ganti sesuai id tabel
+const kelasSelect = document.getElementById("kelasSelect"); // ganti sesuai id select kelas
+
+async function hitungTotalAllJuzFromTable(showOverlay = true) {
   const kelas = kelasSelect.value;
   const dari = document.getElementById("rangeDari").value;
   const sampai = document.getElementById("rangeSampai").value;
@@ -997,14 +1001,12 @@ function aturDropdownKelas(user) {
     return;
   }
 
-  overlay.style.display = "flex";
-      // Tutup overlay setelah selesai
-overlay.style.display = "none";
-
-
   try {
+    if (showOverlay) overlay.style.display = "flex";
+
     // Ambil semua data absensi rentang tanggal
     const res = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const allData = await res.json();
 
     const rows = santriTableBody.querySelectorAll("tr");
@@ -1037,24 +1039,23 @@ overlay.style.display = "none";
   } catch (err) {
     console.error(err);
     alert("❌ Gagal memproses Total All Juz.");
+  } finally {
+    if (showOverlay) overlay.style.display = "none";
   }
-
-  overlay.style.display = "none";
 }
 
-    function hitungTotalAllJuzFromTable() {
-  const rows = santriTableBody.querySelectorAll("tr");
-  const kelas = kelasSelect.value;
+// Contoh pemanggilan otomatis saat halaman load tanpa buka overlay
+window.addEventListener("load", () => {
+  // set tanggal default misal hari ini di input rangeDari dan rangeSampai
+  const today = new Date().toISOString().slice(0, 10);
+  const dariInput = document.getElementById("rangeDari");
+  const sampaiInput = document.getElementById("rangeSampai");
+  if (dariInput) dariInput.value = today;
+  if (sampaiInput) sampaiInput.value = today;
 
-  const dari = document.getElementById("rangeDari").value;
-  const sampai = document.getElementById("rangeSampai").value;
-
-  if (!dari || !sampai) {
-    alert("Pilih rentang tanggal terlebih dahulu.");
-    return;
-  }
-
-  const dateRange = getDateRangeArray(dari, sampai);
+  // panggil hitung tanpa overlay
+  hitungTotalAllJuzFromTable(false);
+});
 
   // Ambil ID & Nama Santri dari Tabel
   const santriList = Array.from(rows).map(row => ({
