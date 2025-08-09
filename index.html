@@ -344,10 +344,7 @@
       <div class="dashboard-header">
   <div class="dashboard-header-row">
     <label for="kelas">Pilih Kelas:</label>
-    <select id="kelas">
-      <option value="kelas_1">Kelas 1</option>
-      <option value="kelas_2">Kelas 2</option>
-    </select>
+    <select id="kelas"></select>
 
     <label for="tanggal">Tanggal:</label>
     <input type="date" id="tanggal" />
@@ -419,113 +416,103 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
 
   
   <script>
+  // Ambil elemen-elemen penting
+  const loginCard = document.getElementById("login-card");
+  const dashboardCard = document.getElementById("dashboard-card");
+  const loginForm = document.getElementById("login-form");
+  const loginError = document.getElementById("login-error");
+  const logoutBtn = document.getElementById("logout-btn");
+  const togglePasswordBtn = document.getElementById("toggle-password");
+  const passwordInput = document.getElementById("password");
+  const overlay = document.getElementById("overlay");
+  const kelasSelect = document.getElementById("kelas");
+  const tanggalInput = document.getElementById("tanggal");
+  const santriTableBody = document.querySelector("#santri-table tbody");
+  const saveBtn = document.getElementById("save-btn");
+  const downloadBtn = document.getElementById("download-btn");
+  const namaUserSpan = document.getElementById("namaUser");
 
-    function login() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+  let surahList = [];
+  let pagesMap = {};
 
-  // Asumsikan verifikasi berhasil
-  document.getElementById("login-card").style.display = "none";
-  document.getElementById("dashboard-card").style.display = "block";
+  // Fungsi menampilkan dashboard
+  function showDashboard() {
+    loginCard.style.display = "none";
+    dashboardCard.style.display = "block";
+  }
 
-  // Tampilkan nama user
-  document.getElementById("namaUser").textContent = username;
-}
+  // Fungsi atur dropdown kelas
+  function aturDropdownKelas(user) {
+    const semuaKelas = ["kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5", "kelas_6"];
+    kelasSelect.innerHTML = "";
 
-    document.getElementById("totalAllJuzHeader").addEventListener("click", bukaOverlayTotalAllJuz);
-    
-    const loginCard = document.getElementById("login-card");
-    const dashboardCard = document.getElementById("dashboard-card");
-    const loginForm = document.getElementById("login-form");
-    const loginError = document.getElementById("login-error");
-    const logoutBtn = document.getElementById("logout-btn");
-    const togglePasswordBtn = document.getElementById("toggle-password");
-    const passwordInput = document.getElementById("password");
-    const overlay = document.getElementById("overlay");
-    const kelasSelect = document.getElementById("kelas");
-    const tanggalInput = document.getElementById("tanggal");
-    const santriTableBody = document.querySelector("#santri-table tbody");
-    const saveBtn = document.getElementById("save-btn");
-    const downloadBtn = document.getElementById("download-btn");
+    const kelasDiizinkan = user?.kelas?.length ? user.kelas : semuaKelas;
 
-    let surahList = [];
-    let pagesMap = {};
-
-    // Load Surah & PagesMap di awal
-    window.addEventListener("DOMContentLoaded", async () => {
-      const isLoggedIn = localStorage.getItem("isLoggedIn");
-      if (isLoggedIn) showDashboard();
-
-      try {
-        const resSurah = await fetch("/.netlify/functions/getAyat");
-        surahList = await resSurah.json();
-
-        const resPages = await fetch("/.netlify/functions/getPagesMap");
-        pagesMap = await resPages.json();
-      } catch (err) {
-        console.error("Gagal load surah/pagesMap:", err);
-      }
+    semuaKelas.forEach(kls => {
+      const opt = document.createElement("option");
+      opt.value = kls;
+      opt.textContent = kls.replace("kelas_", "Kelas ");
+      opt.disabled = !kelasDiizinkan.includes(kls);
+      kelasSelect.appendChild(opt);
     });
 
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const username = document.getElementById("username").value;
-      const password = passwordInput.value;
+    const pertamaAktif = Array.from(kelasSelect.options).find(o => !o.disabled);
+    if (pertamaAktif) kelasSelect.value = pertamaAktif.value;
+  }
 
-      overlay.style.display = "flex";
+  // Saat halaman pertama kali dimuat
+  window.addEventListener("DOMContentLoaded", async () => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
 
-      try {
-        const res = await fetch("/.netlify/functions/getUsers");
-        const users = await res.json();
-        const user = users.find(u => u.username === username && u.password === password);
-
-        if (user) {
-          localStorage.setItem("isLoggedIn", true);
-          localStorage.setItem("username", username);
-          localStorage.setItem("kelasDiizinkan", JSON.stringify(user.kelas || []));
-          showDashboard();
-          aturDropdownKelas(user);   
-        } else {
-          loginError.style.display = "block";
-        }
-      } catch (err) {
-        loginError.textContent = "Gagal memuat data user!";
-        loginError.style.display = "block";
-      }
-      overlay.style.display = "none";
-    });
-
-
-
-    function aturDropdownKelas(user) {
-  const dropdown = document.getElementById("kelas");
-  const semuaKelas = ["kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5", "kelas_6"];
-
-  // Kosongkan semua opsi dulu
-  dropdown.innerHTML = "";
-
-  // Jika user punya properti kelas (akses terbatas)
-  const kelasDiizinkan = Array.isArray(user.kelas) ? user.kelas : semuaKelas;
-
-  semuaKelas.forEach(kls => {
-    const option = document.createElement("option");
-    option.value = kls;
-    option.textContent = kls.replace("_", " ").toUpperCase();
-
-    // Disable jika tidak termasuk kelas yang boleh
-    if (!kelasDiizinkan.includes(kls)) {
-      option.disabled = true;
+    if (isLoggedIn) {
+      showDashboard();
+      const storedKelas = JSON.parse(localStorage.getItem("kelasDiizinkan") || "[]");
+      aturDropdownKelas({ kelas: storedKelas });
+      namaUserSpan.textContent = localStorage.getItem("username") || "";
     }
 
-    dropdown.appendChild(option);
+    try {
+      const resSurah = await fetch("/.netlify/functions/getAyat");
+      surahList = await resSurah.json();
+
+      const resPages = await fetch("/.netlify/functions/getPagesMap");
+      pagesMap = await resPages.json();
+    } catch (err) {
+      console.error("Gagal load surah/pagesMap:", err);
+    }
   });
 
-  // Pilih salah satu yang aktif
-  const pertamaAktif = Array.from(dropdown.options).find(opt => !opt.disabled);
-  if (pertamaAktif) {
-    dropdown.value = pertamaAktif.value;
-  }
-}
+  // Proses login
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = document.getElementById("username").value;
+    const password = passwordInput.value;
+
+    overlay.style.display = "flex";
+
+    try {
+      const res = await fetch("/.netlify/functions/getUsers");
+      const users = await res.json();
+      const user = users.find(u => u.username === username && u.password === password);
+
+      if (user) {
+        localStorage.setItem("isLoggedIn", true);
+        localStorage.setItem("username", username);
+        localStorage.setItem("kelasDiizinkan", JSON.stringify(user.kelas || []));
+
+        namaUserSpan.textContent = username;
+        aturDropdownKelas(user);
+        showDashboard();
+      } else {
+        loginError.style.display = "block";
+      }
+    } catch (err) {
+      loginError.textContent = "Gagal memuat data user!";
+      loginError.style.display = "block";
+    }
+
+    overlay.style.display = "none";
+  });
 
 
     
