@@ -828,7 +828,7 @@ function aturDropdownKelas(user) {
       const ayatSampai = row.querySelector(".ayat-sampai").value;
       const totalJuz = row.querySelector(".total-juz").textContent;
       const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
-      const juzTerbaca = row.querySelector(".total-all-juz").textContent;
+      const totalAllJuz = row.querySelector(".total-all-juz").textContent || "0";
         
         data.push({
           id, nama, absensi, semester,
@@ -836,7 +836,7 @@ function aturDropdownKelas(user) {
           sampai: `${surahSampai}:${ayatSampai}`,
           totalJuz,
           juzTerbaca,
-          total-all-juz
+          totalAllJuz
         });
       });
 
