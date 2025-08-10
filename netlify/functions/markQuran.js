@@ -14,8 +14,8 @@ exports.handler = async (event) => {
   }
 
   try {
-    // GET → ambil isi file
     if (event.httpMethod === "GET") {
+      // Ambil file mark-quran.json dari GitHub sebagai raw content
       const res = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${FILE_PATH}`, {
         headers: {
           Authorization: `Bearer ${TOKEN}`,
@@ -37,8 +37,8 @@ exports.handler = async (event) => {
       };
     }
 
-    // POST → simpan/update file
     if (event.httpMethod === "POST") {
+      // Parsing body JSON
       let newData;
       try {
         newData = JSON.parse(event.body || "{}");
@@ -49,7 +49,21 @@ exports.handler = async (event) => {
         };
       }
 
-      // Ambil file lama beserta SHA-nya
+      // Validasi minimal field wajib
+      if (
+        !newData.idSiswa ||
+        typeof newData.idSiswa !== "number" ||
+        !newData.markQuran ||
+        typeof newData.nilai !== "number" ||
+        !newData.predikat
+      ) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ message: "Data yang dikirim tidak lengkap atau salah format." }),
+        };
+      }
+
+      // Ambil isi file lama dan SHA-nya untuk update file
       let oldData = [];
       let sha = null;
 
@@ -72,16 +86,15 @@ exports.handler = async (event) => {
         }
       }
 
-      // Cari index data santri yang sama
+      // Update data jika idSiswa sudah ada, atau tambah baru
       const index = oldData.findIndex((item) => item.idSiswa === newData.idSiswa);
-
       if (index >= 0) {
-        oldData[index] = newData; // update data santri
+        oldData[index] = newData;
       } else {
-        oldData.push(newData); // tambah data baru
+        oldData.push(newData);
       }
 
-      // Simpan data gabungan ke GitHub
+      // Simpan file baru ke GitHub (PUT dengan SHA jika update)
       const saveRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${FILE_PATH}`, {
         method: "PUT",
         headers: {
