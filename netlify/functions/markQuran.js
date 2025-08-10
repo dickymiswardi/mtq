@@ -1,11 +1,13 @@
+// netlify/functions/markQuran.js
 const fetch = require("node-fetch");
 
 const GITHUB_API = "https://api.github.com";
 const REPO = "dickymiswardi/usermtq";
 const TOKEN = process.env.MTQ_TOKEN;
+const FILE_PATH = "mark-quran.json";
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") {
+  if (!["GET", "POST"].includes(event.httpMethod)) {
     return {
       statusCode: 405,
       body: JSON.stringify({ message: "Method Not Allowed" }),
@@ -13,82 +15,86 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { kelas, tanggal, id, markQuran, nilai, predikat } = JSON.parse(event.body || "{}");
+    // GET → ambil isi file
+    if (event.httpMethod === "GET") {
+      const res = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${FILE_PATH}`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          Accept: "application/vnd.github.v3.raw",
+        },
+      });
 
-    if (!kelas || !tanggal || !id) {
+      if (!res.ok) {
+        return {
+          statusCode: res.status,
+          body: JSON.stringify({ message: "Gagal mengambil data." }),
+        };
+      }
+
+      const text = await res.text();
       return {
-        statusCode: 400,
-        body: JSON.stringify({ message: "kelas, tanggal, dan id wajib diisi" }),
+        statusCode: 200,
+        body: text,
       };
     }
 
-    const path = `absensi/kelas_${kelas}_${tanggal}.json`;
+    // POST → simpan/update file
+    if (event.httpMethod === "POST") {
+      let newData;
+      try {
+        newData = JSON.parse(event.body || "{}");
+      } catch (err) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ message: "Format JSON tidak valid." }),
+        };
+      }
 
-    // Ambil data lama
-    const getRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${path}`, {
-      headers: {
-        Authorization: `Bearer ${TOKEN}`,
-        Accept: "application/vnd.github.v3+json",
-      },
-    });
+      // Ambil SHA file lama (kalau ada)
+      let sha = null;
+      const checkRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${FILE_PATH}`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+      });
 
-    if (!getRes.ok) {
+      if (checkRes.ok) {
+        const fileJson = await checkRes.json();
+        sha = fileJson.sha;
+      }
+
+      // Simpan ke GitHub
+      const saveRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${FILE_PATH}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+        body: JSON.stringify({
+          message: "Update mark-quran.json",
+          content: Buffer.from(JSON.stringify(newData, null, 2)).toString("base64"),
+          sha: sha || undefined,
+        }),
+      });
+
+      if (!saveRes.ok) {
+        const errText = await saveRes.text();
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ message: "Gagal menyimpan file.", error: errText }),
+        };
+      }
+
       return {
-        statusCode: 404,
-        body: JSON.stringify({ message: "File absensi tidak ditemukan" }),
+        statusCode: 200,
+        body: JSON.stringify({ message: "Data berhasil disimpan." }),
       };
     }
-
-    const fileData = await getRes.json();
-    const contentJson = JSON.parse(Buffer.from(fileData.content, "base64").toString());
-
-    // Update data pada id yang sesuai
-    const index = contentJson.findIndex(s => s.id === id);
-    if (index === -1) {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ message: `Santri dengan id ${id} tidak ditemukan` }),
-      };
-    }
-
-    contentJson[index].markQuran = markQuran;
-    contentJson[index].nilai = nilai;
-    contentJson[index].predikat = predikat;
-
-    // Encode kembali ke base64
-    const newContent = Buffer.from(JSON.stringify(contentJson, null, 2)).toString("base64");
-
-    // Simpan perubahan
-    const updateRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${path}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${TOKEN}`,
-        Accept: "application/vnd.github.v3+json",
-      },
-      body: JSON.stringify({
-        message: `Update mark Quran untuk id ${id}`,
-        content: newContent,
-        sha: fileData.sha,
-      }),
-    });
-
-    if (!updateRes.ok) {
-      const errText = await updateRes.text();
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ message: "Gagal memperbarui file", error: errText }),
-      };
-    }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: "Mark Quran berhasil disimpan" }),
-    };
-
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: "Terjadi kesalahan server", error: err.message }),
+      body: JSON.stringify({ message: "Terjadi kesalahan server.", error: err.message }),
     };
   }
 };
