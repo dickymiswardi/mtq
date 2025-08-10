@@ -1602,7 +1602,7 @@ async function submitTambahKelasBaru() {
   }
 </script>
 
-<script>
+ <script>
 let quranData = {};
 let ayahPageMap = {};
 let markData = {}; // { "surah:ayat": { wordIndex: "green|yellow|red" } }
@@ -1673,10 +1673,22 @@ let dataSiap = Promise.all([
     .then(data => { ayahPageMap = data; })
 ]).catch(err => console.error('Gagal memuat data:', err));
 
+async function loadDataKelas(kelas, tanggal) {
+  try {
+    const url = `https://raw.githubusercontent.com/dickymiswardi/usermtq/refs/heads/main/absensi/${kelas}_${tanggal}.json`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data;
+  } catch (e) {
+    console.warn("Gagal load data kelas:", e);
+    return [];
+  }
+}
+
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
-    // RESET markData tiap klik baris baru
-    markData = {};
+    markData = {}; // reset markData tiap buka modal
 
     document.getElementById('overlay').style.display = 'flex';
     await dataSiap;
@@ -1686,7 +1698,6 @@ document.addEventListener('click', async function(e) {
     // Ambil ID dan Nama langsung dari kolom di row
     const idSiswa = parseInt(row.cells[0].innerText.trim());
     const namaSiswa = row.cells[1].innerText.trim();
-
     currentIdSiswa = idSiswa;
 
     // Ambil range surah dan ayat dari input di row tersebut
@@ -1695,6 +1706,21 @@ document.addEventListener('click', async function(e) {
     const surahSampai = parseInt(row.querySelector('.surah-sampai').value);
     const ayatSampai = parseInt(row.querySelector('.ayat-sampai').value);
 
+    // Ambil kelas & tanggal dari UI
+    const kelasSelect = document.getElementById("kelas");
+    const kelas = kelasSelect ? kelasSelect.value : "kelas_1";
+    const tanggal = new Date().toISOString().split('T')[0];
+
+    // Load data kelas hari ini untuk bisa load markQuran yg tersimpan utk santri ini
+    const kelasData = await loadDataKelas(kelas, tanggal);
+
+    // Jika data santri ada di kelasData, ambil markQuran dan apply ke markData
+    const santriData = kelasData.find(s => s.id === currentIdSiswa);
+    if (santriData && santriData.markQuran) {
+      markData = santriData.markQuran;
+    }
+
+    // Tampilkan Quran sesuai rentang
     let halamanMap = {};
     for (let s = surahDari; s <= surahSampai; s++) {
       const ayatMulai = (s === surahDari) ? ayatDari : 1;
@@ -1711,6 +1737,7 @@ document.addEventListener('click', async function(e) {
       }
     }
 
+    // Render ke modal
     const halamanUrut = Object.keys(halamanMap).sort((a,b) => a - b);
     const quranText = document.getElementById('quran-text');
     quranText.innerHTML = '';
@@ -1735,7 +1762,9 @@ document.addEventListener('click', async function(e) {
       quranText.appendChild(pageDiv);
     }
 
+    // Hitung nilai dan tampilkan
     hitungNilai();
+
     document.getElementById('overlay').style.display = 'none';
     document.getElementById('overlay-quran').style.display = 'flex';
   }
@@ -1746,25 +1775,61 @@ document.getElementById("btn-simpan-mark").onclick = async function() {
     alert("Silakan pilih santri terlebih dahulu dengan klik tombol 'Lihat Quran'.");
     return;
   }
-  const { nilai, predikat } = hitungNilai();
-  const tanggalFile = `kelas_1_${new Date().toISOString().split('T')[0]}.json`;
 
-  const res = await fetch("/.netlify/functions/markQuran", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      tanggalFile,
-      idSiswa: currentIdSiswa,
+  const kelasSelect = document.getElementById("kelas");
+  const kelas = kelasSelect ? kelasSelect.value : "kelas_1";
+  const tanggal = new Date().toISOString().split('T')[0];
+
+  // Ambil dulu data kelas hari ini yang sudah ada (file JSON array)
+  let kelasData = [];
+  try {
+    const resGet = await fetch(`https://raw.githubusercontent.com/dickymiswardi/usermtq/refs/heads/main/absensi/${kelas}_${tanggal}.json`);
+    if (resGet.ok) {
+      kelasData = await resGet.json();
+    }
+  } catch (err) {
+    console.warn("Gagal ambil data kelas sebelumnya, anggap data kosong");
+  }
+
+  // Update data santri di kelasData dengan currentIdSiswa dan markQuran baru
+  const santriIndex = kelasData.findIndex(s => s.id === currentIdSiswa);
+  const { nilai, predikat } = hitungNilai();
+
+  if (santriIndex >= 0) {
+    kelasData[santriIndex].markQuran = markData;
+    kelasData[santriIndex].nilai = nilai;
+    kelasData[santriIndex].predikat = predikat;
+  } else {
+    // Jika santri belum ada di file, tambahkan data baru
+    kelasData.push({
+      id: currentIdSiswa,
       markQuran: markData,
       nilai,
       predikat
+      // Bisa tambahkan properti lain kalau perlu
+    });
+  }
+
+  // Kirim data kelasData ke backend saveData.js
+  const resSave = await fetch("/.netlify/functions/saveData", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tanggal,
+      kelas,
+      data: kelasData
     })
   });
 
-  const json = await res.json();
-  alert(json.message);
+  const json = await resSave.json();
+  if (json.success) {
+    alert("Data berhasil disimpan.");
+  } else {
+    alert("Gagal menyimpan data: " + (json.error || "Unknown error"));
+  }
 };
 </script>
+
 
   
 
