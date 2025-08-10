@@ -1698,11 +1698,11 @@ document.addEventListener('click', async function(e) {
       return;
     }
 
-    // Tandai baris ini sebagai aktif
+    // Tandai baris ini sebagai aktif (untuk referensi saat simpan)
     document.querySelectorAll('tr.active').forEach(r => r.classList.remove('active'));
     row.classList.add('active');
 
-    // Ambil id santri dari atribut data-id
+    // Ambil id santri dari atribut data-id (pastikan di tbody <tr data-id="123">)
     const idAttr = row.getAttribute('data-id');
     currentIdSiswa = idAttr ? parseInt(idAttr) : null;
 
@@ -1760,7 +1760,7 @@ document.addEventListener('click', async function(e) {
   }
 });
 
-// Simpan markQuran ke backend
+// Tombol simpan markQuran ke backend
 document.getElementById("btn-simpan-mark").onclick = async function() {
   if (!currentIdSiswa) {
     alert("Silakan klik tombol 'Lihat Quran' pada santri yang ingin disimpan marknya terlebih dahulu.");
