@@ -1607,6 +1607,8 @@ let quranData = {};
 let ayahPageMap = {};
 let markData = {}; // { "surah:ayat": { wordIndex: "green|yellow|red" } }
 
+let currentIdSiswa = null;  // Menyimpan id santri yg sedang aktif/terpilih
+
 // Hitung nilai dan predikat berdasarkan markData
 function hitungNilai() {
   let totalMinus = 0;
@@ -1641,7 +1643,6 @@ function buatKataKlik(surah, ayat, teks) {
     span.dataset.key = `${surah}:${ayat}`;
     span.dataset.idx = idx;
 
-    // Warna klik: null -> green -> yellow -> red -> null
     span.onclick = () => {
       const warnaSekarang = markData[surah+":"+ayat]?.[idx] || null;
       let warnaBaru = null;
@@ -1697,6 +1698,14 @@ document.addEventListener('click', async function(e) {
       return;
     }
 
+    // Tandai baris ini sebagai aktif
+    document.querySelectorAll('tr.active').forEach(r => r.classList.remove('active'));
+    row.classList.add('active');
+
+    // Ambil id santri dari atribut data-id
+    const idAttr = row.getAttribute('data-id');
+    currentIdSiswa = idAttr ? parseInt(idAttr) : null;
+
     // Ambil range surah dan ayat dari input di baris tersebut
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
@@ -1706,7 +1715,6 @@ document.addEventListener('click', async function(e) {
     let halamanMap = {};
     for (let s = surahDari; s <= surahSampai; s++) {
       const ayatMulai = (s === surahDari) ? ayatDari : 1;
-      // Batasi maksimal ayat 300 untuk safety (sesuaikan sesuai surah)
       const ayatAkhir = (s === surahSampai) ? ayatSampai : 300;
 
       for (let a = ayatMulai; a <= ayatAkhir; a++) {
@@ -1754,17 +1762,12 @@ document.addEventListener('click', async function(e) {
 
 // Simpan markQuran ke backend
 document.getElementById("btn-simpan-mark").onclick = async function() {
-  const { nilai, predikat } = hitungNilai();
-
-  // Ambil idSiswa dari tombol simpan yang sedang aktif (misal data attribute dari tombol)
-  // Jika tidak ada, default 1
-  let idSiswa = 1;
-  const activeRow = document.querySelector('tr.active'); // sesuaikan selector jika perlu
-  if(activeRow) {
-    const idAttr = activeRow.getAttribute('data-idsiswa');
-    if(idAttr) idSiswa = parseInt(idAttr);
+  if (!currentIdSiswa) {
+    alert("Silakan klik tombol 'Lihat Quran' pada santri yang ingin disimpan marknya terlebih dahulu.");
+    return;
   }
 
+  const { nilai, predikat } = hitungNilai();
   const tanggalFile = `kelas_1_${new Date().toISOString().split('T')[0]}.json`;
 
   try {
@@ -1773,7 +1776,7 @@ document.getElementById("btn-simpan-mark").onclick = async function() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         tanggalFile,
-        idSiswa,
+        idSiswa: currentIdSiswa,
         markQuran: markData,
         nilai,
         predikat
@@ -1786,6 +1789,7 @@ document.getElementById("btn-simpan-mark").onclick = async function() {
   }
 };
 </script>
+
   
 
 
