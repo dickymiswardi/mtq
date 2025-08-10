@@ -453,18 +453,17 @@
 </div>
 
 
-  <!-- Overlay Quran -->
-<div id="overlay-quran" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
-  <div style="background:#fff; padding:20px; max-height:90vh; overflow:auto; width:80%;">
-    <h2 id="quran-santri-title">Baca Quran</h2>
-    <div id="quran-text"></div>
-    <div style="margin-top:15px; text-align:right;">
-      <button id="simpan-mark-btn" style="background:green; color:#fff; padding:8px 12px; border:none; cursor:pointer;">Simpan Mark Quran</button>
-      <button onclick="document.getElementById('overlay-quran').style.display='none'" style="background:red; color:#fff; padding:8px 12px; border:none; cursor:pointer;">Tutup</button>
-    </div>
+  <div id="overlay-quran" style="display:none; position:fixed; top:0; left:0;
+     width:100%; height:100%; background:rgba(0,0,0,0.5);
+     z-index:10000; justify-content:center; align-items:center;">
+  <div style="background:white; padding:20px; border-radius:8px;
+       max-width:600px; max-height:80%; overflow:auto;">
+    <h3>Ayat Al-Qur'an</h3>
+    <div id="quran-text" style="white-space:pre-wrap; line-height:2; direction:rtl; font-size:20px;"></div>
+    <br>
+    <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
   </div>
-</div>
-
+  </div>
 
 <div id="juzOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
 background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:center;">
@@ -1602,8 +1601,6 @@ async function submitTambahKelasBaru() {
 let quranData = {};
 let ayahPageMap = {};
 let dataSiap = null;
-let currentSantri = null; // Simpan info santri yg sedang dibuka
-let currentMarks = {}; // Mark Quran yang sedang di-edit
 
 // Ambil file Quran & mapping halaman sekali saat load
 dataSiap = Promise.all([
@@ -1618,25 +1615,23 @@ dataSiap = Promise.all([
 
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
-    document.getElementById('overlay').style.display = 'flex'; // Tampilkan loading
 
+     // ✅ Tampilkan loading
+    document.getElementById('overlay').style.display = 'flex';
+
+    // Pastikan data siap
     await dataSiap;
 
     const row = e.target.closest('tr');
-    const idSantri = parseInt(row.dataset.id);
-    const namaSantri = row.querySelector('.nama-santri').textContent.trim();
-    const kelasSantri = row.dataset.kelas;
-    const tanggalHariIni = row.dataset.tanggal;
 
-    currentSantri = { id: idSantri, nama: namaSantri, kelas: kelasSantri, tanggal: tanggalHariIni };
-    currentMarks = {}; // reset mark
-
+    // Ambil nilai dropdown
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
     const surahSampai = parseInt(row.querySelector('.surah-sampai').value);
     const ayatSampai = parseInt(row.querySelector('.ayat-sampai').value);
 
-    let halamanMap = {};
+    // Kumpulkan ayat & halaman
+    let halamanMap = {}; // {halaman: [teks, teks, ...]}
     for (let s = surahDari; s <= surahSampai; s++) {
       const ayatMulai = (s === surahDari) ? ayatDari : 1;
       const ayatAkhir = (s === surahSampai) ? ayatSampai : 300;
@@ -1647,12 +1642,15 @@ document.addEventListener('click', async function(e) {
           const page = ayahPageMap[key];
           if (!page) continue;
           if (!halamanMap[page]) halamanMap[page] = [];
-          halamanMap[page].push({ key, text: quranData[key].replace(/\|/g, ' ') });
+          halamanMap[page].push(quranData[key].replace(/\|/g, ' '));
         }
       }
     }
 
+    // Sort halaman dari kecil ke besar
     const halamanUrut = Object.keys(halamanMap).sort((a,b) => a - b);
+
+    // Tampilkan di overlay
     const quranText = document.getElementById('quran-text');
     quranText.innerHTML = '';
 
@@ -1660,6 +1658,7 @@ document.addEventListener('click', async function(e) {
       const pageStr = String(page).padStart(3, '0');
       const fontUrl = `https://raw.githubusercontent.com/dickymiswardi/quran/refs/heads/main/fonts/QCF_P${pageStr}.TTF`;
 
+      // Load font untuk halaman ini
       try {
         const font = new FontFace(`QCF_P${pageStr}`, `url(${fontUrl})`);
         await font.load();
@@ -1668,59 +1667,19 @@ document.addEventListener('click', async function(e) {
         console.error('Gagal memuat font Quran:', err);
       }
 
-      halamanMap[page].forEach(ayat => {
-        const ayatSpan = document.createElement('span');
-        ayatSpan.style.fontFamily = `QCF_P${pageStr}`;
-        ayatSpan.style.display = 'inline-block';
-        ayatSpan.style.padding = '5px';
-        ayatSpan.style.cursor = 'pointer';
-        ayatSpan.textContent = ayat.text;
+      // Buat elemen div per halaman
+      const pageDiv = document.createElement('div');
+      pageDiv.style.fontFamily = `QCF_P${pageStr}`;
+      pageDiv.style.marginBottom = '20px';
+      pageDiv.innerText = halamanMap[page].join('\n');
 
-        ayatSpan.addEventListener('click', () => {
-          if (!currentMarks[ayat.key]) currentMarks[ayat.key] = {};
-          currentMarks[ayat.key][page] = currentMarks[ayat.key][page] === 'green' ? null : 'green';
-          ayatSpan.style.backgroundColor = currentMarks[ayat.key][page] || '';
-        });
-
-        quranText.appendChild(ayatSpan);
-      });
-
-      quranText.appendChild(document.createElement('br'));
+      quranText.appendChild(pageDiv);
     }
 
+    // ✅ Sembunyikan loading
     document.getElementById('overlay').style.display = 'none';
-    document.getElementById('quran-santri-title').textContent = `Baca Quran - ${namaSantri}`;
+
     document.getElementById('overlay-quran').style.display = 'flex';
-  }
-});
-
-// Simpan mark Quran
-document.getElementById('simpan-mark-btn').addEventListener('click', async () => {
-  if (!currentSantri) return;
-
-  document.getElementById('overlay').style.display = 'flex';
-
-  const res = await fetch('/api/markQuran', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      kelas: currentSantri.kelas,
-      tanggal: currentSantri.tanggal,
-      id: currentSantri.id,
-      markQuran: currentMarks,
-      nilai: 98.5, // contoh
-      predikat: "MUMTAZ (A)" // contoh
-    })
-  });
-
-  document.getElementById('overlay').style.display = 'none';
-
-  if (res.ok) {
-    alert('Mark Quran berhasil disimpan!');
-    document.getElementById('overlay-quran').style.display = 'none';
-  } else {
-    const err = await res.json();
-    alert('Gagal menyimpan: ' + err.message);
   }
 });
 </script>
