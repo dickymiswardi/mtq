@@ -453,17 +453,20 @@
 </div>
 
 
-  <div id="overlay-quran" style="display:none; position:fixed; top:0; left:0;
+  <!-- Overlay Quran -->
+<div id="overlay-quran" style="display:none; position:fixed; top:0; left:0;
      width:100%; height:100%; background:rgba(0,0,0,0.5);
      z-index:10000; justify-content:center; align-items:center;">
   <div style="background:white; padding:20px; border-radius:8px;
        max-width:600px; max-height:80%; overflow:auto;">
     <h3>Ayat Al-Qur'an</h3>
     <div id="quran-text" style="white-space:pre-wrap; line-height:2; direction:rtl; font-size:20px;"></div>
+    <div id="nilai-akhir" style="margin-top:10px; font-weight:bold;"></div>
     <br>
+    <button id="btn-simpan">Simpan</button>
     <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
   </div>
-  </div>
+</div>
 
 <div id="juzOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
 background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:center;">
@@ -1597,10 +1600,39 @@ async function submitTambahKelasBaru() {
   }
 </script>
 
+<!-- Overlay Quran -->
+<div id="overlay-quran" style="display:none; position:fixed; top:0; left:0;
+     width:100%; height:100%; background:rgba(0,0,0,0.5);
+     z-index:10000; justify-content:center; align-items:center;">
+  <div style="background:white; padding:20px; border-radius:8px;
+       max-width:600px; max-height:80%; overflow:auto;">
+    <h3>Ayat Al-Qur'an</h3>
+    <div id="quran-text" style="white-space:pre-wrap; line-height:2; direction:rtl; font-size:20px;"></div>
+    <div id="nilai-akhir" style="margin-top:10px; font-weight:bold;"></div>
+    <br>
+    <button id="btn-simpan">Simpan</button>
+    <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
+  </div>
+</div>
+
+<!-- Overlay Loading -->
+<div id="overlay" style="display:none; position:fixed; top:0; left:0;
+     width:100%; height:100%; background:rgba(0,0,0,0.3);
+     z-index:20000; justify-content:center; align-items:center; font-size:24px; color:white;">
+  <span>⏳ Loading...</span>
+</div>
+
 <script>
 let quranData = {};
 let ayahPageMap = {};
 let dataSiap = null;
+let markState = {}; // { "s:a:wordIndex": "green|yellow|red" }
+
+const warnaMap = {
+  green: { color: "green", minus: 0.5 },
+  yellow: { color: "yellow", minus: 1 },
+  red: { color: "red", minus: 2 }
+};
 
 // Ambil file Quran & mapping halaman sekali saat load
 dataSiap = Promise.all([
@@ -1610,55 +1642,76 @@ dataSiap = Promise.all([
 
   fetch('https://raw.githubusercontent.com/dickymiswardi/tadabbur/refs/heads/main/ayah_page_map.json')
     .then(res => res.json())
-    .then(data => { ayahPageMap = data; })
+    .then(data => { ayahPageMap = data; }),
+
+  fetch('https://raw.githubusercontent.com/dickymiswardi/usermtq/refs/heads/main/mark-quran.json')
+    .then(res => res.json())
+    .then(data => { markState = data || {}; })
 ]).catch(err => console.error('Gagal memuat data:', err));
+
+// Fungsi hitung nilai
+function hitungNilai() {
+  let totalMinus = 0;
+  for (let key in markState) {
+    let warna = markState[key];
+    if (warnaMap[warna]) {
+      totalMinus += warnaMap[warna].minus;
+    }
+  }
+  let nilai = Math.max(1, Math.round(100 - totalMinus));
+  let predikat = "";
+  if (nilai <= 59) predikat = "ROSIB (E)";
+  else if (nilai <= 69) predikat = "MAQBUL (D)";
+  else if (nilai <= 79) predikat = "JAYYID (C)";
+  else if (nilai <= 89) predikat = "JAYYID JIDDAN (B)";
+  else predikat = "MUMTAZ (A)";
+
+  document.getElementById('nilai-akhir').innerText = `Nilai: ${nilai} - ${predikat}`;
+}
+
+// Klik kata → ganti warna
+function toggleMark(el, key) {
+  const urutan = ["green", "yellow", "red", null];
+  let idx = urutan.indexOf(markState[key] || null);
+  let next = urutan[(idx + 1) % urutan.length];
+  markState[key] = next;
+  el.style.backgroundColor = next ? warnaMap[next].color : "transparent";
+  hitungNilai();
+}
 
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
-
-     // ✅ Tampilkan loading
     document.getElementById('overlay').style.display = 'flex';
-
-    // Pastikan data siap
     await dataSiap;
 
     const row = e.target.closest('tr');
-
-    // Ambil nilai dropdown
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
     const surahSampai = parseInt(row.querySelector('.surah-sampai').value);
     const ayatSampai = parseInt(row.querySelector('.ayat-sampai').value);
 
-    // Kumpulkan ayat & halaman
-    let halamanMap = {}; // {halaman: [teks, teks, ...]}
+    let halamanMap = {};
     for (let s = surahDari; s <= surahSampai; s++) {
       const ayatMulai = (s === surahDari) ? ayatDari : 1;
       const ayatAkhir = (s === surahSampai) ? ayatSampai : 300;
-
       for (let a = ayatMulai; a <= ayatAkhir; a++) {
         const key = `${s}:${a}`;
         if (quranData[key]) {
           const page = ayahPageMap[key];
           if (!page) continue;
           if (!halamanMap[page]) halamanMap[page] = [];
-          halamanMap[page].push(quranData[key].replace(/\|/g, ' '));
+          halamanMap[page].push({ text: quranData[key].replace(/\|/g, ' '), surah: s, ayah: a });
         }
       }
     }
 
-    // Sort halaman dari kecil ke besar
     const halamanUrut = Object.keys(halamanMap).sort((a,b) => a - b);
-
-    // Tampilkan di overlay
     const quranText = document.getElementById('quran-text');
     quranText.innerHTML = '';
 
     for (let page of halamanUrut) {
       const pageStr = String(page).padStart(3, '0');
       const fontUrl = `https://raw.githubusercontent.com/dickymiswardi/quran/refs/heads/main/fonts/QCF_P${pageStr}.TTF`;
-
-      // Load font untuk halaman ini
       try {
         const font = new FontFace(`QCF_P${pageStr}`, `url(${fontUrl})`);
         await font.load();
@@ -1667,20 +1720,46 @@ document.addEventListener('click', async function(e) {
         console.error('Gagal memuat font Quran:', err);
       }
 
-      // Buat elemen div per halaman
-      const pageDiv = document.createElement('div');
-      pageDiv.style.fontFamily = `QCF_P${pageStr}`;
-      pageDiv.style.marginBottom = '20px';
-      pageDiv.innerText = halamanMap[page].join('\n');
+      halamanMap[page].forEach(ayatObj => {
+        const ayahDiv = document.createElement('div');
+        ayahDiv.style.fontFamily = `QCF_P${pageStr}`;
+        ayahDiv.style.marginBottom = '10px';
 
-      quranText.appendChild(pageDiv);
+        ayatObj.text.split(' ').forEach((kata, idx) => {
+          const span = document.createElement('span');
+          const key = `${ayatObj.surah}:${ayatObj.ayah}:${idx}`;
+          span.innerText = kata + ' ';
+          if (markState[key]) {
+            span.style.backgroundColor = warnaMap[markState[key]].color;
+          }
+          span.onclick = () => toggleMark(span, key);
+          ayahDiv.appendChild(span);
+        });
+
+        quranText.appendChild(ayahDiv);
+      });
     }
 
-    // ✅ Sembunyikan loading
+    hitungNilai();
     document.getElementById('overlay').style.display = 'none';
-
     document.getElementById('overlay-quran').style.display = 'flex';
   }
+});
+
+// Simpan ke GitHub
+document.getElementById('btn-simpan').addEventListener('click', async () => {
+  document.getElementById('overlay').style.display = 'flex';
+  try {
+    await fetch('/.netlify/functions/markQuran', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: markState })
+    });
+    alert('Penandaan berhasil disimpan.');
+  } catch (err) {
+    alert('Gagal menyimpan: ' + err.message);
+  }
+  document.getElementById('overlay').style.display = 'none';
 });
 </script>
   
