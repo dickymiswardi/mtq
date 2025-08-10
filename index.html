@@ -1607,13 +1607,14 @@ let quranData = {};
 let ayahPageMap = {};
 let markData = {}; // { "surah:ayat": { wordIndex: "green|yellow|red" } }
 
+// Hitung nilai dan predikat berdasarkan markData
 function hitungNilai() {
   let totalMinus = 0;
   for (let ayat in markData) {
     for (let idx in markData[ayat]) {
       if (markData[ayat][idx] === "green") totalMinus += 0.5;
-      if (markData[ayat][idx] === "yellow") totalMinus += 1;
-      if (markData[ayat][idx] === "red") totalMinus += 2;
+      else if (markData[ayat][idx] === "yellow") totalMinus += 1;
+      else if (markData[ayat][idx] === "red") totalMinus += 2;
     }
   }
   const nilai = Math.max(0, 100 - totalMinus);
@@ -1624,11 +1625,14 @@ function hitungNilai() {
   else if (nilai <= 89) predikat = "JAYYID JIDDAN (B)";
   else predikat = "MUMTAZ (A)";
 
-  document.getElementById("nilai-akhir").innerText = nilai.toFixed(1);
-  document.getElementById("predikat-akhir").innerText = predikat;
+  const elNilai = document.getElementById("nilai-akhir");
+  const elPredikat = document.getElementById("predikat-akhir");
+  if(elNilai) elNilai.innerText = nilai.toFixed(1);
+  if(elPredikat) elPredikat.innerText = predikat;
   return { nilai, predikat };
 }
 
+// Buat elemen kata dengan klik berganti warna
 function buatKataKlik(surah, ayat, teks) {
   return teks.split(" ").map((kata, idx) => {
     const span = document.createElement("span");
@@ -1637,6 +1641,7 @@ function buatKataKlik(surah, ayat, teks) {
     span.dataset.key = `${surah}:${ayat}`;
     span.dataset.idx = idx;
 
+    // Warna klik: null -> green -> yellow -> red -> null
     span.onclick = () => {
       const warnaSekarang = markData[surah+":"+ayat]?.[idx] || null;
       let warnaBaru = null;
@@ -1663,21 +1668,36 @@ function buatKataKlik(surah, ayat, teks) {
   });
 }
 
-let dataSiap = Promise.all([
+// Load data Quran dan ayah-page map
+const dataSiap = Promise.all([
   fetch('https://raw.githubusercontent.com/dickymiswardi/mtq/refs/heads/main/symbol1.json')
-    .then(res => res.json())
+    .then(res => {
+      if(!res.ok) throw new Error("Gagal load symbol1.json");
+      return res.json();
+    })
     .then(data => { quranData = data; }),
   fetch('https://raw.githubusercontent.com/dickymiswardi/tadabbur/refs/heads/main/ayah_page_map.json')
-    .then(res => res.json())
+    .then(res => {
+      if(!res.ok) throw new Error("Gagal load ayah_page_map.json");
+      return res.json();
+    })
     .then(data => { ayahPageMap = data; })
 ]).catch(err => console.error('Gagal memuat data:', err));
 
+// Event klik tombol lihat Quran
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
     document.getElementById('overlay').style.display = 'flex';
     await dataSiap;
 
     const row = e.target.closest('tr');
+    if(!row) {
+      alert("Data baris tidak ditemukan.");
+      document.getElementById('overlay').style.display = 'none';
+      return;
+    }
+
+    // Ambil range surah dan ayat dari input di baris tersebut
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
     const surahSampai = parseInt(row.querySelector('.surah-sampai').value);
@@ -1686,6 +1706,7 @@ document.addEventListener('click', async function(e) {
     let halamanMap = {};
     for (let s = surahDari; s <= surahSampai; s++) {
       const ayatMulai = (s === surahDari) ? ayatDari : 1;
+      // Batasi maksimal ayat 300 untuk safety (sesuaikan sesuai surah)
       const ayatAkhir = (s === surahSampai) ? ayatSampai : 300;
 
       for (let a = ayatMulai; a <= ayatAkhir; a++) {
@@ -1710,7 +1731,9 @@ document.addEventListener('click', async function(e) {
         const font = new FontFace(`QCF_P${pageStr}`, `url(${fontUrl})`);
         await font.load();
         document.fonts.add(font);
-      } catch {}
+      } catch(e) {
+        console.warn(`Gagal load font untuk halaman ${pageStr}:`, e);
+      }
       const pageDiv = document.createElement('div');
       pageDiv.style.fontFamily = `QCF_P${pageStr}`;
       pageDiv.style.marginBottom = '20px';
@@ -1729,25 +1752,38 @@ document.addEventListener('click', async function(e) {
   }
 });
 
+// Simpan markQuran ke backend
 document.getElementById("btn-simpan-mark").onclick = async function() {
   const { nilai, predikat } = hitungNilai();
-  const idSiswa = 1; // ambil dari row/atribut di tabel Anda
+
+  // Ambil idSiswa dari tombol simpan yang sedang aktif (misal data attribute dari tombol)
+  // Jika tidak ada, default 1
+  let idSiswa = 1;
+  const activeRow = document.querySelector('tr.active'); // sesuaikan selector jika perlu
+  if(activeRow) {
+    const idAttr = activeRow.getAttribute('data-idsiswa');
+    if(idAttr) idSiswa = parseInt(idAttr);
+  }
+
   const tanggalFile = `kelas_1_${new Date().toISOString().split('T')[0]}.json`;
 
-  const res = await fetch("/.netlify/functions/markQuran", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      tanggalFile,
-      idSiswa,
-      markQuran: markData,
-      nilai,
-      predikat
-    })
-  });
-
-  const json = await res.json();
-  alert(json.message);
+  try {
+    const res = await fetch("/.netlify/functions/markQuran", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tanggalFile,
+        idSiswa,
+        markQuran: markData,
+        nilai,
+        predikat
+      })
+    });
+    const json = await res.json();
+    alert(json.message);
+  } catch (err) {
+    alert("Gagal menyimpan data: " + err.message);
+  }
 };
 </script>
   
