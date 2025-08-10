@@ -1801,6 +1801,216 @@ document.getElementById("btn-simpan-mark").onclick = async function() {
   const santriIndex = kelasData.findIndex(s => s.id === currentIdSiswa);
   const { nilai, predikat } = hitungNilai();
 
+<!-- Pastikan ada elemen ini di HTML -->
+<select id="kelas">
+  <option value="kelas_1">Kelas 1</option>
+  <option value="kelas_2">Kelas 2</option>
+  <!-- dst -->
+</select>
+
+<input type="date" id="tanggal" value="<?= new Date().toISOString().split('T')[0] ?>"> 
+
+<!-- Tombol simpan di modal -->
+<button id="btn-simpan-mark">Simpan Mark Quran</button>
+
+<script>
+let quranData = {};
+let ayahPageMap = {};
+let markData = {}; // { "surah:ayat": { wordIndex: "green|yellow|red" } }
+let currentIdSiswa = null;  // id santri yg aktif/terpilih
+
+const kelasSelect = document.getElementById("kelas");
+const tanggalInput = document.getElementById("tanggal");
+
+// Hitung nilai dan predikat berdasarkan markData
+function hitungNilai() {
+  let totalMinus = 0;
+  for (let ayat in markData) {
+    for (let idx in markData[ayat]) {
+      if (markData[ayat][idx] === "green") totalMinus += 0.5;
+      else if (markData[ayat][idx] === "yellow") totalMinus += 1;
+      else if (markData[ayat][idx] === "red") totalMinus += 2;
+    }
+  }
+  const nilai = Math.max(0, 100 - totalMinus);
+  let predikat = "";
+  if (nilai <= 59) predikat = "ROSIB (E)";
+  else if (nilai <= 69) predikat = "MAQBUL (D)";
+  else if (nilai <= 79) predikat = "JAYYID (C)";
+  else if (nilai <= 89) predikat = "JAYYID JIDDAN (B)";
+  else predikat = "MUMTAZ (A)";
+  document.getElementById("nilai-akhir").innerText = nilai.toFixed(1);
+  document.getElementById("predikat-akhir").innerText = predikat;
+  return { nilai, predikat };
+}
+
+// Fungsi membuat kata klik untuk modal Quran
+function buatKataKlik(surah, ayat, teks) {
+  return teks.split(" ").map((kata, idx) => {
+    const span = document.createElement("span");
+    span.innerText = kata + " ";
+    span.style.cursor = "pointer";
+    span.dataset.key = `${surah}:${ayat}`;
+    span.dataset.idx = idx;
+
+    span.onclick = () => {
+      const warnaSekarang = markData[surah+":"+ayat]?.[idx] || null;
+      let warnaBaru = null;
+      if (warnaSekarang === null) warnaBaru = "green";
+      else if (warnaSekarang === "green") warnaBaru = "yellow";
+      else if (warnaSekarang === "yellow") warnaBaru = "red";
+      else warnaBaru = null;
+
+      if (!markData[surah+":"+ayat]) markData[surah+":"+ayat] = {};
+      if (warnaBaru) {
+        markData[surah+":"+ayat][idx] = warnaBaru;
+        span.style.backgroundColor = warnaBaru;
+      } else {
+        delete markData[surah+":"+ayat][idx];
+        span.style.backgroundColor = "";
+      }
+      hitungNilai();
+    };
+
+    if (markData[surah+":"+ayat]?.[idx]) {
+      span.style.backgroundColor = markData[surah+":"+ayat][idx];
+    }
+    return span;
+  });
+}
+
+// Load quranData & ayahPageMap sekali di awal
+let dataSiap = Promise.all([
+  fetch('https://raw.githubusercontent.com/dickymiswardi/mtq/refs/heads/main/symbol1.json')
+    .then(res => res.json())
+    .then(data => { quranData = data; }),
+  fetch('https://raw.githubusercontent.com/dickymiswardi/tadabbur/refs/heads/main/ayah_page_map.json')
+    .then(res => res.json())
+    .then(data => { ayahPageMap = data; })
+]).catch(err => console.error('Gagal memuat data:', err));
+
+// Fungsi load data kelas dan tanggal tertentu dari repo GitHub
+async function loadDataKelas(kelas, tanggal) {
+  try {
+    const url = `https://raw.githubusercontent.com/dickymiswardi/usermtq/refs/heads/main/absensi/${kelas}_${tanggal}.json`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data;
+  } catch (e) {
+    console.warn("Gagal load data kelas:", e);
+    return [];
+  }
+}
+
+// Event listener tombol "Lihat Quran"
+document.addEventListener('click', async function(e) {
+  if (e.target.classList.contains('lihat-quran-btn')) {
+    markData = {}; // reset markData tiap buka modal
+
+    document.getElementById('overlay').style.display = 'flex';
+    await dataSiap;
+
+    const row = e.target.closest('tr');
+
+    // Ambil ID dan Nama santri dari row
+    const idSiswa = parseInt(row.cells[0].innerText.trim());
+    const namaSiswa = row.cells[1].innerText.trim();
+    currentIdSiswa = idSiswa;
+
+    // Ambil range surah & ayat dari input di row
+    const surahDari = parseInt(row.querySelector('.surah-dari').value);
+    const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
+    const surahSampai = parseInt(row.querySelector('.surah-sampai').value);
+    const ayatSampai = parseInt(row.querySelector('.ayat-sampai').value);
+
+    // Ambil kelas dan tanggal dari UI
+    const kelas = kelasSelect.value;
+    const tanggal = tanggalInput.value;
+
+    // Load data kelas hari ini untuk dapat markQuran santri ini
+    const kelasData = await loadDataKelas(kelas, tanggal);
+
+    // Cari data santri dan load markQuran jika ada
+    const santriData = kelasData.find(s => s.id === currentIdSiswa);
+    if (santriData && santriData.markQuran) {
+      markData = santriData.markQuran;
+    }
+
+    // Tampilkan Quran sesuai rentang
+    let halamanMap = {};
+    for (let s = surahDari; s <= surahSampai; s++) {
+      const ayatMulai = (s === surahDari) ? ayatDari : 1;
+      const ayatAkhir = (s === surahSampai) ? ayatSampai : 300;
+
+      for (let a = ayatMulai; a <= ayatAkhir; a++) {
+        const key = `${s}:${a}`;
+        if (quranData[key]) {
+          const page = ayahPageMap[key];
+          if (!page) continue;
+          if (!halamanMap[page]) halamanMap[page] = [];
+          halamanMap[page].push({ surah: s, ayat: a, teks: quranData[key].replace(/\|/g, ' ') });
+        }
+      }
+    }
+
+    // Render ke modal Quran
+    const halamanUrut = Object.keys(halamanMap).sort((a,b) => a - b);
+    const quranText = document.getElementById('quran-text');
+    quranText.innerHTML = '';
+
+    for (let page of halamanUrut) {
+      const pageStr = String(page).padStart(3, '0');
+      const fontUrl = `https://raw.githubusercontent.com/dickymiswardi/quran/refs/heads/main/fonts/QCF_P${pageStr}.TTF`;
+      try {
+        const font = new FontFace(`QCF_P${pageStr}`, `url(${fontUrl})`);
+        await font.load();
+        document.fonts.add(font);
+      } catch {}
+      const pageDiv = document.createElement('div');
+      pageDiv.style.fontFamily = `QCF_P${pageStr}`;
+      pageDiv.style.marginBottom = '20px';
+
+      halamanMap[page].forEach(item => {
+        const kataElems = buatKataKlik(item.surah, item.ayat, item.teks);
+        kataElems.forEach(k => pageDiv.appendChild(k));
+        pageDiv.appendChild(document.createElement('br'));
+      });
+      quranText.appendChild(pageDiv);
+    }
+
+    hitungNilai();
+
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('overlay-quran').style.display = 'flex';
+  }
+});
+
+// Tombol simpan markQuran
+document.getElementById("btn-simpan-mark").onclick = async function() {
+  if (!currentIdSiswa) {
+    alert("Silakan pilih santri terlebih dahulu dengan klik tombol 'Lihat Quran'.");
+    return;
+  }
+
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
+
+  // Load data kelas hari ini
+  let kelasData = [];
+  try {
+    const resGet = await fetch(`https://raw.githubusercontent.com/dickymiswardi/usermtq/refs/heads/main/absensi/${kelas}_${tanggal}.json`);
+    if (resGet.ok) {
+      kelasData = await resGet.json();
+    }
+  } catch (err) {
+    console.warn("Gagal ambil data kelas sebelumnya, anggap data kosong");
+  }
+
+  // Update data santri yg dipilih
+  const santriIndex = kelasData.findIndex(s => s.id === currentIdSiswa);
+  const { nilai, predikat } = hitungNilai();
+
   if (santriIndex >= 0) {
     kelasData[santriIndex].markQuran = markData;
     kelasData[santriIndex].nilai = nilai;
@@ -1811,7 +2021,6 @@ document.getElementById("btn-simpan-mark").onclick = async function() {
       markQuran: markData,
       nilai,
       predikat
-      // Bisa tambah properti lain jika perlu
     });
   }
 
@@ -1833,7 +2042,8 @@ document.getElementById("btn-simpan-mark").onclick = async function() {
     alert("Gagal menyimpan data: " + (json.error || "Unknown error"));
   }
 };
-        </script>
+</script>
+
   
         
   <script>
