@@ -1,4 +1,3 @@
-// netlify/functions/markQuran.js
 const fetch = require("node-fetch");
 
 const GITHUB_API = "https://api.github.com";
@@ -14,18 +13,18 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { tanggalFile, idSiswa, markQuran, nilai, predikat } = JSON.parse(event.body || "{}");
+    const { kelas, tanggal, id, markQuran, nilai, predikat } = JSON.parse(event.body || "{}");
 
-    if (!tanggalFile || !idSiswa) {
+    if (!kelas || !tanggal || !id) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: "tanggalFile dan idSiswa wajib diisi" }),
+        body: JSON.stringify({ message: "kelas, tanggal, dan id wajib diisi" }),
       };
     }
 
-    const path = `absensi/${tanggalFile}`;
+    const path = `absensi/kelas_${kelas}_${tanggal}.json`;
 
-    // Ambil file lama
+    // Ambil data lama
     const getRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${path}`, {
       headers: {
         Authorization: `Bearer ${TOKEN}`,
@@ -41,24 +40,25 @@ exports.handler = async (event) => {
     }
 
     const fileData = await getRes.json();
-    const existingContent = JSON.parse(Buffer.from(fileData.content, "base64").toString());
+    const contentJson = JSON.parse(Buffer.from(fileData.content, "base64").toString());
 
-    // Update data siswa
-    const idx = existingContent.findIndex(s => s.id === idSiswa);
-    if (idx === -1) {
+    // Update data pada id yang sesuai
+    const index = contentJson.findIndex(s => s.id === id);
+    if (index === -1) {
       return {
         statusCode: 404,
-        body: JSON.stringify({ message: "Siswa tidak ditemukan" }),
+        body: JSON.stringify({ message: `Santri dengan id ${id} tidak ditemukan` }),
       };
     }
 
-    existingContent[idx].markQuran = markQuran;
-    existingContent[idx].nilai = nilai;
-    existingContent[idx].predikat = predikat;
+    contentJson[index].markQuran = markQuran;
+    contentJson[index].nilai = nilai;
+    contentJson[index].predikat = predikat;
 
-    // Simpan kembali
-    const updatedContent = Buffer.from(JSON.stringify(existingContent, null, 2)).toString("base64");
+    // Encode kembali ke base64
+    const newContent = Buffer.from(JSON.stringify(contentJson, null, 2)).toString("base64");
 
+    // Simpan perubahan
     const updateRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${path}`, {
       method: "PUT",
       headers: {
@@ -66,8 +66,8 @@ exports.handler = async (event) => {
         Accept: "application/vnd.github.v3+json",
       },
       body: JSON.stringify({
-        message: `Update mark Quran untuk siswa ${idSiswa}`,
-        content: updatedContent,
+        message: `Update mark Quran untuk id ${id}`,
+        content: newContent,
         sha: fileData.sha,
       }),
     });
@@ -76,19 +76,19 @@ exports.handler = async (event) => {
       const errText = await updateRes.text();
       return {
         statusCode: 500,
-        body: JSON.stringify({ message: "Gagal update file.", error: errText }),
+        body: JSON.stringify({ message: "Gagal memperbarui file", error: errText }),
       };
     }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "Data mark Quran berhasil disimpan." }),
+      body: JSON.stringify({ message: "Mark Quran berhasil disimpan" }),
     };
 
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: "Terjadi kesalahan server.", error: err.message }),
+      body: JSON.stringify({ message: "Terjadi kesalahan server", error: err.message }),
     };
   }
 };
