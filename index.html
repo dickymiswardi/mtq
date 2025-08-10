@@ -1603,19 +1603,23 @@ async function submitTambahKelasBaru() {
 </script>
 
 
-    <script>
+<script>
 let quranData = {};
 let ayahPageMap = {};
 let markData = {}; // { "surah:ayat": { wordIndex: "green|yellow|red" } }
-let currentIdSiswa = null;  // id santri yang sedang aktif/terpilih
+let currentIdSiswa = null;  // id santri yg aktif/terpilih
 
+const kelasSelect = document.getElementById("kelas");
+const tanggalInput = document.getElementById("tanggal");
+
+// Hitung nilai dan predikat berdasarkan markData
 function hitungNilai() {
   let totalMinus = 0;
   for (let ayat in markData) {
     for (let idx in markData[ayat]) {
       if (markData[ayat][idx] === "green") totalMinus += 0.5;
-      if (markData[ayat][idx] === "yellow") totalMinus += 1;
-      if (markData[ayat][idx] === "red") totalMinus += 2;
+      else if (markData[ayat][idx] === "yellow") totalMinus += 1;
+      else if (markData[ayat][idx] === "red") totalMinus += 2;
     }
   }
   const nilai = Math.max(0, 100 - totalMinus);
@@ -1625,12 +1629,12 @@ function hitungNilai() {
   else if (nilai <= 79) predikat = "JAYYID (C)";
   else if (nilai <= 89) predikat = "JAYYID JIDDAN (B)";
   else predikat = "MUMTAZ (A)";
-
   document.getElementById("nilai-akhir").innerText = nilai.toFixed(1);
   document.getElementById("predikat-akhir").innerText = predikat;
   return { nilai, predikat };
 }
 
+// Fungsi membuat kata klik untuk modal Quran
 function buatKataKlik(surah, ayat, teks) {
   return teks.split(" ").map((kata, idx) => {
     const span = document.createElement("span");
@@ -1665,6 +1669,7 @@ function buatKataKlik(surah, ayat, teks) {
   });
 }
 
+// Load quranData & ayahPageMap sekali di awal
 let dataSiap = Promise.all([
   fetch('https://raw.githubusercontent.com/dickymiswardi/mtq/refs/heads/main/symbol1.json')
     .then(res => res.json())
@@ -1674,6 +1679,7 @@ let dataSiap = Promise.all([
     .then(data => { ayahPageMap = data; })
 ]).catch(err => console.error('Gagal memuat data:', err));
 
+// Fungsi load data kelas dan tanggal tertentu dari repo GitHub
 async function loadDataKelas(kelas, tanggal) {
   try {
     const url = `https://raw.githubusercontent.com/dickymiswardi/usermtq/refs/heads/main/absensi/${kelas}_${tanggal}.json`;
@@ -1687,6 +1693,7 @@ async function loadDataKelas(kelas, tanggal) {
   }
 }
 
+// Event listener untuk tombol lihat Quran
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
     markData = {}; // reset markData tiap buka modal
@@ -1696,26 +1703,25 @@ document.addEventListener('click', async function(e) {
 
     const row = e.target.closest('tr');
 
-    // Ambil ID dan Nama langsung dari kolom di row
+    // Ambil ID dan Nama santri dari row
     const idSiswa = parseInt(row.cells[0].innerText.trim());
     const namaSiswa = row.cells[1].innerText.trim();
     currentIdSiswa = idSiswa;
 
-    // Ambil range surah dan ayat dari input di row tersebut
+    // Ambil range surah & ayat dari input di row
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
     const surahSampai = parseInt(row.querySelector('.surah-sampai').value);
     const ayatSampai = parseInt(row.querySelector('.ayat-sampai').value);
 
-    // Ambil kelas & tanggal dari UI
-    const kelasSelect = document.getElementById("kelas");
-    const kelas = kelasSelect ? kelasSelect.value : "kelas_1";
-    const tanggal = new Date().toISOString().split('T')[0];
+    // Ambil kelas dan tanggal dari UI
+    const kelas = kelasSelect.value;
+    const tanggal = tanggalInput.value;
 
-    // Load data kelas hari ini untuk bisa load markQuran yg tersimpan utk santri ini
+    // Load data kelas hari ini untuk dapat markQuran santri ini
     const kelasData = await loadDataKelas(kelas, tanggal);
 
-    // Jika data santri ada di kelasData, ambil markQuran dan apply ke markData
+    // Cari data santri dan load markQuran jika ada
     const santriData = kelasData.find(s => s.id === currentIdSiswa);
     if (santriData && santriData.markQuran) {
       markData = santriData.markQuran;
@@ -1738,7 +1744,7 @@ document.addEventListener('click', async function(e) {
       }
     }
 
-    // Render ke modal
+    // Render ke modal Quran
     const halamanUrut = Object.keys(halamanMap).sort((a,b) => a - b);
     const quranText = document.getElementById('quran-text');
     quranText.innerHTML = '';
@@ -1763,7 +1769,6 @@ document.addEventListener('click', async function(e) {
       quranText.appendChild(pageDiv);
     }
 
-    // Hitung nilai dan tampilkan
     hitungNilai();
 
     document.getElementById('overlay').style.display = 'none';
@@ -1771,17 +1776,17 @@ document.addEventListener('click', async function(e) {
   }
 });
 
+// Tombol simpan markQuran
 document.getElementById("btn-simpan-mark").onclick = async function() {
   if (!currentIdSiswa) {
     alert("Silakan pilih santri terlebih dahulu dengan klik tombol 'Lihat Quran'.");
     return;
   }
 
-  const kelasSelect = document.getElementById("kelas");
-  const kelas = kelasSelect ? kelasSelect.value : "kelas_1";
-  const tanggal = new Date().toISOString().split('T')[0];
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
 
-  // Ambil dulu data kelas hari ini yang sudah ada (file JSON array)
+  // Load data kelas hari ini
   let kelasData = [];
   try {
     const resGet = await fetch(`https://raw.githubusercontent.com/dickymiswardi/usermtq/refs/heads/main/absensi/${kelas}_${tanggal}.json`);
@@ -1792,7 +1797,7 @@ document.getElementById("btn-simpan-mark").onclick = async function() {
     console.warn("Gagal ambil data kelas sebelumnya, anggap data kosong");
   }
 
-  // Update data santri di kelasData dengan currentIdSiswa dan markQuran baru
+  // Update data santri yg dipilih
   const santriIndex = kelasData.findIndex(s => s.id === currentIdSiswa);
   const { nilai, predikat } = hitungNilai();
 
@@ -1801,17 +1806,16 @@ document.getElementById("btn-simpan-mark").onclick = async function() {
     kelasData[santriIndex].nilai = nilai;
     kelasData[santriIndex].predikat = predikat;
   } else {
-    // Jika santri belum ada di file, tambahkan data baru
     kelasData.push({
       id: currentIdSiswa,
       markQuran: markData,
       nilai,
       predikat
-      // Bisa tambahkan properti lain jika diperlukan
+      // Bisa tambah properti lain jika perlu
     });
   }
 
-  // Kirim data kelasData ke backend saveData.js
+  // Kirim ke backend saveData.js
   const resSave = await fetch("/.netlify/functions/saveData", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1829,13 +1833,9 @@ document.getElementById("btn-simpan-mark").onclick = async function() {
     alert("Gagal menyimpan data: " + (json.error || "Unknown error"));
   }
 };
-</script>
-
+        </script>
   
-
-
-  
-
+        
   <script>
   function tutupModal(id) {
     const modal = document.getElementById(id);
