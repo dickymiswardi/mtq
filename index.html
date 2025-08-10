@@ -1616,6 +1616,9 @@ dataSiap = Promise.all([
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
 
+     // ✅ Tampilkan loading
+    document.getElementById('overlay').style.display = 'flex';
+
     // Pastikan data siap
     await dataSiap;
 
@@ -1672,6 +1675,9 @@ document.addEventListener('click', async function(e) {
 
       quranText.appendChild(pageDiv);
     }
+
+    // ✅ Sembunyikan loading
+    document.getElementById('overlay').style.display = 'none';
 
     document.getElementById('overlay-quran').style.display = 'flex';
   }
