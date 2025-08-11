@@ -410,7 +410,6 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
-            <th>Nilai</th>
             <th>Cek Quran</th>
             <th id="totalAllJuzHeader" style="cursor:pointer; text-decoration:underline;">Ketuntasan</th>
           </tr>
@@ -707,7 +706,6 @@ function aturDropdownKelas(user) {
               <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
             </select>
             </td>
-            <td class="nilai">0</td>
             <td><button class="lihat-quran-btn">Lihat Quran</button></td>
             <td class="total-all-juz">0</td>
           `;
@@ -851,7 +849,6 @@ function aturDropdownKelas(user) {
       const id = parseInt(row.children[0].textContent);      // ambil dari kolom nomor
       const nama = row.children[1].textContent;               // kolom nama
       const semester = row.querySelector(".semester").value;  // BENAR
-      const nilai = row.querySelector(".nilai").value;
       const absensi = row.querySelector(".absensi").value;
       const surahDari = row.querySelector(".surah-dari").value;
       const ayatDari = row.querySelector(".ayat-dari").value;
@@ -1608,8 +1605,9 @@ async function submitTambahKelasBaru() {
 <script>
 let quranData = {};
 let ayahPageMap = {};
-let markData = {}; // { "surah:ayat": { wordIndex: "green|yellow|red" } }
-let currentIdSiswa = null;  // id santri yang sedang aktif/terpilih
+let markData = {};
+let currentIdSiswa = null;
+let currentButton = null; // 🔹 Simpan tombol yang sedang aktif
 
 function hitungNilai() {
   let totalMinus = 0;
@@ -1631,24 +1629,17 @@ function hitungNilai() {
   else if (nilai <= 89) predikat = "JAYYID JIDDAN (B)";
   else predikat = "MUMTAZ (A)";
 
-  // Update di overlay
   document.getElementById("nilai-akhir").innerText = nilai.toFixed(1);
   document.getElementById("predikat-akhir").innerText = predikat;
 
   return { nilai, predikat, hijau, kuning, merah };
 }
 
-function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
-  if (!currentIdSiswa) return;
-  const row = [...document.querySelectorAll("table tbody tr")]
-    .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
-
-  if (row) {
-    // Ganti index kolom ini sesuai kebutuhan (contoh kolom ke-7)
-    const cellIndex = 7;
-    row.cells[cellIndex].innerHTML = `
-      <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
-      <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
+function updateNilaiDiTombol({ nilai, predikat, hijau, kuning, merah }) {
+  if (currentButton) {
+    currentButton.innerHTML = `
+      ${nilai.toFixed(1)} (${predikat})<br>
+      🟩${hijau} 🟨${kuning} 🟥${merah}
     `;
   }
 }
@@ -1679,7 +1670,7 @@ function buatKataKlik(surah, ayat, teks) {
       }
 
       const hasil = hitungNilai();
-      updateNilaiDiTabel(hasil);
+      updateNilaiDiTombol(hasil);
     };
 
     if (markData[surah+":"+ayat]?.[idx]) {
@@ -1700,19 +1691,15 @@ let dataSiap = Promise.all([
 
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
-    // RESET markData tiap klik baris baru
     markData = {};
-
     document.getElementById('overlay').style.display = 'flex';
     await dataSiap;
 
     const row = e.target.closest('tr');
-
-    // Ambil ID dan Nama langsung dari kolom di row
     const idSiswa = parseInt(row.cells[0].innerText.trim());
     currentIdSiswa = idSiswa;
+    currentButton = e.target; // 🔹 simpan tombol aktif
 
-    // Ambil range surah dan ayat dari input di row tersebut
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
     const surahSampai = parseInt(row.querySelector('.surah-sampai').value);
@@ -1759,7 +1746,7 @@ document.addEventListener('click', async function(e) {
     }
 
     const hasil = hitungNilai();
-    updateNilaiDiTabel(hasil);
+    updateNilaiDiTombol(hasil);
 
     document.getElementById('overlay').style.display = 'none';
     document.getElementById('overlay-quran').style.display = 'flex';
@@ -1772,8 +1759,8 @@ document.getElementById("btn-simpan-mark").onclick = function() {
     return;
   }
   const hasil = hitungNilai();
-  updateNilaiDiTabel(hasil);
-  alert("Nilai tersimpan di tabel lokal.");
+  updateNilaiDiTombol(hasil);
+  alert("Nilai tersimpan di tombol.");
 };
 </script>
 
