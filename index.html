@@ -466,21 +466,23 @@
 </div>
 
 
-<div id="modalHapusSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-background:rgba(0,0,0,0.5); z-index:9999;">
+<div id="modalHapusSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
   <div style="background:#fff; width:300px; margin:100px auto; padding:20px; border-radius:10px;">
     <h2>Hapus Santri</h2>
     <label>Pilih Santri:</label>
-    <select id="selectSantriHapus" style="width:80%; margin-bottom:10px;"></select>
+    <select id="pilihSantri" style="width:80%; margin-bottom:10px;">
+      <!-- Akan diisi otomatis lewat fetch -->
+    </select>
     <div style="margin-top:10px; display:flex; justify-content:space-between;">
       <button onclick="hapusSantri()">Hapus</button>
       <button onclick="tutupModal('modalHapusSantri')">Close</button>
     </div>
-    <div id="loadingHapusSantri" style="display:none; margin-top:10px; color:blue;">
+    <div id="loadingHapusSantri" style="display:none; margin-top:10px; color:red;">
       ⏳ Menghapus...
     </div>
   </div>
 </div>
+
   
   
   <div id="overlay-quran" style="display:none; position:fixed; top:0; left:0;
@@ -1636,60 +1638,54 @@ async function submitTambahKelasBaru() {
 
 <script>
   async function bukaModalHapusSantri() {
-    const kelas = document.getElementById("kelas").value;
-    if (!kelas) {
-      alert("Pilih kelas terlebih dahulu.");
-      return;
-    }
+    document.getElementById("modalHapusSantri").style.display = "block";
+    await loadDaftarSantri();
+  }
 
-    const fileName = `kelas_${kelas.split("_")[1]}.json`;
-    const githubApiUrl = `https://api.github.com/repos/dickymiswardi/usermtq/contents/${fileName}`;
+  function tutupModal(idModal) {
+    document.getElementById(idModal).style.display = "none";
+  }
+
+  async function loadDaftarSantri() {
+    const kelas = document.getElementById("kelas").value;
+    const pilihSantri = document.getElementById("pilihSantri");
+    pilihSantri.innerHTML = "<option>Loading...</option>";
 
     try {
-      const res = await fetch(githubApiUrl, {
-        headers: {
-          Accept: "application/vnd.github.v3+json"
-        }
-      });
+      const res = await fetch(`/.netlify/functions/daftarSantri?kelas=${kelas}`);
+      const data = await res.json();
 
-      if (!res.ok) throw new Error("Gagal mengambil daftar santri");
+      if (!res.ok) throw new Error(data.error || "Gagal ambil daftar santri");
 
-      const fileData = await res.json();
-      const contentDecoded = atob(fileData.content);
-      const santriList = JSON.parse(contentDecoded);
-
-      // Isi dropdown
-      const selectEl = document.getElementById("selectSantriHapus");
-      selectEl.innerHTML = santriList
-        .map(s => `<option value="${s.id}">${s.nama} (Semester ${s.semester})</option>`)
-        .join("");
-
-      document.getElementById("modalHapusSantri").style.display = "block";
+      pilihSantri.innerHTML = data.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
     } catch (err) {
-      alert(err.message);
+      pilihSantri.innerHTML = `<option>Error: ${err.message}</option>`;
     }
   }
 
   async function hapusSantri() {
-    const id = document.getElementById("selectSantriHapus").value;
+    const id = document.getElementById("pilihSantri").value;
     const kelas = document.getElementById("kelas").value;
 
     if (!id) {
-      alert("Pilih santri yang akan dihapus.");
+      alert("Pilih santri terlebih dahulu.");
       return;
     }
 
-    document.getElementById("loadingHapusSantri").style.display = "block";
+    if (!confirm("Yakin ingin menghapus santri ini?")) return;
+
+    const loadingEl = document.getElementById("loadingHapusSantri");
+    loadingEl.style.display = "block";
 
     try {
       const res = await fetch("/.netlify/functions/hapusSantri", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: parseInt(id), kelas })
+        body: JSON.stringify({ id, kelas })
       });
 
       const data = await res.json();
-      document.getElementById("loadingHapusSantri").style.display = "none";
+      loadingEl.style.display = "none";
 
       if (res.ok) {
         alert("Santri berhasil dihapus!");
@@ -1699,7 +1695,7 @@ async function submitTambahKelasBaru() {
         alert("Gagal menghapus: " + data.error);
       }
     } catch (err) {
-      document.getElementById("loadingHapusSantri").style.display = "none";
+      loadingEl.style.display = "none";
       alert("Terjadi kesalahan: " + err.message);
     }
   }
