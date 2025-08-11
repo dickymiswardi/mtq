@@ -713,7 +713,7 @@ function aturDropdownKelas(user) {
             <td>
               <select class="absensi">
                 <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
-                <option value="Alpha" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
+                <option value="Alpha" ${dataAbsensi.absensi === "Alpha" ? "selected" : ""}>Alpha</option>
                 <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
                 <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
               </select>
@@ -959,6 +959,7 @@ function aturDropdownKelas(user) {
       if (!rekap[item.nama]) {
         rekap[item.nama] = {
           hadir: 0,
+          alpha: 0,
           sakit: 0,
           izin: 0,
           totalJuz: 0,
@@ -1026,7 +1027,7 @@ function aturDropdownKelas(user) {
     let y = 35;
     Object.entries(rekap).forEach(([nama, data], i) => {
       const juzList = ringkasJuzTerbaca(data.juzTerbacaSet);
-      const text = `${i + 1}. ${nama} | Hadir: ${data.hadir || 0}, Sakit: ${data.sakit || 0}, Izin: ${data.izin || 0} | Juz Terbaca: ${juzList} | Total Juz: ${data.totalJuz.toFixed(2)}`;
+      const text = `${i + 1}. ${nama} | Hadir: ${data.hadir || 0}, | Alpha: ${data.alpha || 0}, Sakit: ${data.sakit || 0}, Izin: ${data.izin || 0} | Juz Terbaca: ${juzList} | Total Juz: ${data.totalJuz.toFixed(2)}`;
       doc.text(text, 14, y);
       y += 8;
       if (y > 280) {
