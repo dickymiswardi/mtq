@@ -1610,13 +1610,16 @@ let currentIdSiswa = null;  // id santri yang sedang aktif/terpilih
 
 function hitungNilai() {
   let totalMinus = 0;
+  let hijau = 0, kuning = 0, merah = 0;
+
   for (let ayat in markData) {
     for (let idx in markData[ayat]) {
-      if (markData[ayat][idx] === "green") totalMinus += 0.5;
-      if (markData[ayat][idx] === "yellow") totalMinus += 1;
-      if (markData[ayat][idx] === "red") totalMinus += 2;
+      if (markData[ayat][idx] === "green") { totalMinus += 0.5; hijau++; }
+      if (markData[ayat][idx] === "yellow") { totalMinus += 1; kuning++; }
+      if (markData[ayat][idx] === "red") { totalMinus += 2; merah++; }
     }
   }
+
   const nilai = Math.max(0, 100 - totalMinus);
   let predikat = "";
   if (nilai <= 59) predikat = "ROSIB (E)";
@@ -1625,9 +1628,26 @@ function hitungNilai() {
   else if (nilai <= 89) predikat = "JAYYID JIDDAN (B)";
   else predikat = "MUMTAZ (A)";
 
+  // Update di overlay
   document.getElementById("nilai-akhir").innerText = nilai.toFixed(1);
   document.getElementById("predikat-akhir").innerText = predikat;
-  return { nilai, predikat };
+
+  return { nilai, predikat, hijau, kuning, merah };
+}
+
+function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
+  if (!currentIdSiswa) return;
+  const row = [...document.querySelectorAll("table tbody tr")]
+    .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
+
+  if (row) {
+    // Ganti index kolom ini sesuai kebutuhan (contoh kolom ke-7)
+    const cellIndex = 7;
+    row.cells[cellIndex].innerHTML = `
+      <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
+      <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
+    `;
+  }
 }
 
 function buatKataKlik(surah, ayat, teks) {
@@ -1654,7 +1674,9 @@ function buatKataKlik(surah, ayat, teks) {
         delete markData[surah+":"+ayat][idx];
         span.style.backgroundColor = "";
       }
-      hitungNilai();
+
+      const hasil = hitungNilai();
+      updateNilaiDiTabel(hasil);
     };
 
     if (markData[surah+":"+ayat]?.[idx]) {
@@ -1685,8 +1707,6 @@ document.addEventListener('click', async function(e) {
 
     // Ambil ID dan Nama langsung dari kolom di row
     const idSiswa = parseInt(row.cells[0].innerText.trim());
-    const namaSiswa = row.cells[1].innerText.trim();
-
     currentIdSiswa = idSiswa;
 
     // Ambil range surah dan ayat dari input di row tersebut
@@ -1735,34 +1755,22 @@ document.addEventListener('click', async function(e) {
       quranText.appendChild(pageDiv);
     }
 
-    hitungNilai();
+    const hasil = hitungNilai();
+    updateNilaiDiTabel(hasil);
+
     document.getElementById('overlay').style.display = 'none';
     document.getElementById('overlay-quran').style.display = 'flex';
   }
 });
 
-document.getElementById("btn-simpan-mark").onclick = async function() {
+document.getElementById("btn-simpan-mark").onclick = function() {
   if (!currentIdSiswa) {
     alert("Silakan pilih santri terlebih dahulu dengan klik tombol 'Lihat Quran'.");
     return;
   }
-  const { nilai, predikat } = hitungNilai();
-  const tanggalFile = `kelas_1_${new Date().toISOString().split('T')[0]}.json`;
-
-  const res = await fetch("/.netlify/functions/markQuran", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      tanggalFile,
-      idSiswa: currentIdSiswa,
-      markQuran: markData,
-      nilai,
-      predikat
-    })
-  });
-
-  const json = await res.json();
-  alert(json.message);
+  const hasil = hitungNilai();
+  updateNilaiDiTabel(hasil);
+  alert("Nilai tersimpan di tabel lokal.");
 };
 </script>
 
