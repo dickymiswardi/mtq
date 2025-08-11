@@ -12,6 +12,16 @@
       background: #f4f6f8;
     }
 
+    .lihat-quran-btn {
+  display: inline; /* bukan block/inline-block */
+  padding: 0;
+  background: none;
+  border: none;
+  color: blue;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 #santri-table th:first-child,
 #santri-table td:first-child {
   position: sticky;
@@ -706,7 +716,7 @@ function aturDropdownKelas(user) {
               <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
             </select>
             </td>
-            <td><button class="lihat-quran-btn">Lihat Quran</button></td>
+            <td><a href="#" class="lihat-quran-btn">Lihat Quran</a></td>
             <td class="total-all-juz">0</td>
           `;
 
