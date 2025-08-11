@@ -1,3 +1,4 @@
+// netlify/functions/markQuran.js
 const fetch = require("node-fetch");
 
 const GITHUB_API = "https://api.github.com";
@@ -14,8 +15,8 @@ exports.handler = async (event) => {
   }
 
   try {
+    // GET → ambil isi file
     if (event.httpMethod === "GET") {
-      // Ambil file mark-quran.json dari GitHub sebagai raw content
       const res = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${FILE_PATH}`, {
         headers: {
           Authorization: `Bearer ${TOKEN}`,
@@ -37,8 +38,8 @@ exports.handler = async (event) => {
       };
     }
 
+    // POST → simpan/update file
     if (event.httpMethod === "POST") {
-      // Parsing body JSON
       let newData;
       try {
         newData = JSON.parse(event.body || "{}");
@@ -49,24 +50,8 @@ exports.handler = async (event) => {
         };
       }
 
-      // Validasi minimal field wajib
-      if (
-        !newData.idSiswa ||
-        typeof newData.idSiswa !== "number" ||
-        !newData.markQuran ||
-        typeof newData.nilai !== "number" ||
-        !newData.predikat
-      ) {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ message: "Data yang dikirim tidak lengkap atau salah format." }),
-        };
-      }
-
-      // Ambil isi file lama dan SHA-nya untuk update file
-      let oldData = [];
+      // Ambil SHA file lama (kalau ada)
       let sha = null;
-
       const checkRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${FILE_PATH}`, {
         headers: {
           Authorization: `Bearer ${TOKEN}`,
@@ -77,24 +62,9 @@ exports.handler = async (event) => {
       if (checkRes.ok) {
         const fileJson = await checkRes.json();
         sha = fileJson.sha;
-        const contentBase64 = fileJson.content;
-        try {
-          oldData = JSON.parse(Buffer.from(contentBase64, "base64").toString("utf-8"));
-          if (!Array.isArray(oldData)) oldData = [];
-        } catch {
-          oldData = [];
-        }
       }
 
-      // Update data jika idSiswa sudah ada, atau tambah baru
-      const index = oldData.findIndex((item) => item.idSiswa === newData.idSiswa);
-      if (index >= 0) {
-        oldData[index] = newData;
-      } else {
-        oldData.push(newData);
-      }
-
-      // Simpan file baru ke GitHub (PUT dengan SHA jika update)
+      // Simpan ke GitHub
       const saveRes = await fetch(`${GITHUB_API}/repos/${REPO}/contents/${FILE_PATH}`, {
         method: "PUT",
         headers: {
@@ -102,8 +72,8 @@ exports.handler = async (event) => {
           Accept: "application/vnd.github.v3+json",
         },
         body: JSON.stringify({
-          message: `Update mark-quran.json untuk idSiswa ${newData.idSiswa}`,
-          content: Buffer.from(JSON.stringify(oldData, null, 2)).toString("base64"),
+          message: "Update mark-quran.json",
+          content: Buffer.from(JSON.stringify(newData, null, 2)).toString("base64"),
           sha: sha || undefined,
         }),
       });
