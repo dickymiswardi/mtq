@@ -804,57 +804,80 @@ function aturDropdownKelas(user) {
   const keyDari = `${surahDari}:${ayatDari}`;
   const keySampai = `${surahSampai}:${ayatSampai}`;
 
-  const halamanAwal = pagesMap[keyDari] || 1;
-  const halamanAkhir = pagesMap[keySampai] || halamanAwal;
+  const halamanAwal = pagesMap[keyDari];
+  const halamanAkhir = pagesMap[keySampai];
 
-  // Daftar halaman awal tiap juz (dalam urutan)
+  console.log("Dari:", keyDari, "halamanAwal:", halamanAwal);
+  console.log("Sampai:", keySampai, "halamanAkhir:", halamanAkhir);
+
+  if (!halamanAwal || !halamanAkhir) {
+    console.error("Halaman awal atau akhir tidak ditemukan di pagesMap");
+    row.querySelector(".total-juz").textContent = "0.00";
+    row.querySelector(".juz-terbaca").textContent = "";
+    return;
+  }
+
   const halamanAwalJuz = [
     1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
     202, 222, 242, 262, 282, 302, 322, 342, 362, 382,
     402, 422, 442, 462, 482, 502, 522, 542, 562, 582, 602
   ];
 
-  // Buat array berisi rentang halaman valid (skip halaman 21 dan 602-604)
+  // Buat array halaman valid
   const halamanValid = [];
   for (let h = halamanAwal; h <= halamanAkhir; h++) {
     if ((h >= 602 && h <= 604) || h === 21) continue;
     halamanValid.push(h);
   }
+  console.log("Halaman valid:", halamanValid);
 
-  // Fungsi bantu dapatkan jumlah ayat halaman (jumlahAyatPerHalaman adalah objek global)
-  const getJumlahAyatHalaman = (halaman) => jumlahAyatPerHalaman[halaman] || 20;
+  // Helper dapat jumlah ayat halaman
+  const getJumlahAyatHalaman = (halaman) => {
+    const jml = jumlahAyatPerHalaman[halaman];
+    if (!jml) {
+      console.warn(`jumlahAyatPerHalaman[${halaman}] undefined, default 20`);
+      return 20; // default kalau gak ada data
+    }
+    return jml;
+  };
 
   let totalJuz = 0;
 
   if (halamanAwal === halamanAkhir) {
-    // Ayat di halaman yang sama
     const jumlahAyatHalaman = getJumlahAyatHalaman(halamanAwal);
     const ayatTerbaca = ayatSampai - ayatDari + 1;
     const nilaiPerAyat = 0.05 / jumlahAyatHalaman;
     totalJuz = ayatTerbaca * nilaiPerAyat;
+
+    console.log(`Satu halaman ${halamanAwal}: ayatTerbaca=${ayatTerbaca}, nilaiPerAyat=${nilaiPerAyat.toFixed(5)}, totalJuz=${totalJuz.toFixed(5)}`);
   } else {
-    // Halaman awal (dari ayat mulai sampai akhir halaman)
+    // Halaman awal
     const jumlahAyatHalamanAwal = getJumlahAyatHalaman(halamanAwal);
     const ayatTerbacaAwal = jumlahAyatHalamanAwal - ayatDari + 1;
     const nilaiPerAyatAwal = 0.05 / jumlahAyatHalamanAwal;
     totalJuz += ayatTerbacaAwal * nilaiPerAyatAwal;
 
-    // Halaman akhir (dari ayat 1 sampai ayat sampai)
+    console.log(`Halaman awal ${halamanAwal}: ayatTerbacaAwal=${ayatTerbacaAwal}, nilaiPerAyatAwal=${nilaiPerAyatAwal.toFixed(5)}`);
+
+    // Halaman akhir
     const jumlahAyatHalamanAkhir = getJumlahAyatHalaman(halamanAkhir);
     const ayatTerbacaAkhir = ayatSampai;
     const nilaiPerAyatAkhir = 0.05 / jumlahAyatHalamanAkhir;
     totalJuz += ayatTerbacaAkhir * nilaiPerAyatAkhir;
 
-    // Halaman penuh di antaranya (nilai 0.05 juz per halaman)
+    console.log(`Halaman akhir ${halamanAkhir}: ayatTerbacaAkhir=${ayatTerbacaAkhir}, nilaiPerAyatAkhir=${nilaiPerAyatAkhir.toFixed(5)}`);
+
+    // Halaman penuh di antaranya
     for (let h = halamanAwal + 1; h <= halamanAkhir - 1; h++) {
       if ((h >= 602 && h <= 604) || h === 21) continue;
       totalJuz += 0.05;
+      console.log(`Halaman penuh di antaranya: ${h} +0.05 juz`);
     }
   }
 
   totalJuz = totalJuz.toFixed(2);
 
-  // Cari juz-juz yang tercakup berdasarkan halaman valid
+  // Cari juz-juz yang tercakup
   const juzTercakup = [];
   for (let i = 0; i < halamanAwalJuz.length; i++) {
     const awalJuz = halamanAwalJuz[i];
@@ -870,7 +893,7 @@ function aturDropdownKelas(user) {
     }
   }
 
-  // Fungsi kompres range juz misal [1,2,3,5,6] => "Juz 1-3, 5-6"
+  // Fungsi kompres range juz
   function compressJuzRanges(list) {
     if (list.length === 0) return "";
     list.sort((a, b) => a - b);
@@ -893,6 +916,7 @@ function aturDropdownKelas(user) {
   row.querySelector(".total-juz").textContent = totalJuz;
   row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
 }
+
 
     kelasSelect.addEventListener("change", loadSantriData);
     tanggalInput.addEventListener("change", loadSantriData);
