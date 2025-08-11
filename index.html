@@ -1608,12 +1608,33 @@ let ayahPageMap = {};
 let markData = {};
 let currentIdSiswa = null;
 
-const kelasAktif = document.body.dataset.kelas; // bisa set <body data-kelas="VII-A">
-const tanggalAktif = new Date().toISOString().slice(0, 10); // format YYYY-MM-DD
+function getStorageKey() {
+  const kelas = document.getElementById('kelas')?.value || 'default';
+  const tanggal = document.getElementById('tanggal')?.value || 'default';
+  return `marks_${kelas}_${tanggal}_${currentIdSiswa}`;
+}
 
-// Hitung nilai dari markData
+function simpanKeStorage() {
+  if (!currentIdSiswa) return;
+  const key = getStorageKey();
+  localStorage.setItem(key, JSON.stringify(markData));
+}
+
+function ambilDariStorage() {
+  if (!currentIdSiswa) return;
+  const key = getStorageKey();
+  const saved = localStorage.getItem(key);
+  if (saved) {
+    markData = JSON.parse(saved);
+  } else {
+    markData = {};
+  }
+}
+
 function hitungNilai() {
-  let totalMinus = 0, hijau = 0, kuning = 0, merah = 0;
+  let totalMinus = 0;
+  let hijau = 0, kuning = 0, merah = 0;
+
   for (let ayat in markData) {
     for (let idx in markData[ayat]) {
       if (markData[ayat][idx] === "green") { totalMinus += 0.5; hijau++; }
@@ -1621,6 +1642,7 @@ function hitungNilai() {
       if (markData[ayat][idx] === "red") { totalMinus += 2; merah++; }
     }
   }
+
   const nilai = Math.max(0, 100 - totalMinus);
   let predikat = "";
   if (nilai <= 59) predikat = "ROSIB (E)";
@@ -1631,13 +1653,15 @@ function hitungNilai() {
 
   document.getElementById("nilai-akhir").innerText = nilai.toFixed(1);
   document.getElementById("predikat-akhir").innerText = predikat;
+
   return { nilai, predikat, hijau, kuning, merah };
 }
 
 function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
   if (!currentIdSiswa) return;
-  const row = [...document.querySelectorAll("#tableData tbody tr")]
+  const row = [...document.querySelectorAll("table tbody tr")]
     .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
+
   if (row) {
     const cellIndex = 7;
     row.cells[cellIndex].innerHTML = `
@@ -1654,6 +1678,7 @@ function buatKataKlik(surah, ayat, teks) {
     span.style.cursor = "pointer";
     span.dataset.key = `${surah}:${ayat}`;
     span.dataset.idx = idx;
+
     span.onclick = () => {
       const warnaSekarang = markData[surah+":"+ayat]?.[idx] || null;
       let warnaBaru = null;
@@ -1670,9 +1695,12 @@ function buatKataKlik(surah, ayat, teks) {
         delete markData[surah+":"+ayat][idx];
         span.style.backgroundColor = "";
       }
+
+      simpanKeStorage();
       const hasil = hitungNilai();
       updateNilaiDiTabel(hasil);
     };
+
     if (markData[surah+":"+ayat]?.[idx]) {
       span.style.backgroundColor = markData[surah+":"+ayat][idx];
     }
@@ -1680,51 +1708,25 @@ function buatKataKlik(surah, ayat, teks) {
   });
 }
 
-// Load data Quran & page map
 let dataSiap = Promise.all([
   fetch('https://raw.githubusercontent.com/dickymiswardi/mtq/refs/heads/main/symbol1.json')
-    .then(res => res.json()).then(data => quranData = data),
+    .then(res => res.json())
+    .then(data => { quranData = data; }),
   fetch('https://raw.githubusercontent.com/dickymiswardi/tadabbur/refs/heads/main/ayah_page_map.json')
-    .then(res => res.json()).then(data => ayahPageMap = data)
-]);
-
-// Ambil data dari server
-async function loadMarkData(idSiswa) {
-  const res = await fetch(`/.netlify/functions/getData?id_siswa=${idSiswa}&kelas=${encodeURIComponent(kelasAktif)}&tanggal=${encodeURIComponent(tanggalAktif)}`);
-  if (res.ok) {
-    const json = await res.json();
-    markData = json || {};
-  } else {
-    markData = {};
-  }
-}
-
-// Simpan data ke server
-async function saveMarkData() {
-  if (!currentIdSiswa) return;
-  await fetch(`/.netlify/functions/saveData`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      tanggal: tanggalAktif,
-      kelas: kelasAktif,
-      id_siswa: currentIdSiswa,
-      data: markData
-    })
-  });
-}
+    .then(res => res.json())
+    .then(data => { ayahPageMap = data; })
+]).catch(err => console.error('Gagal memuat data:', err));
 
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
+    markData = {};
     document.getElementById('overlay').style.display = 'flex';
     await dataSiap;
 
     const row = e.target.closest('tr');
-    const idSiswa = parseInt(row.cells[0].innerText.trim());
-    currentIdSiswa = idSiswa;
+    currentIdSiswa = parseInt(row.cells[0].innerText.trim());
 
-    // Ambil markData dari server
-    await loadMarkData(idSiswa);
+    ambilDariStorage(); // Ambil data yang pernah disimpan
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
@@ -1735,6 +1737,7 @@ document.addEventListener('click', async function(e) {
     for (let s = surahDari; s <= surahSampai; s++) {
       const ayatMulai = (s === surahDari) ? ayatDari : 1;
       const ayatAkhir = (s === surahSampai) ? ayatSampai : 300;
+
       for (let a = ayatMulai; a <= ayatAkhir; a++) {
         const key = `${s}:${a}`;
         if (quranData[key]) {
@@ -1772,23 +1775,24 @@ document.addEventListener('click', async function(e) {
 
     const hasil = hitungNilai();
     updateNilaiDiTabel(hasil);
+
     document.getElementById('overlay').style.display = 'none';
     document.getElementById('overlay-quran').style.display = 'flex';
   }
 });
 
-// Tombol simpan
-document.getElementById("btn-simpan-mark").onclick = async function() {
+document.getElementById("btn-simpan-mark").onclick = function() {
   if (!currentIdSiswa) {
-    alert("Silakan pilih santri terlebih dahulu.");
+    alert("Silakan pilih santri terlebih dahulu dengan klik tombol 'Lihat Quran'.");
     return;
   }
   const hasil = hitungNilai();
   updateNilaiDiTabel(hasil);
-  await saveMarkData();
-  alert("Data berhasil disimpan ke server.");
+  simpanKeStorage();
+  alert("Nilai tersimpan di penyimpanan lokal (localStorage).");
 };
 </script>
+
 
 
   
