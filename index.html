@@ -810,47 +810,49 @@ function updateTotalJuz(row) {
   const halamanAwal = pagesMap[keyDari] || 1;
   const halamanAkhir = pagesMap[keySampai] || halamanAwal;
 
-  // Daftar halaman awal tiap juz (dalam urutan)
   const halamanAwalJuz = [
     1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
     202, 222, 242, 262, 282, 302, 322, 342, 362, 382,
     402, 422, 442, 462, 482, 502, 522, 542, 562, 582, 602
   ];
 
-  // Hitung total ayat berdasarkan halaman dan jumlah ayat per halaman
-  let totalAyat = 0;
+  // Hitung total juz dengan bobot per halaman 0.05, dan bobot per ayat per halaman = 0.05 / jumlah ayat halaman
+  let totalJuz = 0;
 
   for (let h = halamanAwal; h <= halamanAkhir; h++) {
     if ((h >= 602 && h <= 604) || h === 21) continue;
 
-    let ayatDiHalaman = jumlahAyatPerHalaman[h];
+    const ayatDiHalaman = jumlahAyatPerHalaman[h];
     if (ayatDiHalaman === undefined) {
       console.warn(`Jumlah ayat tidak ditemukan untuk halaman ${h}`);
-      ayatDiHalaman = 0;
+      continue;
     }
 
-    if (h === halamanAwal && h === halamanAkhir) {
-      // Jika hanya satu halaman, hitung selisih ayat (sampai - dari + 1)
-      totalAyat += (ayatSampai - ayatDari + 1);
+    // Nilai per ayat pada halaman h
+    const nilaiPerAyatHalaman = 0.05 / ayatDiHalaman;
+
+    let ayatYangDihitung = 0;
+
+    if (halamanAwal === halamanAkhir) {
+      // Jika di halaman yang sama
+      ayatYangDihitung = ayatSampai - ayatDari + 1;
     } else if (h === halamanAwal) {
       // Halaman awal: hitung sisa ayat dari ayatDari sampai akhir halaman
-      totalAyat += (ayatDiHalaman - ayatDari + 1);
+      ayatYangDihitung = ayatDiHalaman - ayatDari + 1;
     } else if (h === halamanAkhir) {
-      // Halaman akhir: hitung ayat dari awal halaman sampai ayatSampai
-      totalAyat += ayatSampai;
+      // Halaman akhir: hitung dari ayat 1 sampai ayatSampai
+      ayatYangDihitung = ayatSampai;
     } else {
-      // Halaman penuh (selain awal dan akhir)
-      totalAyat += ayatDiHalaman;
+      // Halaman penuh
+      ayatYangDihitung = ayatDiHalaman;
     }
+
+    totalJuz += ayatYangDihitung * nilaiPerAyatHalaman;
   }
 
-  // Nilai per ayat, misal 0.05 (sesuaikan jika perlu)
-  const nilaiPerAyat = 0.05;
+  totalJuz = totalJuz.toFixed(2);
 
-  // Hitung total juz berdasarkan jumlah ayat dan nilai per ayat
-  const totalJuz = (totalAyat * nilaiPerAyat).toFixed(2);
-
-  // Cari juz-juz yang tercakup berdasarkan halaman valid (sama seperti sebelumnya)
+  // Cari juz-juz yang tercakup berdasarkan halaman valid
   const halamanValid = [];
   for (let h = halamanAwal; h <= halamanAkhir; h++) {
     if ((h >= 602 && h <= 604) || h === 21) continue;
@@ -872,7 +874,6 @@ function updateTotalJuz(row) {
     }
   }
 
-  // Kompresi format Juz
   function compressJuzRanges(list) {
     if (list.length === 0) return "";
     list.sort((a, b) => a - b);
@@ -895,6 +896,7 @@ function updateTotalJuz(row) {
   row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
   row.querySelector(".total-juz").textContent = totalJuz;
 }
+
 
     kelasSelect.addEventListener("change", loadSantriData);
     tanggalInput.addEventListener("change", loadSantriData);
