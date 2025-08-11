@@ -1663,11 +1663,14 @@ function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
     .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
 
   if (row) {
-    const cellIndex = 7;
-    row.cells[cellIndex].innerHTML = `
-      <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
-      <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
-    `;
+    const buttonCell = [...row.cells].find(td => td.querySelector(".lihat-quran-btn"));
+    if (buttonCell) {
+      buttonCell.innerHTML = `
+        <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
+        <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
+        <button class="lihat-quran-btn">Lihat Quran</button>
+      `;
+    }
   }
 }
 
@@ -1792,6 +1795,7 @@ document.getElementById("btn-simpan-mark").onclick = function() {
   alert("Nilai tersimpan di penyimpanan lokal (localStorage).");
 };
 </script>
+
 
 
 
