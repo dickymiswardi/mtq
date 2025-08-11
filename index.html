@@ -429,6 +429,7 @@
         <tbody></tbody>
       </table>
       <button onclick="bukaModalSantri()" style="margin-left:0px;">➕ Tambah Santri</button>
+      <button onclick="bukaModalHapusSantri()" style="margin-left:0px;">🗑 Hapus Santri</button>
       <div class="actions">
         <button id="save-btn">Simpan Data Mutaba'ah</button>
         <button id="download-btn">Download PDF</button>
@@ -463,6 +464,24 @@
     </div>
   </div>
 </div>
+
+
+<div id="modalHapusSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+background:rgba(0,0,0,0.5); z-index:9999;">
+  <div style="background:#fff; width:300px; margin:100px auto; padding:20px; border-radius:10px;">
+    <h2>Hapus Santri</h2>
+    <label>Pilih Santri:</label>
+    <select id="selectSantriHapus" style="width:80%; margin-bottom:10px;"></select>
+    <div style="margin-top:10px; display:flex; justify-content:space-between;">
+      <button onclick="hapusSantri()">Hapus</button>
+      <button onclick="tutupModal('modalHapusSantri')">Close</button>
+    </div>
+    <div id="loadingHapusSantri" style="display:none; margin-top:10px; color:blue;">
+      ⏳ Menghapus...
+    </div>
+  </div>
+</div>
+  
   
   <div id="overlay-quran" style="display:none; position:fixed; top:0; left:0;
      width:100%; height:100%; background:rgba(0,0,0,0.5);
@@ -1613,6 +1632,79 @@ async function submitTambahKelasBaru() {
     }
   }
 </script>
+
+
+<script>
+  async function bukaModalHapusSantri() {
+    const kelas = document.getElementById("kelas").value;
+    if (!kelas) {
+      alert("Pilih kelas terlebih dahulu.");
+      return;
+    }
+
+    const fileName = `kelas_${kelas.split("_")[1]}.json`;
+    const githubApiUrl = `https://api.github.com/repos/dickymiswardi/usermtq/contents/${fileName}`;
+
+    try {
+      const res = await fetch(githubApiUrl, {
+        headers: {
+          Accept: "application/vnd.github.v3+json"
+        }
+      });
+
+      if (!res.ok) throw new Error("Gagal mengambil daftar santri");
+
+      const fileData = await res.json();
+      const contentDecoded = atob(fileData.content);
+      const santriList = JSON.parse(contentDecoded);
+
+      // Isi dropdown
+      const selectEl = document.getElementById("selectSantriHapus");
+      selectEl.innerHTML = santriList
+        .map(s => `<option value="${s.id}">${s.nama} (Semester ${s.semester})</option>`)
+        .join("");
+
+      document.getElementById("modalHapusSantri").style.display = "block";
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function hapusSantri() {
+    const id = document.getElementById("selectSantriHapus").value;
+    const kelas = document.getElementById("kelas").value;
+
+    if (!id) {
+      alert("Pilih santri yang akan dihapus.");
+      return;
+    }
+
+    document.getElementById("loadingHapusSantri").style.display = "block";
+
+    try {
+      const res = await fetch("/.netlify/functions/hapusSantri", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: parseInt(id), kelas })
+      });
+
+      const data = await res.json();
+      document.getElementById("loadingHapusSantri").style.display = "none";
+
+      if (res.ok) {
+        alert("Santri berhasil dihapus!");
+        tutupModal('modalHapusSantri');
+        location.reload();
+      } else {
+        alert("Gagal menghapus: " + data.error);
+      }
+    } catch (err) {
+      document.getElementById("loadingHapusSantri").style.display = "none";
+      alert("Terjadi kesalahan: " + err.message);
+    }
+  }
+</script>
+  
 
 <script>
 let quranData = {};
