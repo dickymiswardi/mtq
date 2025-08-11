@@ -471,7 +471,7 @@
     <h2>Hapus Santri</h2>
     <label>Pilih Santri:</label>
     <select id="pilihSantri" style="width:80%; margin-bottom:10px;">
-      <!-- Akan diisi otomatis lewat fetch -->
+      <option>Loading...</option>
     </select>
     <div style="margin-top:10px; display:flex; justify-content:space-between;">
       <button onclick="hapusSantri()">Hapus</button>
@@ -1638,67 +1638,90 @@ async function submitTambahKelasBaru() {
 
 <script>
   async function bukaModalHapusSantri() {
-    document.getElementById("modalHapusSantri").style.display = "block";
-    await loadDaftarSantri();
-  }
+  document.getElementById("modalHapusSantri").style.display = "block";
+  await loadDaftarSantri();
+}
 
-  function tutupModal(idModal) {
-    document.getElementById(idModal).style.display = "none";
-  }
+function tutupModal(idModal) {
+  document.getElementById(idModal).style.display = "none";
+}
 
-  async function loadDaftarSantri() {
-    const kelas = document.getElementById("kelas").value;
-    const pilihSantri = document.getElementById("pilihSantri");
-    pilihSantri.innerHTML = "<option>Loading...</option>";
+async function loadDaftarSantri() {
+  const kelas = document.getElementById("kelas").value;
+  const pilihSantri = document.getElementById("pilihSantri");
+  pilihSantri.innerHTML = "<option>Loading...</option>";
 
-    try {
-      const res = await fetch(`/.netlify/functions/daftarSantri?kelas=${kelas}`);
-      const data = await res.json();
+  try {
+    const url = `/.netlify/functions/daftarSantri?kelas=${encodeURIComponent(kelas)}`;
+    const res = await fetch(url);
 
-      if (!res.ok) throw new Error(data.error || "Gagal ambil daftar santri");
+    const text = await res.text();
 
-      pilihSantri.innerHTML = data.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
-    } catch (err) {
-      pilihSantri.innerHTML = `<option>Error: ${err.message}</option>`;
-    }
-  }
-
-  async function hapusSantri() {
-    const id = document.getElementById("pilihSantri").value;
-    const kelas = document.getElementById("kelas").value;
-
-    if (!id) {
-      alert("Pilih santri terlebih dahulu.");
+    // Cek kalau bukan JSON (biasanya error HTML)
+    if (!text.trim().startsWith("{") && !text.trim().startsWith("[")) {
+      console.error("Response bukan JSON:", text);
+      pilihSantri.innerHTML = `<option>Error memuat data</option>`;
       return;
     }
 
-    if (!confirm("Yakin ingin menghapus santri ini?")) return;
+    const data = JSON.parse(text);
 
-    const loadingEl = document.getElementById("loadingHapusSantri");
-    loadingEl.style.display = "block";
-
-    try {
-      const res = await fetch("/.netlify/functions/hapusSantri", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, kelas })
-      });
-
-      const data = await res.json();
-      loadingEl.style.display = "none";
-
-      if (res.ok) {
-        alert("Santri berhasil dihapus!");
-        tutupModal('modalHapusSantri');
-        location.reload();
-      } else {
-        alert("Gagal menghapus: " + data.error);
-      }
-    } catch (err) {
-      loadingEl.style.display = "none";
-      alert("Terjadi kesalahan: " + err.message);
+    if (!Array.isArray(data) || data.length === 0) {
+      pilihSantri.innerHTML = `<option>Tidak ada santri</option>`;
+      return;
     }
+
+    pilihSantri.innerHTML = data.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
+  } catch (err) {
+    console.error("Gagal mengambil daftar santri:", err);
+    pilihSantri.innerHTML = `<option>Error: ${err.message}</option>`;
   }
+}
+
+async function hapusSantri() {
+  const id = document.getElementById("pilihSantri").value;
+  const kelas = document.getElementById("kelas").value;
+
+  if (!id) {
+    alert("Pilih santri terlebih dahulu.");
+    return;
+  }
+
+  if (!confirm("Yakin ingin menghapus santri ini?")) return;
+
+  const loadingEl = document.getElementById("loadingHapusSantri");
+  loadingEl.style.display = "block";
+
+  try {
+    const res = await fetch("/.netlify/functions/hapusSantri", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, kelas })
+    });
+
+    const text = await res.text();
+    loadingEl.style.display = "none";
+
+    if (!text.trim().startsWith("{") && !text.trim().startsWith("[")) {
+      console.error("Response bukan JSON:", text);
+      alert("Gagal menghapus: respons server tidak valid");
+      return;
+    }
+
+    const data = JSON.parse(text);
+
+    if (res.ok) {
+      alert("Santri berhasil dihapus!");
+      tutupModal('modalHapusSantri');
+      location.reload();
+    } else {
+      alert("Gagal menghapus: " + data.error);
+    }
+  } catch (err) {
+    loadingEl.style.display = "none";
+    alert("Terjadi kesalahan: " + err.message);
+  }
+}
 </script>
   
 
