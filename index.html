@@ -410,6 +410,7 @@
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
+            <th>Nilai</th>
             <th>Cek Quran</th>
             <th id="totalAllJuzHeader" style="cursor:pointer; text-decoration:underline;">Ketuntasan</th>
           </tr>
@@ -706,6 +707,7 @@ function aturDropdownKelas(user) {
               <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
             </select>
             </td>
+            <td class="nilai">0</td>
             <td><button class="lihat-quran-btn">Lihat Quran</button></td>
             <td class="total-all-juz">0</td>
           `;
@@ -849,6 +851,7 @@ function aturDropdownKelas(user) {
       const id = parseInt(row.children[0].textContent);      // ambil dari kolom nomor
       const nama = row.children[1].textContent;               // kolom nama
       const semester = row.querySelector(".semester").value;  // BENAR
+      const nilai = row.querySelector(".nilai").value;
       const absensi = row.querySelector(".absensi").value;
       const surahDari = row.querySelector(".surah-dari").value;
       const ayatDari = row.querySelector(".ayat-dari").value;
