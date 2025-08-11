@@ -797,9 +797,9 @@ function aturDropdownKelas(user) {
 
     function updateTotalJuz(row) {
   const surahDari = row.querySelector(".surah-dari").value.trim();
-  const ayatDari = row.querySelector(".ayat-dari").value.trim();
+  const ayatDari = parseInt(row.querySelector(".ayat-dari").value.trim());
   const surahSampai = row.querySelector(".surah-sampai").value.trim();
-  const ayatSampai = row.querySelector(".ayat-sampai").value.trim();
+  const ayatSampai = parseInt(row.querySelector(".ayat-sampai").value.trim());
 
   const keyDari = `${surahDari}:${ayatDari}`;
   const keySampai = `${surahSampai}:${ayatSampai}`;
@@ -814,18 +814,45 @@ function aturDropdownKelas(user) {
     402, 422, 442, 462, 482, 502, 522, 542, 562, 582, 602
   ];
 
-  // Buat array berisi rentang halaman valid
+  // Buat array berisi rentang halaman valid (skip halaman 21 dan 602-604)
   const halamanValid = [];
   for (let h = halamanAwal; h <= halamanAkhir; h++) {
     if ((h >= 602 && h <= 604) || h === 21) continue;
     halamanValid.push(h);
   }
 
-  // Hitung total halaman valid
-  const totalHalaman = halamanValid.length;
+  // Fungsi bantu dapatkan jumlah ayat halaman (jumlahAyatPerHalaman adalah objek global)
+  const getJumlahAyatHalaman = (halaman) => jumlahAyatPerHalaman[halaman] || 20;
 
-  // Hitung total juz (berdasarkan 20 halaman per juz)
-  const totalJuz = (totalHalaman / 20).toFixed(2);
+  let totalJuz = 0;
+
+  if (halamanAwal === halamanAkhir) {
+    // Ayat di halaman yang sama
+    const jumlahAyatHalaman = getJumlahAyatHalaman(halamanAwal);
+    const ayatTerbaca = ayatSampai - ayatDari + 1;
+    const nilaiPerAyat = 0.05 / jumlahAyatHalaman;
+    totalJuz = ayatTerbaca * nilaiPerAyat;
+  } else {
+    // Halaman awal (dari ayat mulai sampai akhir halaman)
+    const jumlahAyatHalamanAwal = getJumlahAyatHalaman(halamanAwal);
+    const ayatTerbacaAwal = jumlahAyatHalamanAwal - ayatDari + 1;
+    const nilaiPerAyatAwal = 0.05 / jumlahAyatHalamanAwal;
+    totalJuz += ayatTerbacaAwal * nilaiPerAyatAwal;
+
+    // Halaman akhir (dari ayat 1 sampai ayat sampai)
+    const jumlahAyatHalamanAkhir = getJumlahAyatHalaman(halamanAkhir);
+    const ayatTerbacaAkhir = ayatSampai;
+    const nilaiPerAyatAkhir = 0.05 / jumlahAyatHalamanAkhir;
+    totalJuz += ayatTerbacaAkhir * nilaiPerAyatAkhir;
+
+    // Halaman penuh di antaranya (nilai 0.05 juz per halaman)
+    for (let h = halamanAwal + 1; h <= halamanAkhir - 1; h++) {
+      if ((h >= 602 && h <= 604) || h === 21) continue;
+      totalJuz += 0.05;
+    }
+  }
+
+  totalJuz = totalJuz.toFixed(2);
 
   // Cari juz-juz yang tercakup berdasarkan halaman valid
   const juzTercakup = [];
@@ -833,7 +860,6 @@ function aturDropdownKelas(user) {
     const awalJuz = halamanAwalJuz[i];
     const akhirJuz = i < halamanAwalJuz.length - 1 ? halamanAwalJuz[i + 1] - 1 : 604;
 
-    // Skip jika seluruh halaman juz ada di rentang yang tidak valid
     if (akhirJuz >= 602 && awalJuz <= 604) continue;
 
     for (let h of halamanValid) {
@@ -844,7 +870,7 @@ function aturDropdownKelas(user) {
     }
   }
 
-  // Kompresi format Juz
+  // Fungsi kompres range juz misal [1,2,3,5,6] => "Juz 1-3, 5-6"
   function compressJuzRanges(list) {
     if (list.length === 0) return "";
     list.sort((a, b) => a - b);
@@ -864,8 +890,8 @@ function aturDropdownKelas(user) {
 
   const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
-  row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
   row.querySelector(".total-juz").textContent = totalJuz;
+  row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
 }
 
     kelasSelect.addEventListener("change", loadSantriData);
