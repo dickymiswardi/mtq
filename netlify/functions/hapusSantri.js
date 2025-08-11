@@ -12,11 +12,11 @@ export async function handler(event) {
     };
   }
 
-  const fileName = `kelas_${kelas.split("_")[1]}.json`;
+  const fileName = `${kelas}.json`; // kelas_1.json, kelas_2.json, dst
   const githubApiUrl = `https://api.github.com/repos/dickymiswardi/usermtq/contents/${fileName}`;
 
   try {
-    // 1. Ambil data lama
+    // 1. Ambil file lama dari GitHub
     const getRes = await fetch(githubApiUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -25,24 +25,24 @@ export async function handler(event) {
       },
     });
 
-    if (!getRes.ok) throw new Error(`Gagal mengambil data GitHub: ${getRes.statusText}`);
+    if (!getRes.ok) throw new Error(`Gagal ambil data GitHub: ${getRes.statusText}`);
 
     const fileData = await getRes.json();
     const contentDecoded = Buffer.from(fileData.content, "base64").toString("utf-8");
     let santriList = JSON.parse(contentDecoded);
 
-    // 2. Filter santri berdasarkan ID
-    const beforeLength = santriList.length;
+    // 2. Hapus santri sesuai ID
+    const awalLength = santriList.length;
     santriList = santriList.filter(s => s.id !== id);
 
-    if (santriList.length === beforeLength) {
+    if (santriList.length === awalLength) {
       return {
         statusCode: 404,
         body: JSON.stringify({ error: "Santri tidak ditemukan." }),
       };
     }
 
-    // 3. Encode dan update ke GitHub
+    // 3. Encode dan kirim PUT ke GitHub
     const updatedContent = Buffer.from(JSON.stringify(santriList, null, 2)).toString("base64");
 
     const putRes = await fetch(githubApiUrl, {
@@ -61,7 +61,7 @@ export async function handler(event) {
 
     if (!putRes.ok) {
       const errorText = await putRes.text();
-      throw new Error(`Gagal menyimpan ke GitHub: ${putRes.status} ${errorText}`);
+      throw new Error(`Gagal simpan ke GitHub: ${putRes.status} ${errorText}`);
     }
 
     return {
