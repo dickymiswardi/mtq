@@ -1121,7 +1121,6 @@ function updateTotalJuz(row) {
 });
 
 
-// Fungsi hitung total juz dan update tabel serta tampilkan status tuntas/belum
 async function hitungTotalAllJuzFromTable() {
   const kelas = kelasSelect.value;
   const dari = document.getElementById("rangeDari").value;
@@ -1138,6 +1137,7 @@ async function hitungTotalAllJuzFromTable() {
   if (rangeSampaiInput) {
     rangeSampaiInput.value = sampai;
     rangeSampaiInput.max = sampai;
+    rangeSampaiInput.disabled = true; // disable supaya user tidak bisa ubah
   }
 
   if (!dari) {
@@ -1193,6 +1193,40 @@ async function hitungTotalAllJuzFromTable() {
     });
 
     alert("✅ Total All Juz berhasil dihitung.");
+
+    // === SIMPAN DATA KE REPO lewat aksesAutoUpdateAllJuz ===
+
+    // Siapkan payload data sesuai format yang diinginkan
+    // Contoh format:
+    // { fromDate: dari, toDate: sampai, kelas: kelas, data: [ {id, totalJuz}, ... ] }
+
+    const savePayload = {
+      fromDate: dari,
+      toDate: sampai,
+      kelas: kelas,
+      data: Object.entries(rekap).map(([id, val]) => ({
+        id: parseInt(id),
+        totalJuz: val.totalJuz,
+        semester: val.semester,
+      })),
+    };
+
+    // Kirim data ke Netlify Function
+    const saveRes = await fetch('/.netlify/functions/aksesAutoUpdateAllJuz', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(savePayload),
+    });
+
+    if (!saveRes.ok) {
+      const errText = await saveRes.text();
+      alert(`❌ Gagal simpan data ke repo: ${errText}`);
+    } else {
+      alert('✅ Data total all juz berhasil disimpan ke repo.');
+    }
+
   } catch (err) {
     console.error(err);
     alert("❌ Gagal memproses Total All Juz.");
@@ -1202,52 +1236,6 @@ async function hitungTotalAllJuzFromTable() {
   }
 }
 
-// Fungsi bantu buat array tanggal (tidak dihapus, tetap tersedia)
-function getDateRangeArray(start, end) {
-  const result = [];
-  const current = new Date(start);
-  const endDate = new Date(end);
-
-  while (current <= endDate) {
-    const iso = current.toISOString().split('T')[0];
-    result.push(iso);
-    current.setDate(current.getDate() + 1);
-  }
-  return result;
-}
-
-// Fungsi buka overlay dan set tanggal Sampai otomatis hari ini
-function bukaOverlayTotalAllJuz() {
-  // Ambil tanggal hari ini sesuai zona lokal (bukan UTC)
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const dd = String(today.getDate()).padStart(2, "0");
-  const todayStr = `${yyyy}-${mm}-${dd}`;
-
-  const rangeDari = document.getElementById("rangeDari");
-  const rangeSampai = document.getElementById("rangeSampai");
-
-  // Set batas maksimum ke tanggal lokal hari ini dan default value
-  if (rangeDari) {
-    rangeDari.max = todayStr;
-    if (!rangeDari.value || rangeDari.value > todayStr) {
-      rangeDari.value = todayStr;
-    }
-  }
-
-  if (rangeSampai) {
-    rangeSampai.max = todayStr;
-    // Set value Sampai ke hari ini dan disable input supaya user tidak ubah
-    rangeSampai.value = todayStr;
-    rangeSampai.disabled = true;
-  }
-
-  // Tampilkan overlay
-  document.getElementById("juzOverlay").style.display = "flex";
-}
-
-document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTotalAllJuzFromTable);
 
   </script>
 
