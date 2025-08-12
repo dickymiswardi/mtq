@@ -711,7 +711,6 @@ function aturDropdownKelas(user) {
       const tanggal = tanggalInput.value;
       overlay.style.display = "flex";
 
-
       try {
         const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
         const santriData = await resSantri.json();
@@ -728,7 +727,6 @@ function aturDropdownKelas(user) {
           const surahOptions = surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
           const dari = (dataAbsensi.dari || "1:1").split(":");
           const sampai = (dataAbsensi.sampai || "1:1").split(":");
-          const totalAllJuz = dataAbsensi.totalAllJuz ?? "0";
 
           // asumsi: dataAbsensi sudah didefinisikan untuk setiap santri, mis.
 // const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
@@ -769,7 +767,7 @@ row.innerHTML = `
     <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
     <button type="button" class="lihat-quran-btn">Lihat Quran</button>
   </td>
-  <<td class="total-all-juz">${totalAllJuz}</td>
+  <td class="total-all-juz">0</td>
 `;
 santriTableBody.appendChild(row);
 
