@@ -17,14 +17,32 @@
   display: inline-block;
   font-weight: 600;
   font-size: 14px;
+  letter-spacing: 0.3px;
   color: #1E88E5;
+  padding: 2px 4px;
   cursor: pointer;
-  transition: color 0.25s ease, text-decoration-color 0.25s ease;
+  position: relative;
+  transition: color 0.25s ease;
+}
+
+/* underline animasi halus */
+button.lihat-quran-btn::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0%;
+  height: 2px;
+  background-color: currentColor;
+  transition: width 0.25s ease;
 }
 
 button.lihat-quran-btn:hover {
-  color: #d4eaff;
-  text-decoration: underline;
+  color: #1565C0;
+}
+
+button.lihat-quran-btn:hover::after {
+  width: 100%;
 }
 
 #santri-table th:first-child,
