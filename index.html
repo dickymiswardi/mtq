@@ -728,6 +728,8 @@ function aturDropdownKelas(user) {
           const dari = (dataAbsensi.dari || "1:1").split(":");
           const sampai = (dataAbsensi.sampai || "1:1").split(":");
 
+          const totalAllJuz = dataAbsensi?.totalAllJuz ?? '-';
+
           // asumsi: dataAbsensi sudah didefinisikan untuk setiap santri, mis.
 // const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
 
@@ -768,7 +770,7 @@ row.innerHTML = `
     <button type="button" class="lihat-quran-btn">Lihat Quran</button>
   </td>
   <td class="total-all-juz">
-  <div>${(dataAbsensi.totalAllJuz !== undefined && dataAbsensi.totalAllJuz !== null) ? dataAbsensi.totalAllJuz : '-'}</div>
+  <div>${totalAllJuz}</div>
   </td>
 `;
 santriTableBody.appendChild(row);
