@@ -767,7 +767,9 @@ row.innerHTML = `
     <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
     <button type="button" class="lihat-quran-btn">Lihat Quran</button>
   </td>
-  <td class="total-all-juz">0</td>
+  <td class="total-all-juz">
+  <div>${(dataAbsensi.totalAllJuz !== undefined && dataAbsensi.totalAllJuz !== null) ? dataAbsensi.totalAllJuz : '-'}</div>
+</td>
 `;
 santriTableBody.appendChild(row);
 
