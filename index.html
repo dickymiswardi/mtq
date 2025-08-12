@@ -706,78 +706,68 @@ function aturDropdownKelas(user) {
       }, 500);
     });
 
-    // === Fungsi 1: loadSantriData ===
-async function loadSantriData() {
+    async function loadSantriData() {
   const kelas = kelasSelect.value;
   const tanggal = tanggalInput.value;
   overlay.style.display = "flex";
 
   try {
     const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-    if (!resSantri.ok) throw new Error("Gagal memuat data santri");
     const santriData = await resSantri.json();
 
     const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-    if (!resAbsensi.ok) throw new Error("Gagal memuat data absensi");
     const absensiData = await resAbsensi.json();
 
     santriTableBody.innerHTML = "";
 
     santriData.forEach((santri, i) => {
       const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
-      const row = document.createElement("tr");
 
       const surahOptions = surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
-      // Split dari/sampai, jika diperlukan nanti (tidak dipakai saat ini)
-      const dari = (dataAbsensi.dari || "1:1").split(":");
-      const sampai = (dataAbsensi.sampai || "1:1").split(":");
 
-      const totalAllJuz = dataAbsensi?.totalAllJuz ?? '-';
+      const totalAllJuz = dataAbsensi.totalAllJuz ?? "0";
 
-          // asumsi: dataAbsensi sudah didefinisikan untuk setiap santri, mis.
-// const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${santri.nama}</td>
+        <td>
+          <select class="absensi">
+            <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
+            <option value="Alpha" ${dataAbsensi.absensi === "Alpha" ? "selected" : ""}>Alpha</option>
+            <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
+            <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
+          </select>
+        </td>
+        <td>
+          <select class="surah-dari">${surahOptions}</select>
+          <select class="ayat-dari"></select>
+        </td>
+        <td>
+          <select class="surah-sampai">${surahOptions}</select>
+          <select class="ayat-sampai"></select>
+        </td>
+        <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
+        <td class="total-juz">${dataAbsensi.totalJuz ?? 0}</td>
+        <td>
+          <select class="semester">
+            <option value="1" ${santri.semester == 1 ? 'selected' : ''}>Semester 1</option>
+            <option value="2" ${santri.semester == 2 ? 'selected' : ''}>Semester 2</option>
+            <option value="3" ${santri.semester == 3 ? 'selected' : ''}>Semester 3</option>
+            <option value="4" ${santri.semester == 4 ? 'selected' : ''}>Semester 4</option>
+            <option value="5" ${santri.semester == 5 ? 'selected' : ''}>Semester 5</option>
+            <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
+          </select>
+        </td>
+        <td>
+          <div class="nilai-ringkas">${dataAbsensi.buttonCell?.nilai || ''}</div>
+          <div class="warna-ringkas">${dataAbsensi.buttonCell?.warna || ''}</div>
+          <button type="button" class="lihat-quran-btn">Lihat Quran</button>
+        </td>
+        <td class="total-all-juz">${totalAllJuz}</td>
+      `;
 
-row.innerHTML = `
-  <td>${i + 1}</td>
-  <td>${santri.nama}</td>
-  <td>
-    <select class="absensi">
-      <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
-      <option value="Alpha" ${dataAbsensi.absensi === "Alpha" ? "selected" : ""}>Alpha</option>
-      <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
-      <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
-    </select>
-  </td>
-  <td>
-    <select class="surah-dari">${surahOptions}</select>
-    <select class="ayat-dari"></select>
-  </td>
-  <td>
-    <select class="surah-sampai">${surahOptions}</select>
-    <select class="ayat-sampai"></select>
-  </td>
-  <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
-  <td class="total-juz">${dataAbsensi.totalJuz ?? 0}</td>
-  <td>
-            <select class="semester">
-              <option value="1" ${santri.semester == 1 ? 'selected' : ''}>Semester 1</option>
-              <option value="2" ${santri.semester == 2 ? 'selected' : ''}>Semester 2</option>
-              <option value="3" ${santri.semester == 3 ? 'selected' : ''}>Semester 3</option>
-              <option value="4" ${santri.semester == 4 ? 'selected' : ''}>Semester 4</option>
-              <option value="5" ${santri.semester == 5 ? 'selected' : ''}>Semester 5</option>
-              <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
-            </select>
-            </td>
-  <td>
-    <div class="nilai-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.nilai) ? dataAbsensi.buttonCell.nilai : ''}</div>
-    <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
-    <button type="button" class="lihat-quran-btn">Lihat Quran</button>
-  </td>
-  <td class="total-all-juz">
-  <div>${totalAllJuz}</div>
-  </td>
-`;
-santriTableBody.appendChild(row);
+      santriTableBody.appendChild(row);
 
 
           const surahDari = row.querySelector(".surah-dari");
@@ -1120,8 +1110,8 @@ function updateTotalJuz(row) {
 });
 
 
-// === Fungsi 2: hitungTotalAllJuzFromTable (versi async lengkap) ===
-async function hitungTotalAllJuzFromTable() {
+// Ambil semua data juz absensi rentang tanggal
+  async function hitungTotalAllJuzFromTable() {
   const kelas = kelasSelect.value;
   const dari = document.getElementById("rangeDari").value;
   const sampai = document.getElementById("rangeSampai").value;
@@ -1132,15 +1122,19 @@ async function hitungTotalAllJuzFromTable() {
   }
 
   overlay.style.display = "flex";
+      // Tutup overlay setelah selesai
+overlay.style.display = "none";
+
 
   try {
+    // Ambil semua data absensi rentang tanggal
     const res = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
-    if (!res.ok) throw new Error("Gagal mengambil data absensi rentang tanggal");
     const allData = await res.json();
 
     const rows = santriTableBody.querySelectorAll("tr");
     const rekap = {}; // { id: {totalJuz, semester} }
 
+    // Rekap total per santri
     allData.forEach(item => {
       const id = item.id;
       if (!rekap[id]) {
@@ -1149,12 +1143,13 @@ async function hitungTotalAllJuzFromTable() {
           semester: item.semester || null,
         };
       }
-      rekap[id].totalJuz += parseFloat(item.totalJuz) || 0;
+      rekap[id].totalJuz += parseFloat(item.totalJuz || 0);
     });
 
+    // Update ke tabel kolom "Total All Juz"
     rows.forEach(row => {
       const id = parseInt(row.children[0].textContent);
-      const cell = row.querySelector(".total-all-juz > div");
+      const cell = row.querySelector(".total-all-juz");
       if (rekap[id]) {
         cell.textContent = rekap[id].totalJuz.toFixed(2);
       } else {
@@ -1164,15 +1159,14 @@ async function hitungTotalAllJuzFromTable() {
 
     alert("✅ Total All Juz berhasil dihitung.");
   } catch (err) {
-    alert("❌ Gagal memproses Total All Juz. " + err.message);
     console.error(err);
-  } finally {
-    overlay.style.display = "none";
+    alert("❌ Gagal memproses Total All Juz.");
   }
+
+  overlay.style.display = "none";
 }
 
-// === Fungsi 3: hitungTotalAllJuzFromTable (versi partial dari kamu, bisa dihapus atau diganti) ===
-function hitungTotalAllJuzFromTable() {
+    function hitungTotalAllJuzFromTable() {
   const rows = santriTableBody.querySelectorAll("tr");
   const kelas = kelasSelect.value;
 
@@ -1185,8 +1179,7 @@ function hitungTotalAllJuzFromTable() {
   }
 
   const dateRange = getDateRangeArray(dari, sampai);
-  // Fungsi ini belum lengkap, pastikan kamu tambahkan implementasi sesuai kebutuhan
-}
+
   // Ambil ID & Nama Santri dari Tabel
   const santriList = Array.from(rows).map(row => ({
     id: parseInt(row.children[0].textContent),
