@@ -707,78 +707,89 @@ function aturDropdownKelas(user) {
     });
 
     async function loadSantriData() {
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
-      overlay.style.display = "flex";
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
+  overlay.style.display = "flex";
 
-      try {
-        const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-        const santriData = await resSantri.json();
+  try {
+    const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+    const santriData = await resSantri.json();
 
-        const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-        const absensiData = await resAbsensi.json();
+    const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+    const absensiData = await resAbsensi.json();
 
-        santriTableBody.innerHTML = "";
+    santriTableBody.innerHTML = "";
 
-        santriData.forEach((santri, i) => {
-          const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
-          const row = document.createElement("tr");
+    santriData.forEach((santri, i) => {
+      const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
 
-          const surahOptions = surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
-          const dari = (dataAbsensi.dari || "1:1").split(":");
-          const sampai = (dataAbsensi.sampai || "1:1").split(":");
+      // --- Ambil mark dari localStorage jika ada ---
+      let storedMarks = JSON.parse(localStorage.getItem("markData") || "{}");
+      let markDetail = storedMarks[santri.id] 
+                        || (dataAbsensi.buttonCell && dataAbsensi.buttonCell.mark) 
+                        || {};
 
-          // asumsi: dataAbsensi sudah didefinisikan untuk setiap santri, mis.
-// const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
+      const row = document.createElement("tr");
 
-row.innerHTML = `
-  <td>${i + 1}</td>
-  <td>${santri.nama}</td>
-  <td>
-    <select class="absensi">
-      <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
-      <option value="Alpha" ${dataAbsensi.absensi === "Alpha" ? "selected" : ""}>Alpha</option>
-      <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
-      <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
-    </select>
-  </td>
-  <td>
-    <select class="surah-dari">${surahOptions}</select>
-    <select class="ayat-dari"></select>
-  </td>
-  <td>
-    <select class="surah-sampai">${surahOptions}</select>
-    <select class="ayat-sampai"></select>
-  </td>
-  <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
-  <td class="total-juz">${dataAbsensi.totalJuz ?? 0}</td>
-  <td>
-            <select class="semester">
-              <option value="1" ${santri.semester == 1 ? 'selected' : ''}>Semester 1</option>
-              <option value="2" ${santri.semester == 2 ? 'selected' : ''}>Semester 2</option>
-              <option value="3" ${santri.semester == 3 ? 'selected' : ''}>Semester 3</option>
-              <option value="4" ${santri.semester == 4 ? 'selected' : ''}>Semester 4</option>
-              <option value="5" ${santri.semester == 5 ? 'selected' : ''}>Semester 5</option>
-              <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
-            </select>
-            </td>
-  <td 
-  class="cell-nilai" 
-  data-mark='${dataAbsensi.buttonCell && dataAbsensi.buttonCell.mark ? JSON.stringify(dataAbsensi.buttonCell.mark) : "{}"}'>
-  
-  <div class="nilai-ringkas">
-    ${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.nilai) ? dataAbsensi.buttonCell.nilai : ''}
-  </div>
-  
-  <div class="warna-ringkas">
-    ${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}
-  </div>
-  
-  <button type="button" class="lihat-quran-btn">Lihat Quran</button>
-</td>
-  <td class="total-all-juz">0</td>
-`;
-santriTableBody.appendChild(row);
+      const surahOptions = surahList
+        .map(s => `<option value="${s.id}">${s.nama}</option>`)
+        .join("");
+
+      const dari = (dataAbsensi.dari || "1:1").split(":");
+      const sampai = (dataAbsensi.sampai || "1:1").split(":");
+
+      row.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${santri.nama}</td>
+        <td>
+          <select class="absensi">
+            <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
+            <option value="Alpha" ${dataAbsensi.absensi === "Alpha" ? "selected" : ""}>Alpha</option>
+            <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
+            <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
+          </select>
+        </td>
+        <td>
+          <select class="surah-dari">${surahOptions}</select>
+          <select class="ayat-dari"></select>
+        </td>
+        <td>
+          <select class="surah-sampai">${surahOptions}</select>
+          <select class="ayat-sampai"></select>
+        </td>
+        <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
+        <td class="total-juz">${dataAbsensi.totalJuz ?? 0}</td>
+        <td>
+          <select class="semester">
+            <option value="1" ${santri.semester == 1 ? 'selected' : ''}>Semester 1</option>
+            <option value="2" ${santri.semester == 2 ? 'selected' : ''}>Semester 2</option>
+            <option value="3" ${santri.semester == 3 ? 'selected' : ''}>Semester 3</option>
+            <option value="4" ${santri.semester == 4 ? 'selected' : ''}>Semester 4</option>
+            <option value="5" ${santri.semester == 5 ? 'selected' : ''}>Semester 5</option>
+            <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
+          </select>
+        </td>
+        <td class="cell-nilai" data-mark='${JSON.stringify(markDetail)}'>
+          <div class="nilai-ringkas">
+            ${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.nilai) || ''}
+          </div>
+          <div class="warna-ringkas">
+            ${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) || ''}
+          </div>
+          <button type="button" class="lihat-quran-btn">Lihat Quran</button>
+        </td>
+        <td class="total-all-juz">0</td>
+      `;
+
+      santriTableBody.appendChild(row);
+    });
+
+  } catch (error) {
+    console.error(error);
+  } finally {
+    overlay.style.display = "none";
+  }
+}
 
 
           const surahDari = row.querySelector(".surah-dari");
@@ -1793,9 +1804,9 @@ function simpanKeStorage() {
   const key = getStorageKey();
   localStorage.setItem(key, JSON.stringify(markData));
 
-  // Simpan juga ke tabel (disembunyikan di data-* attribute)
+  // Simpan juga ke atribut tersembunyi di tabel
   const row = [...document.querySelectorAll("table tbody tr")]
-    .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
+    .find(r => parseInt(r.dataset.id) === currentIdSiswa);
   if (row) {
     const buttonCell = [...row.cells].find(td => td.querySelector(".lihat-quran-btn"));
     if (buttonCell) {
@@ -1812,9 +1823,9 @@ function ambilDariStorage() {
   if (saved) {
     markData = JSON.parse(saved);
   } else {
-    // fallback ke data di tabel jika ada
+    // fallback ke data di tabel
     const row = [...document.querySelectorAll("table tbody tr")]
-      .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
+      .find(r => parseInt(r.dataset.id) === currentIdSiswa);
     const buttonCell = row ? [...row.cells].find(td => td.querySelector(".lihat-quran-btn")) : null;
     if (buttonCell?.dataset.markDetail) {
       markData = JSON.parse(buttonCell.dataset.markDetail);
@@ -1860,17 +1871,18 @@ function hitungNilai() {
 function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
   if (!currentIdSiswa) return;
   const row = [...document.querySelectorAll("table tbody tr")]
-    .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
+    .find(r => parseInt(r.dataset.id) === currentIdSiswa);
 
   if (row) {
     const buttonCell = [...row.cells].find(td => td.querySelector(".lihat-quran-btn"));
     if (buttonCell) {
-      buttonCell.dataset.markDetail = JSON.stringify(markData); // simpan tersembunyi
-
+      // simpan mark detail tersembunyi
+      buttonCell.dataset.markDetail = JSON.stringify(markData);
+      // tampilkan hanya nilai ringkas + warna ringkas
       buttonCell.innerHTML = `
-        <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
-        <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
-        <button class="lihat-quran-btn">Lihat Quran</button>
+        <div class="nilai-ringkas">${nilai.toFixed(1)} (${predikat})</div>
+        <div class="warna-ringkas">🟩${hijau} 🟨${kuning} 🟥${merah}</div>
+        <button type="button" class="lihat-quran-btn">Lihat Quran</button>
       `;
     }
   }
@@ -1929,7 +1941,7 @@ document.addEventListener('click', async function(e) {
     await dataSiap;
 
     const row = e.target.closest('tr');
-    currentIdSiswa = parseInt(row.cells[0].innerText.trim());
+    currentIdSiswa = parseInt(row.dataset.id); // pakai dataset.id
 
     ambilDariStorage();
 
@@ -1997,6 +2009,7 @@ document.getElementById("btn-simpan-mark").onclick = function() {
   alert("Nilai tersimpan di localStorage dan tabel.");
 };
 </script>
+
 
 
 
