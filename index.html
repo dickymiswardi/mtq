@@ -1121,7 +1121,10 @@ function updateTotalJuz(row) {
 });
 
 
-  // Asumsi kelasSelect dan santriTableBody sudah didefinisikan di luar
+  // Asumsi kelasSelect dan santriTableBody sudah ada di kode utama Anda:
+  // contoh: const kelasSelect = document.getElementById('kelas');
+  // contoh: const santriTableBody = document.querySelector('#santriTable tbody');
+  // contoh: const overlay = document.getElementById('overlay'); // untuk loading
 
   async function hitungTotalAllJuzFromTable() {
     const kelas = kelasSelect.value;
@@ -1137,7 +1140,8 @@ function updateTotalJuz(row) {
       return;
     }
 
-    overlay.style.display = "flex";
+    // Tampilkan loading overlay jika ada, atau buat sendiri:
+    if(window.overlay) overlay.style.display = "flex";
 
     try {
       const res = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
@@ -1208,10 +1212,11 @@ function updateTotalJuz(row) {
       console.error(err);
       alert("❌ Terjadi kesalahan: " + err.message);
     } finally {
-      overlay.style.display = "none";
+      if(window.overlay) overlay.style.display = "none";
     }
   }
 
+  // Buka overlay input tanggal, tanpa batas maksimal
   function bukaOverlayTotalAllJuz() {
     const rangeDari = document.getElementById("rangeDari");
     const rangeSampai = document.getElementById("rangeSampai");
@@ -1233,8 +1238,10 @@ function updateTotalJuz(row) {
     document.getElementById("juzOverlay").style.display = "flex";
   }
 
+  // Pasang event listener tombol hitung
   document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTotalAllJuzFromTable);
 </script>
+
   
 
 
