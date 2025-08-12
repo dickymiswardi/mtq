@@ -1773,25 +1773,58 @@ let ayahPageMap = {};
 let markData = {};
 let currentIdSiswa = null;
 
-function getStorageKey() {
+async function simpanKeServer() {
+  if (!currentIdSiswa) return;
+
   const kelas = document.getElementById('kelas')?.value || 'default';
   const tanggal = document.getElementById('tanggal')?.value || 'default';
-  return `marks_${kelas}_${tanggal}_${currentIdSiswa}`;
+
+  // Ambil data lama dari server dulu supaya tidak overwrite data santri lain
+  let existingData = {};
+  try {
+    const resGet = await fetch(`/.netlify/functions/getData?kelas=${kelas}&tanggal=${tanggal}`);
+    if (resGet.ok) {
+      existingData = await resGet.json();
+    }
+  } catch {
+    existingData = {};
+  }
+
+  // Update data current santri
+  existingData[currentIdSiswa] = markData;
+
+  try {
+    const resSave = await fetch('/.netlify/functions/saveData', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tanggal,
+        kelas,
+        data: existingData
+      }),
+    });
+    if (!resSave.ok) throw new Error(`Gagal menyimpan data (status ${resSave.status})`);
+  } catch (err) {
+    alert("Gagal simpan data ke server: " + err.message);
+    throw err;
+  }
 }
 
-function simpanKeStorage() {
+async function ambilDariServer() {
   if (!currentIdSiswa) return;
-  const key = getStorageKey();
-  localStorage.setItem(key, JSON.stringify(markData));
-}
 
-function ambilDariStorage() {
-  if (!currentIdSiswa) return;
-  const key = getStorageKey();
-  const saved = localStorage.getItem(key);
-  if (saved) {
-    markData = JSON.parse(saved);
-  } else {
+  const kelas = document.getElementById('kelas')?.value || 'default';
+  const tanggal = document.getElementById('tanggal')?.value || 'default';
+
+  try {
+    const res = await fetch(`/.netlify/functions/getData?kelas=${kelas}&tanggal=${tanggal}`);
+    if (!res.ok) {
+      markData = {};
+      return;
+    }
+    const allData = await res.json();
+    markData = allData[currentIdSiswa] || {};
+  } catch {
     markData = {};
   }
 }
@@ -1800,12 +1833,11 @@ function hitungNilai() {
   let totalMinus = 0;
   let hijau = 0, kuning = 0, merah = 0;
 
-  // Cek apakah ada data yang sudah ditandai
   let adaMark = false;
 
   for (let ayat in markData) {
     for (let idx in markData[ayat]) {
-      adaMark = true; // Ada setidaknya satu tanda
+      adaMark = true;
       if (markData[ayat][idx] === "green") { totalMinus += 0.5; hijau++; }
       if (markData[ayat][idx] === "yellow") { totalMinus += 1; kuning++; }
       if (markData[ayat][idx] === "red") { totalMinus += 2; merah++; }
@@ -1873,7 +1905,9 @@ function buatKataKlik(surah, ayat, teks) {
         span.style.backgroundColor = "";
       }
 
-      simpanKeStorage();
+      // Simpan ke server (async, jangan await supaya UI tetap responsif)
+      simpanKeServer().catch(e => console.error(e));
+
       const hasil = hitungNilai();
       updateNilaiDiTabel(hasil);
     };
@@ -1903,7 +1937,7 @@ document.addEventListener('click', async function(e) {
     const row = e.target.closest('tr');
     currentIdSiswa = parseInt(row.cells[0].innerText.trim());
 
-    ambilDariStorage(); // Ambil data yang pernah disimpan
+    await ambilDariServer();
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
@@ -1938,6 +1972,7 @@ document.addEventListener('click', async function(e) {
         await font.load();
         document.fonts.add(font);
       } catch {}
+
       const pageDiv = document.createElement('div');
       pageDiv.style.fontFamily = `QCF_P${pageStr}`;
       pageDiv.style.marginBottom = '20px';
@@ -1958,15 +1993,19 @@ document.addEventListener('click', async function(e) {
   }
 });
 
-document.getElementById("btn-simpan-mark").onclick = function() {
+document.getElementById("btn-simpan-mark").onclick = async function() {
   if (!currentIdSiswa) {
     alert("Silakan pilih santri terlebih dahulu dengan klik tombol 'Lihat Quran'.");
     return;
   }
   const hasil = hitungNilai();
   updateNilaiDiTabel(hasil);
-  simpanKeStorage();
-  alert("Nilai tersimpan di penyimpanan lokal (localStorage).");
+  try {
+    await simpanKeServer();
+    alert("Nilai tersimpan di server.");
+  } catch {
+    alert("Gagal menyimpan nilai ke server.");
+  }
 };
 </script>
 
