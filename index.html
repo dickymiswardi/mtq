@@ -706,29 +706,33 @@ function aturDropdownKelas(user) {
       }, 500);
     });
 
-    async function loadSantriData() {
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
-      overlay.style.display = "flex";
+    // === Fungsi 1: loadSantriData ===
+async function loadSantriData() {
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
+  overlay.style.display = "flex";
 
-      try {
-        const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-        const santriData = await resSantri.json();
+  try {
+    const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+    if (!resSantri.ok) throw new Error("Gagal memuat data santri");
+    const santriData = await resSantri.json();
 
-        const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-        const absensiData = await resAbsensi.json();
+    const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+    if (!resAbsensi.ok) throw new Error("Gagal memuat data absensi");
+    const absensiData = await resAbsensi.json();
 
-        santriTableBody.innerHTML = "";
+    santriTableBody.innerHTML = "";
 
-        santriData.forEach((santri, i) => {
-          const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
-          const row = document.createElement("tr");
+    santriData.forEach((santri, i) => {
+      const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
+      const row = document.createElement("tr");
 
-          const surahOptions = surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
-          const dari = (dataAbsensi.dari || "1:1").split(":");
-          const sampai = (dataAbsensi.sampai || "1:1").split(":");
+      const surahOptions = surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
+      // Split dari/sampai, jika diperlukan nanti (tidak dipakai saat ini)
+      const dari = (dataAbsensi.dari || "1:1").split(":");
+      const sampai = (dataAbsensi.sampai || "1:1").split(":");
 
-          const totalAllJuz = dataAbsensi?.totalAllJuz ?? '-';
+      const totalAllJuz = dataAbsensi?.totalAllJuz ?? '-';
 
           // asumsi: dataAbsensi sudah didefinisikan untuk setiap santri, mis.
 // const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
@@ -1116,8 +1120,8 @@ function updateTotalJuz(row) {
 });
 
 
-// Ambil semua data juz absensi rentang tanggal
-  async function hitungTotalAllJuzFromTable() {
+// === Fungsi 2: hitungTotalAllJuzFromTable (versi async lengkap) ===
+async function hitungTotalAllJuzFromTable() {
   const kelas = kelasSelect.value;
   const dari = document.getElementById("rangeDari").value;
   const sampai = document.getElementById("rangeSampai").value;
@@ -1128,19 +1132,15 @@ function updateTotalJuz(row) {
   }
 
   overlay.style.display = "flex";
-      // Tutup overlay setelah selesai
-overlay.style.display = "none";
-
 
   try {
-    // Ambil semua data absensi rentang tanggal
     const res = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
+    if (!res.ok) throw new Error("Gagal mengambil data absensi rentang tanggal");
     const allData = await res.json();
 
     const rows = santriTableBody.querySelectorAll("tr");
     const rekap = {}; // { id: {totalJuz, semester} }
 
-    // Rekap total per santri
     allData.forEach(item => {
       const id = item.id;
       if (!rekap[id]) {
@@ -1149,13 +1149,12 @@ overlay.style.display = "none";
           semester: item.semester || null,
         };
       }
-      rekap[id].totalJuz += parseFloat(item.totalJuz || 0);
+      rekap[id].totalJuz += parseFloat(item.totalJuz) || 0;
     });
 
-    // Update ke tabel kolom "Total All Juz"
     rows.forEach(row => {
       const id = parseInt(row.children[0].textContent);
-      const cell = row.querySelector(".total-all-juz");
+      const cell = row.querySelector(".total-all-juz > div");
       if (rekap[id]) {
         cell.textContent = rekap[id].totalJuz.toFixed(2);
       } else {
@@ -1165,14 +1164,15 @@ overlay.style.display = "none";
 
     alert("✅ Total All Juz berhasil dihitung.");
   } catch (err) {
+    alert("❌ Gagal memproses Total All Juz. " + err.message);
     console.error(err);
-    alert("❌ Gagal memproses Total All Juz.");
+  } finally {
+    overlay.style.display = "none";
   }
-
-  overlay.style.display = "none";
 }
 
-    function hitungTotalAllJuzFromTable() {
+// === Fungsi 3: hitungTotalAllJuzFromTable (versi partial dari kamu, bisa dihapus atau diganti) ===
+function hitungTotalAllJuzFromTable() {
   const rows = santriTableBody.querySelectorAll("tr");
   const kelas = kelasSelect.value;
 
@@ -1185,7 +1185,8 @@ overlay.style.display = "none";
   }
 
   const dateRange = getDateRangeArray(dari, sampai);
-
+  // Fungsi ini belum lengkap, pastikan kamu tambahkan implementasi sesuai kebutuhan
+}
   // Ambil ID & Nama Santri dari Tabel
   const santriList = Array.from(rows).map(row => ({
     id: parseInt(row.children[0].textContent),
