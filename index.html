@@ -22,7 +22,7 @@
 }
 
 .lihat-quran-btn:hover {
-  color: #1565C0; /* biru sedikit lebih gelap */
+  color: #1565C0;
   text-decoration: underline;
   text-decoration-color: #1565C0;
 }
@@ -30,8 +30,9 @@
 .lihat-quran-btn:focus,
 .lihat-quran-btn:active {
   outline: none;
-  background: none;
-  color: #1E88E5;
+  background: none !important; /* hapus background biru */
+  box-shadow: none; /* hapus efek bayangan fokus */
+  color: #1E88E5; /* tetap warna biru */
   text-decoration: none;
 }
 
