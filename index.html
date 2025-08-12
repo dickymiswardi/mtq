@@ -187,23 +187,14 @@ button.lihat-quran-btn:hover::after {
     .total-all-juz span {
   font-weight: bold;
   font-size: 11px;
+  background: #e0f2f1;
   border-radius: 4px;
   padding: 2px 6px;
+  color: black;
   display: inline-block;
   min-width: 50px;
   text-align: center;
-  color: white; /* default text putih */
-  background-color: #e0f2f1; /* default background */
 }
-
-    .tuntas {
-  background-color: green !important;
-}
-
-.belum {
-  background-color: red !important;
-}
-
     .container {
       max-width: 1400px;
       margin: auto;
@@ -781,12 +772,8 @@ row.innerHTML = `
     <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
     <button type="button" class="lihat-quran-btn">Lihat Quran</button>
   </td>
-  <td class="total-all-juz">
-  <div><span span class="${tuntas ? 'tuntas' : 'belum'}">${
-  (dataAbsensi.totalAllJuz !== undefined && dataAbsensi.totalAllJuz !== null)
-    ? `${tuntas ? 'TUNTAS' : 'BELUM'} ${dataAbsensi.totalAllJuz}`
-    : '-'
-}</span></div>
+<td class="total-all-juz">
+  <div><span>${(dataAbsensi.totalAllJuz !== undefined && dataAbsensi.totalAllJuz !== null) ? dataAbsensi.totalAllJuz : '-'}</span></div>
 </td>
 `;
 santriTableBody.appendChild(row);
