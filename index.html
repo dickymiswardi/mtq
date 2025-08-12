@@ -1783,25 +1783,6 @@ function simpanKeStorage() {
   if (!currentIdSiswa) return;
   const key = getStorageKey();
   localStorage.setItem(key, JSON.stringify(markData));
-
-  // Simpan juga ke tabel (data tersembunyi & update isi cell)
-  const row = [...document.querySelectorAll("table tbody tr")]
-    .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
-
-  if (row) {
-    const buttonCell = [...row.cells].find(td => td.querySelector(".lihat-quran-btn"));
-    if (buttonCell) {
-      buttonCell.dataset.markDetail = JSON.stringify(markData); // simpan detail markData
-
-      // Update tampilan ringkas (nilai, predikat, dan emoji warna)
-      const { nilai, predikat, hijau, kuning, merah } = hitungNilai();
-      buttonCell.innerHTML = `
-        <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
-        <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
-        <button class="lihat-quran-btn">Lihat Quran</button>
-      `;
-    }
-  }
 }
 
 function ambilDariStorage() {
@@ -1811,15 +1792,7 @@ function ambilDariStorage() {
   if (saved) {
     markData = JSON.parse(saved);
   } else {
-    // fallback: coba ambil dari data attribute di tabel
-    const row = [...document.querySelectorAll("table tbody tr")]
-      .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
-    const buttonCell = row ? [...row.cells].find(td => td.querySelector(".lihat-quran-btn")) : null;
-    if (buttonCell?.dataset.markDetail) {
-      markData = JSON.parse(buttonCell.dataset.markDetail);
-    } else {
-      markData = {};
-    }
+    markData = {};
   }
 }
 
@@ -1827,11 +1800,12 @@ function hitungNilai() {
   let totalMinus = 0;
   let hijau = 0, kuning = 0, merah = 0;
 
+  // Cek apakah ada data yang sudah ditandai
   let adaMark = false;
 
   for (let ayat in markData) {
     for (let idx in markData[ayat]) {
-      adaMark = true;
+      adaMark = true; // Ada setidaknya satu tanda
       if (markData[ayat][idx] === "green") { totalMinus += 0.5; hijau++; }
       if (markData[ayat][idx] === "yellow") { totalMinus += 1; kuning++; }
       if (markData[ayat][idx] === "red") { totalMinus += 2; merah++; }
@@ -1865,8 +1839,6 @@ function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
   if (row) {
     const buttonCell = [...row.cells].find(td => td.querySelector(".lihat-quran-btn"));
     if (buttonCell) {
-      buttonCell.dataset.markDetail = JSON.stringify(markData); // simpan detail markData
-
       buttonCell.innerHTML = `
         <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
         <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
@@ -1931,7 +1903,7 @@ document.addEventListener('click', async function(e) {
     const row = e.target.closest('tr');
     currentIdSiswa = parseInt(row.cells[0].innerText.trim());
 
-    ambilDariStorage();
+    ambilDariStorage(); // Ambil data yang pernah disimpan
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
@@ -1997,7 +1969,6 @@ document.getElementById("btn-simpan-mark").onclick = function() {
   alert("Nilai tersimpan di penyimpanan lokal (localStorage).");
 };
 </script>
-
 
 
 
