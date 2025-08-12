@@ -528,13 +528,14 @@ button.lihat-quran-btn:hover::after {
 </div>
 
 
+<!-- Overlay Hitung Total All Juz -->
 <div id="juzOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
 background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:center;">
   <div style="background:white; padding:20px; border-radius:8px; min-width:300px;">
     <h3>Hitung Total All Juz</h3>
     <label>Dari: <input type="date" id="rangeDari"></label><br><br>
-    <label>Sampai: <input type="date" id="rangeSampai"></label><br><br>
-    <button onclick="hitungTotalAllJuzFromTable()">Hitung Total All Juz</button>
+    <label>Sampai: <input type="date" id="rangeSampai" disabled></label><br><br>
+    <button id="btnHitungTotalJuz">Hitung Total All Juz</button>
     <button onclick="document.getElementById('juzOverlay').style.display='none'">Close</button>
   </div>
 </div>
@@ -1120,31 +1121,43 @@ function updateTotalJuz(row) {
 });
 
 
-// Ambil semua data juz absensi rentang tanggal
-  async function hitungTotalAllJuzFromTable() {
+// Fungsi hitung total juz dan update tabel serta tampilkan status tuntas/belum
+async function hitungTotalAllJuzFromTable() {
   const kelas = kelasSelect.value;
   const dari = document.getElementById("rangeDari").value;
-  const sampai = document.getElementById("rangeSampai").value;
 
-  if (!dari || !sampai) {
-    alert("Mohon pilih tanggal Dari dan Sampai.");
+  // Override tanggal Sampai agar selalu hari ini (otomatis)
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const sampai = `${yyyy}-${mm}-${dd}`;
+
+  // Set nilai tanggal Sampai di input agar sesuai (bisa untuk UI)
+  const rangeSampaiInput = document.getElementById("rangeSampai");
+  if (rangeSampaiInput) {
+    rangeSampaiInput.value = sampai;
+    rangeSampaiInput.max = sampai;
+  }
+
+  if (!dari) {
+    alert("Mohon pilih tanggal Dari.");
     return;
   }
 
+  // Tampilkan overlay loading
   overlay.style.display = "flex";
-      // Tutup overlay setelah selesai
-overlay.style.display = "none";
-
 
   try {
-    // Ambil semua data absensi rentang tanggal
+    // Ambil semua data absensi dari backend rentang tanggal
     const res = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
+    if (!res.ok) throw new Error("Gagal ambil data absensi.");
     const allData = await res.json();
 
     const rows = santriTableBody.querySelectorAll("tr");
     const rekap = {}; // { id: {totalJuz, semester} }
 
-    // Rekap total per santri
+    // Rekap total juz per santri dari data
     allData.forEach(item => {
       const id = item.id;
       if (!rekap[id]) {
@@ -1156,14 +1169,26 @@ overlay.style.display = "none";
       rekap[id].totalJuz += parseFloat(item.totalJuz || 0);
     });
 
-    // Update ke tabel kolom "Total All Juz"
+    // Batas TUNTAS per semester
+    const batasSemester = { 1: 8, 2: 13, 3: 18, 4: 23, 5: 28, 6: 30 };
+
+    // Update ke tabel kolom "Total All Juz" dengan warna dan status
     rows.forEach(row => {
       const id = parseInt(row.children[0].textContent);
       const cell = row.querySelector(".total-all-juz");
       if (rekap[id]) {
-        cell.textContent = rekap[id].totalJuz.toFixed(2);
+        const totalJuz = rekap[id].totalJuz.toFixed(2);
+        // Ambil semester dari input select/class semester di baris, fallback ke rekap
+        let semester = parseInt(row.querySelector(".semester")?.value);
+        if (!semester && rekap[id].semester) semester = rekap[id].semester;
+
+        const batas = batasSemester[semester] || 0;
+        const tuntas = totalJuz >= batas && batas > 0;
+
+        cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? "green" : "red"}; font-size: 11px;">${tuntas ? "TUNTAS" : "BELUM"}</span>`;
       } else {
-        cell.textContent = "0.00";
+        cell.textContent = "0.00 BELUM";
+        cell.style.color = "red";
       }
     });
 
@@ -1171,77 +1196,13 @@ overlay.style.display = "none";
   } catch (err) {
     console.error(err);
     alert("❌ Gagal memproses Total All Juz.");
+  } finally {
+    // Sembunyikan overlay
+    overlay.style.display = "none";
   }
-
-  overlay.style.display = "none";
 }
 
-    function hitungTotalAllJuzFromTable() {
-  const rows = santriTableBody.querySelectorAll("tr");
-  const kelas = kelasSelect.value;
-
-  const dari = document.getElementById("rangeDari").value;
-  const sampai = document.getElementById("rangeSampai").value;
-
-  if (!dari || !sampai) {
-    alert("Pilih rentang tanggal terlebih dahulu.");
-    return;
-  }
-
-  const dateRange = getDateRangeArray(dari, sampai);
-
-  // Ambil ID & Nama Santri dari Tabel
-  const santriList = Array.from(rows).map(row => ({
-    id: parseInt(row.children[0].textContent),
-    nama: row.children[1].textContent.trim(),
-    semester: parseInt(row.querySelector(".semester").value),
-    rowEl: row
-  }));
-
-  overlay.style.display = "flex";
-  document.getElementById("juzOverlay").style.display = "none";
-
-  fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`)
-    .then(res => res.json())
-    .then(data => {
-      const totalMap = {}; // id => total juz
-
-      santriList.forEach(s => {
-        totalMap[s.id] = 0;
-      });
-
-      data.forEach(item => {
-        const id = parseInt(item.id);
-        const juz = parseFloat(item.totalJuz || 0);
-        if (!isNaN(juz) && totalMap.hasOwnProperty(id)) {
-          totalMap[id] += juz;
-        }
-      });
-
-      // Batas TUNTAS per semester
-const batasSemester = { 1: 8, 2: 13, 3: 18, 4: 23, 5: 28, 6: 30 };
-
-// Tampilkan hasil
-santriList.forEach(s => {
-  const totalJuz = parseFloat(totalMap[s.id] || 0).toFixed(2);
-  const cell = s.rowEl.querySelector(".total-all-juz");
-
-  const batas = batasSemester[s.semester] || 0;
-  const tuntas = totalJuz >= batas && batas > 0;
-
-  cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? 'green' : 'red'}; font-size: 11px;">${tuntas ? 'TUNTAS' : 'BELUM'}</span>`;
-});
-
-      overlay.style.display = "none";
-    })
-    .catch(err => {
-      console.error(err);
-      alert("Gagal menghitung total All Juz.");
-      overlay.style.display = "none";
-    });
-}
-
-// Fungsi bantu buat array tanggal
+// Fungsi bantu buat array tanggal (tidak dihapus, tetap tersedia)
 function getDateRangeArray(start, end) {
   const result = [];
   const current = new Date(start);
@@ -1255,10 +1216,8 @@ function getDateRangeArray(start, end) {
   return result;
 }
 
-
-
-
-    function bukaOverlayTotalAllJuz() {
+// Fungsi buka overlay dan set tanggal Sampai otomatis hari ini
+function bukaOverlayTotalAllJuz() {
   // Ambil tanggal hari ini sesuai zona lokal (bukan UTC)
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -1269,7 +1228,7 @@ function getDateRangeArray(start, end) {
   const rangeDari = document.getElementById("rangeDari");
   const rangeSampai = document.getElementById("rangeSampai");
 
-  // Set batas maksimum ke tanggal lokal hari ini
+  // Set batas maksimum ke tanggal lokal hari ini dan default value
   if (rangeDari) {
     rangeDari.max = todayStr;
     if (!rangeDari.value || rangeDari.value > todayStr) {
@@ -1279,9 +1238,9 @@ function getDateRangeArray(start, end) {
 
   if (rangeSampai) {
     rangeSampai.max = todayStr;
-    if (!rangeSampai.value || rangeSampai.value > todayStr) {
-      rangeSampai.value = todayStr;
-    }
+    // Set value Sampai ke hari ini dan disable input supaya user tidak ubah
+    rangeSampai.value = todayStr;
+    rangeSampai.disabled = true;
   }
 
   // Tampilkan overlay
