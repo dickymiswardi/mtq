@@ -4,16 +4,18 @@ const GITHUB_REPO = 'dickymiswardi/usermtq';
 const FILE_PATH = 'autoUpdateAllJuz.json';
 const BRANCH = 'main';
 
-const TOKEN = process.env.GITHUB_TOKEN;
+const TOKEN = process.env.MTQ_TOKEN; // gunakan MTQ_TOKEN sesuai permintaan
 
 export async function handler(event) {
+  const headers = {
+    Authorization: `Bearer ${TOKEN}`,
+    Accept: 'application/vnd.github.v3+json',
+  };
+
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${FILE_PATH}?ref=${BRANCH}`;
+
   if (event.httpMethod === 'GET') {
     // Ambil isi file
-    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${FILE_PATH}?ref=${BRANCH}`;
-    const headers = {
-      Authorization: `Bearer ${TOKEN}`,
-      Accept: 'application/vnd.github.v3+json',
-    };
     try {
       const res = await fetch(url, { headers });
       if (!res.ok) {
@@ -28,42 +30,45 @@ export async function handler(event) {
   }
 
   if (event.httpMethod === 'POST') {
-    // Update file dengan data baru (append atau replace sesuai kebutuhan)
-    const headers = {
-      Authorization: `Bearer ${TOKEN}`,
-      Accept: 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    };
-
-    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${FILE_PATH}?ref=${BRANCH}`;
-
     try {
-      // Ambil sha dulu
+      // Ambil sha dan isi file dulu
       const resGet = await fetch(url, { headers });
       if (!resGet.ok) throw new Error('Gagal ambil SHA file');
       const fileData = await resGet.json();
       const sha = fileData.sha;
 
-      // Ambil body JSON baru
-      const body = JSON.parse(event.body);
+      const existingContent = Buffer.from(fileData.content, 'base64').toString('utf8');
+      let existingJson = [];
+      try {
+        existingJson = JSON.parse(existingContent);
+        if (!Array.isArray(existingJson)) existingJson = [];
+      } catch {
+        existingJson = [];
+      }
 
-      // Struktur baru yang disimpan di file (bisa diubah sesuai kebutuhan)
-      // Misal simpan array history:
+      // Ambil data baru dari request body
+      const body = JSON.parse(event.body);
       const newData = {
         updatedAt: new Date().toISOString(),
-        fromDate: body.fromDate,
-        toDate: body.toDate,
+        fromDate: body.fromDate || body.from_date,
+        toDate: body.toDate || body.to_date,
         kelas: body.kelas,
         data: body.data,
       };
 
-      // Encode base64
-      const contentEncoded = Buffer.from(JSON.stringify(newData, null, 2)).toString('base64');
+      // Tambah data baru ke array
+      existingJson.push(newData);
 
-      // PUT update file
+      // Encode ke base64
+      const contentEncoded = Buffer.from(JSON.stringify(existingJson, null, 2)).toString('base64');
+
+      // PUT update file di GitHub
       const updateRes = await fetch(url, {
         method: 'PUT',
-        headers,
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           message: `Update autoUpdateAllJuz.json at ${new Date().toISOString()}`,
           content: contentEncoded,
