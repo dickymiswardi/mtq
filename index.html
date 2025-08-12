@@ -13,27 +13,27 @@
     }
 
     .lihat-quran-btn {
+  display: inline-block;
   font-weight: 600;
   font-size: 14px;
   color: #1E88E5;
-  padding: 0;
+  padding: 4px 10px;
+  border-radius: 6px;
   text-decoration: none;
-  transition: color 0.25s ease, text-decoration-color 0.25s ease;
+  transition: all 0.25s ease;
 }
 
 .lihat-quran-btn:hover {
-  color: #1565C0;
-  text-decoration: underline;
-  text-decoration-color: #1565C0;
+  background-color: rgba(30, 136, 229, 0.1); /* biru tipis di belakang */
+  color: #1565C0; /* biru lebih gelap */
 }
 
-.lihat-quran-btn:focus,
+    .lihat-quran-btn:focus,
 .lihat-quran-btn:active {
-  outline: none;
-  background: none !important; /* hapus background biru */
-  box-shadow: none; /* hapus efek bayangan fokus */
-  color: #1E88E5; /* tetap warna biru */
-  text-decoration: none;
+  outline: none !important;
+  background: none !important;
+  color: #1E88E5 !important;
+  box-shadow: none !important;
 }
 
 #santri-table th:first-child,
@@ -1985,5 +1985,17 @@ document.getElementById("btn-simpan-mark").onclick = function() {
   }
 }
 </script>
+
+  <script>
+    document.querySelectorAll('.lihat-quran-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    // buka overlay
+    document.getElementById('overlay-quran').style.display = 'flex';
+    // hilangkan focus supaya tidak muncul background biru
+    btn.blur();
+  });
+});
+  </script>
 </body>
 </html>
