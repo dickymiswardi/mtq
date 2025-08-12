@@ -1124,24 +1124,27 @@ function updateTotalJuz(row) {
 async function hitungTotalAllJuzFromTable() {
   const kelas = kelasSelect.value;
   const dari = document.getElementById("rangeDari").value;
+  const sampai = document.getElementById("rangeSampai").value;
 
-  // Tentukan tanggal Sampai otomatis hari ini
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const dd = String(today.getDate()).padStart(2, "0");
-  const sampai = `${yyyy}-${mm}-${dd}`;
-
-  // Set input tanggal Sampai supaya sinkron dengan hari ini
-  const rangeSampaiInput = document.getElementById("rangeSampai");
-  if (rangeSampaiInput) {
-    rangeSampaiInput.value = sampai;
-    rangeSampaiInput.max = sampai;
-    rangeSampaiInput.disabled = true; // disable supaya user tidak ubah
-  }
-
+  // Validasi input tanggal
   if (!dari) {
     alert("Mohon pilih tanggal Dari.");
+    return;
+  }
+  if (!sampai) {
+    alert("Mohon pilih tanggal Sampai.");
+    return;
+  }
+  if (new Date(sampai) < new Date(dari)) {
+    alert("Tanggal Sampai tidak boleh lebih kecil dari tanggal Dari.");
+    return;
+  }
+
+  // Validasi maksimal tanggal sampai hari ini
+  const today = new Date();
+  const sampaiDate = new Date(sampai);
+  if (sampaiDate > today) {
+    alert("Tanggal Sampai tidak boleh lebih dari hari ini.");
     return;
   }
 
@@ -1186,7 +1189,6 @@ async function hitungTotalAllJuzFromTable() {
 
         cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? "green" : "red"}; font-size: 11px;">${tuntas ? "TUNTAS" : "BELUM"}</span>`;
 
-        // Siapkan data untuk simpan ke file JSON
         dataToSave.push({
           id,
           totalJuz: parseFloat(totalJuz),
@@ -1225,7 +1227,7 @@ async function hitungTotalAllJuzFromTable() {
   }
 }
 
-// Fungsi buka overlay dan set tanggal Sampai otomatis hari ini
+// Fungsi buka overlay dengan input tanggal Dari dan Sampai bebas dipilih, tapi batasi max hari ini & validasi minimal Sampai >= Dari
 function bukaOverlayTotalAllJuz() {
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -1241,12 +1243,23 @@ function bukaOverlayTotalAllJuz() {
     if (!rangeDari.value || rangeDari.value > todayStr) {
       rangeDari.value = todayStr;
     }
+    // Jika tanggal Dari diubah, atur min tanggal Sampai
+    rangeDari.onchange = () => {
+      if (rangeSampai) {
+        rangeSampai.min = rangeDari.value;
+        if (rangeSampai.value < rangeDari.value) {
+          rangeSampai.value = rangeDari.value;
+        }
+      }
+    };
   }
 
   if (rangeSampai) {
     rangeSampai.max = todayStr;
-    rangeSampai.value = todayStr;
-    rangeSampai.disabled = true;
+    if (!rangeSampai.value || rangeSampai.value > todayStr) {
+      rangeSampai.value = todayStr;
+    }
+    rangeSampai.min = rangeDari ? rangeDari.value : null;
   }
 
   document.getElementById("juzOverlay").style.display = "flex";
@@ -1254,7 +1267,10 @@ function bukaOverlayTotalAllJuz() {
 
 // Pasang event listener tombol hitung
 document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTotalAllJuzFromTable);
-   
+
+
+
+
 
   </script>
 
