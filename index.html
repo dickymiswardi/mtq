@@ -738,7 +738,11 @@ function aturDropdownKelas(user) {
               <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
             </select>
             </td>
+            <td>
+            <div>${item.buttonCell?.nilai || ''}</div>
+            <div>${item.buttonCell?.warna || ''}</div>
             <td><a href="#" class="lihat-quran-btn">Lihat Quran</a></td>
+            </td>
             <td class="total-all-juz">0</td>
           `;
 
