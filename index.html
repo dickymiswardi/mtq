@@ -707,69 +707,70 @@ function aturDropdownKelas(user) {
     });
 
     async function loadSantriData() {
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
-      overlay.style.display = "flex";
+  try {
+    const kelas = kelasSelect.value;
+    const tanggal = tanggalInput.value;
+    overlay.style.display = "flex";
 
-      try {
-        const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
-        const santriData = await resSantri.json();
+    const resSantri = await fetch(`/.netlify/functions/getSantri?kelas=${kelas}`);
+    if (!resSantri.ok) throw new Error("Gagal memuat data santri");
+    const santriData = await resSantri.json();
+    if (!Array.isArray(santriData)) throw new Error("Data santri tidak valid");
 
-        const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
-        const absensiData = await resAbsensi.json();
+    const resAbsensi = await fetch(`/.netlify/functions/getAbsensi?kelas=${kelas}&tanggal=${tanggal}`);
+    if (!resAbsensi.ok) throw new Error("Gagal memuat data absensi");
+    const absensiData = await resAbsensi.json();
+    if (!Array.isArray(absensiData)) throw new Error("Data absensi tidak valid");
 
-        santriTableBody.innerHTML = "";
+    santriTableBody.innerHTML = "";
 
-        santriData.forEach((santri, i) => {
-          const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
-          const row = document.createElement("tr");
+    santriData.forEach((santri, i) => {
+      const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
 
-          const surahOptions = surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
-          const dari = (dataAbsensi.dari || "1:1").split(":");
-          const sampai = (dataAbsensi.sampai || "1:1").split(":");
+      const surahOptions = surahList.map(s => `<option value="${s.id}">${s.nama}</option>`).join("");
+      const dari = (dataAbsensi.dari || "1:1").split(":");
+      const sampai = (dataAbsensi.sampai || "1:1").split(":");
 
-          // asumsi: dataAbsensi sudah didefinisikan untuk setiap santri, mis.
-// const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
-
-row.innerHTML = `
-  <td>${i + 1}</td>
-  <td>${santri.nama}</td>
-  <td>
-    <select class="absensi">
-      <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
-      <option value="Alpha" ${dataAbsensi.absensi === "Alpha" ? "selected" : ""}>Alpha</option>
-      <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
-      <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
-    </select>
-  </td>
-  <td>
-    <select class="surah-dari">${surahOptions}</select>
-    <select class="ayat-dari"></select>
-  </td>
-  <td>
-    <select class="surah-sampai">${surahOptions}</select>
-    <select class="ayat-sampai"></select>
-  </td>
-  <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
-  <td class="total-juz">${dataAbsensi.totalJuz ?? 0}</td>
-  <td>
-            <select class="semester">
-              <option value="1" ${santri.semester == 1 ? 'selected' : ''}>Semester 1</option>
-              <option value="2" ${santri.semester == 2 ? 'selected' : ''}>Semester 2</option>
-              <option value="3" ${santri.semester == 3 ? 'selected' : ''}>Semester 3</option>
-              <option value="4" ${santri.semester == 4 ? 'selected' : ''}>Semester 4</option>
-              <option value="5" ${santri.semester == 5 ? 'selected' : ''}>Semester 5</option>
-              <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
-            </select>
-            </td>
-  <td>
-    <div class="nilai-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.nilai) ? dataAbsensi.buttonCell.nilai : ''}</div>
-    <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
-    <button type="button" class="lihat-quran-btn">Lihat Quran</button>
-  </td>
-  <td class="total-all-juz">${dataAbsensi.totalAllJuz || '-'}</td>
-`;
-santriTableBody.appendChild(row);
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${santri.nama}</td>
+        <td>
+          <select class="absensi">
+            <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
+            <option value="Alpha" ${dataAbsensi.absensi === "Alpha" ? "selected" : ""}>Alpha</option>
+            <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
+            <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
+          </select>
+        </td>
+        <td>
+          <select class="surah-dari">${surahOptions}</select>
+          <select class="ayat-dari"></select>
+        </td>
+        <td>
+          <select class="surah-sampai">${surahOptions}</select>
+          <select class="ayat-sampai"></select>
+        </td>
+        <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
+        <td class="total-juz">${dataAbsensi.totalJuz ?? 0}</td>
+        <td>
+          <select class="semester">
+            <option value="1" ${santri.semester == 1 ? 'selected' : ''}>Semester 1</option>
+            <option value="2" ${santri.semester == 2 ? 'selected' : ''}>Semester 2</option>
+            <option value="3" ${santri.semester == 3 ? 'selected' : ''}>Semester 3</option>
+            <option value="4" ${santri.semester == 4 ? 'selected' : ''}>Semester 4</option>
+            <option value="5" ${santri.semester == 5 ? 'selected' : ''}>Semester 5</option>
+            <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
+          </select>
+        </td>
+        <td>
+          <div class="nilai-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.nilai) ? dataAbsensi.buttonCell.nilai : ''}</div>
+          <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
+          <button type="button" class="lihat-quran-btn">Lihat Quran</button>
+        </td>
+        <td class="total-all-juz">${dataAbsensi.totalAllJuz ?? '-'}</td>
+      `;
+      santriTableBody.appendChild(row);
 
 
           const surahDari = row.querySelector(".surah-dari");
