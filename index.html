@@ -1779,44 +1779,72 @@ function getStorageKey() {
   return `marks_${kelas}_${tanggal}_${currentIdSiswa}`;
 }
 
-// Simpan markData ke localStorage
-function saveMarkData() {
+function simpanKeStorage() {
   if (!currentIdSiswa) return;
   const key = getStorageKey();
   localStorage.setItem(key, JSON.stringify(markData));
-  console.log(`✅ markData saved to localStorage key: ${key}`, markData);
 }
 
-// Ambil markData dari localStorage, kalau kosong coba dari server
-async function loadMarkData() {
+function ambilDariStorage() {
   if (!currentIdSiswa) return;
   const key = getStorageKey();
   const saved = localStorage.getItem(key);
-
   if (saved) {
     markData = JSON.parse(saved);
-    console.log(`📦 Loaded markData from localStorage key: ${key}`, markData);
+  } else {
+    markData = {};
+  }
+}
+
+function simpanKeServer() {
+  if (!currentIdSiswa) return;
+
+  const key = getStorageKey();
+  const saved = localStorage.getItem(key);
+  if (!saved) {
+    console.warn("Tidak ada data mark di localStorage untuk dikirim ke server");
     return;
   }
 
-  // Fallback ke server
-  try {
-    const res = await fetch(`/api/getMarkData?id=${currentIdSiswa}`);
-    if (!res.ok) throw new Error("Gagal ambil markData dari server");
+  const markDetail = JSON.parse(saved);
 
-    const serverData = await res.json();
-    if (serverData && typeof serverData === "object") {
-      markData = serverData;
-      console.log(`🌐 Loaded markData from server for ID ${currentIdSiswa}`, markData);
-      // Simpan ke localStorage supaya next time cepat
-      localStorage.setItem(key, JSON.stringify(markData));
-    } else {
-      markData = {};
-    }
-  } catch (err) {
-    console.error("❌ Error load markData:", err);
-    markData = {};
-  }
+  // Ambil data baris siswa dari tabel
+  const row = [...document.querySelectorAll("table tbody tr")]
+    .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
+
+  if (!row) return;
+
+  const buttonCellDivs = row.querySelector(".lihat-quran-btn").parentElement.querySelectorAll("div");
+
+  const dataSantri = {
+    id: currentIdSiswa,
+    nama: row.cells[1].innerText.trim(),
+    absensi: row.querySelector(".absensi")?.value || "",
+    semester: row.querySelector(".semester")?.value || "",
+    dari: row.querySelector(".surah-dari")?.value + ":" + row.querySelector(".ayat-dari")?.value,
+    sampai: row.querySelector(".surah-sampai")?.value + ":" + row.querySelector(".ayat-sampai")?.value,
+    totalJuz: row.querySelector(".total-juz")?.innerText.trim() || "",
+    juzTerbaca: row.querySelector(".juz-terbaca")?.innerText.trim() || "",
+    buttonCell: {
+      nilai: buttonCellDivs[0]?.innerText || "",
+      warna: buttonCellDivs[1]?.innerText || ""
+    },
+    totalAllJuz: row.querySelector(".total-all-juz")?.innerText.trim() || "",
+    markDetail // detail warna kata
+  };
+
+  fetch("/api/simpan_mark", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dataSantri)
+  })
+  .then(res => res.json())
+  .then(res => {
+    console.log("Data berhasil dikirim ke server:", res);
+  })
+  .catch(err => {
+    console.error("Gagal mengirim data ke server:", err);
+  });
 }
 
 function hitungNilai() {
@@ -1894,7 +1922,7 @@ function buatKataKlik(surah, ayat, teks) {
         span.style.backgroundColor = "";
       }
 
-      saveMarkData();
+      simpanKeStorage();
       const hasil = hitungNilai();
       updateNilaiDiTabel(hasil);
     };
@@ -1924,7 +1952,7 @@ document.addEventListener('click', async function(e) {
     const row = e.target.closest('tr');
     currentIdSiswa = parseInt(row.cells[0].innerText.trim());
 
-    await loadMarkData(); // Ambil dari localStorage atau server
+    ambilDariStorage();
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
@@ -1986,10 +2014,12 @@ document.getElementById("btn-simpan-mark").onclick = function() {
   }
   const hasil = hitungNilai();
   updateNilaiDiTabel(hasil);
-  saveMarkData();
-  alert("Nilai tersimpan di penyimpanan lokal (localStorage).");
+  simpanKeStorage();
+  simpanKeServer(); // kirim ke server juga
+  alert("Nilai tersimpan di localStorage dan dikirim ke server.");
 };
 </script>
+
 
 
 
