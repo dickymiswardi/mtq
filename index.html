@@ -918,7 +918,10 @@ function updateTotalJuz(row) {
       const ayatSampai = row.querySelector(".ayat-sampai").value;
       const totalJuz = row.querySelector(".total-juz").textContent;
       const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
-      const buttonCell = row.querySelector(".lihat-quran-btn").value;
+      const nilaiCell = row.querySelector(".lihat-quran-btn").parentElement; // td tempat tombol berada
+      const nilaiDiv = nilaiCell.querySelector("div:nth-child(1)")?.innerText.trim() || "";
+      const warnaDiv = nilaiCell.querySelector("div:nth-child(2)")?.innerText.trim() || "";
+      const buttonCell = { nilai: nilaiDiv, warna: warnaDiv };
       const totalAllJuz = row.querySelector(".total-all-juz").textContent || "0";
         
         data.push({
