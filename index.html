@@ -186,10 +186,24 @@ button.lihat-quran-btn:hover::after {
     
     .total-all-juz span {
   font-weight: bold;
-  background: #e0f2f1;
+  font-size: 11px;
   border-radius: 4px;
-  padding: 1px 4px;
+  padding: 2px 6px;
+  display: inline-block;
+  min-width: 50px;
+  text-align: center;
+  color: white; /* default text putih */
+  background-color: #e0f2f1; /* default background */
 }
+
+    .tuntas {
+  background-color: green !important;
+}
+
+.belum {
+  background-color: red !important;
+}
+
     .container {
       max-width: 1400px;
       margin: auto;
@@ -768,27 +782,11 @@ row.innerHTML = `
     <button type="button" class="lihat-quran-btn">Lihat Quran</button>
   </td>
   <td class="total-all-juz">
-  <div>
-    ${
-      (dataAbsensi.totalAllJuz !== undefined && dataAbsensi.totalAllJuz !== null) 
-      ? (() => {
-          const tuntas = dataAbsensi.totalAllJuz >= target;
-          return `<span style="
-            font-size: 11px;
-            color: white;
-            background-color: ${tuntas ? 'green' : 'red'};
-            padding: 2px 6px;
-            border-radius: 4px;
-            display: inline-block;
-            min-width: 50px;
-            text-align: center;
-          ">
-            ${tuntas ? 'TUNTAS' : 'BELUM'}
-          </span>`;
-        })()
-      : '<span style="font-size: 11px;">-</span>'
-    }
-  </div>
+  <div><span span class="${tuntas ? 'tuntas' : 'belum'}">${
+  (dataAbsensi.totalAllJuz !== undefined && dataAbsensi.totalAllJuz !== null)
+    ? `${tuntas ? 'TUNTAS' : 'BELUM'} ${dataAbsensi.totalAllJuz}`
+    : '-'
+}</span></div>
 </td>
 `;
 santriTableBody.appendChild(row);
