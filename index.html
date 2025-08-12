@@ -768,13 +768,8 @@ row.innerHTML = `
     <button type="button" class="lihat-quran-btn">Lihat Quran</button>
   </td>
   <td class="total-all-juz">
-    <div>
-      ${dataAbsensi.totalAllJuz} 
-      <span style="color: ${tuntas ? 'green' : 'red'}; font-size: 11px;">
-        ${tuntas ? 'TUNTAS' : 'BELUM'}
-      </span>
-    </div>
-  </td>
+  <div><span>${(dataAbsensi.totalAllJuz !== undefined && dataAbsensi.totalAllJuz !== null) ? dataAbsensi.totalAllJuz : '-'}</span></div>
+</td>
 `;
 santriTableBody.appendChild(row);
 
