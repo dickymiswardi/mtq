@@ -1779,19 +1779,42 @@ function getStorageKey() {
   return `marks_${kelas}_${tanggal}_${currentIdSiswa}`;
 }
 
-function simpanKeStorage() {
+// Simpan markData ke localStorage
+function saveMarkData() {
   if (!currentIdSiswa) return;
   const key = getStorageKey();
   localStorage.setItem(key, JSON.stringify(markData));
+  console.log(`✅ markData saved to localStorage key: ${key}`, markData);
 }
 
-function ambilDariStorage() {
+// Ambil markData dari localStorage, kalau kosong coba dari server
+async function loadMarkData() {
   if (!currentIdSiswa) return;
   const key = getStorageKey();
   const saved = localStorage.getItem(key);
+
   if (saved) {
     markData = JSON.parse(saved);
-  } else {
+    console.log(`📦 Loaded markData from localStorage key: ${key}`, markData);
+    return;
+  }
+
+  // Fallback ke server
+  try {
+    const res = await fetch(`/api/getMarkData?id=${currentIdSiswa}`);
+    if (!res.ok) throw new Error("Gagal ambil markData dari server");
+
+    const serverData = await res.json();
+    if (serverData && typeof serverData === "object") {
+      markData = serverData;
+      console.log(`🌐 Loaded markData from server for ID ${currentIdSiswa}`, markData);
+      // Simpan ke localStorage supaya next time cepat
+      localStorage.setItem(key, JSON.stringify(markData));
+    } else {
+      markData = {};
+    }
+  } catch (err) {
+    console.error("❌ Error load markData:", err);
     markData = {};
   }
 }
@@ -1799,13 +1822,11 @@ function ambilDariStorage() {
 function hitungNilai() {
   let totalMinus = 0;
   let hijau = 0, kuning = 0, merah = 0;
-
-  // Cek apakah ada data yang sudah ditandai
   let adaMark = false;
 
   for (let ayat in markData) {
     for (let idx in markData[ayat]) {
-      adaMark = true; // Ada setidaknya satu tanda
+      adaMark = true;
       if (markData[ayat][idx] === "green") { totalMinus += 0.5; hijau++; }
       if (markData[ayat][idx] === "yellow") { totalMinus += 1; kuning++; }
       if (markData[ayat][idx] === "red") { totalMinus += 2; merah++; }
@@ -1873,7 +1894,7 @@ function buatKataKlik(surah, ayat, teks) {
         span.style.backgroundColor = "";
       }
 
-      simpanKeStorage();
+      saveMarkData();
       const hasil = hitungNilai();
       updateNilaiDiTabel(hasil);
     };
@@ -1903,7 +1924,7 @@ document.addEventListener('click', async function(e) {
     const row = e.target.closest('tr');
     currentIdSiswa = parseInt(row.cells[0].innerText.trim());
 
-    ambilDariStorage(); // Ambil data yang pernah disimpan
+    await loadMarkData(); // Ambil dari localStorage atau server
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
@@ -1965,7 +1986,7 @@ document.getElementById("btn-simpan-mark").onclick = function() {
   }
   const hasil = hitungNilai();
   updateNilaiDiTabel(hasil);
-  simpanKeStorage();
+  saveMarkData();
   alert("Nilai tersimpan di penyimpanan lokal (localStorage).");
 };
 </script>
