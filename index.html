@@ -762,11 +762,20 @@ row.innerHTML = `
               <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
             </select>
             </td>
-  <td>
-    <div class="nilai-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.nilai) ? dataAbsensi.buttonCell.nilai : ''}</div>
-    <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
-    <button type="button" class="lihat-quran-btn">Lihat Quran</button>
-  </td>
+  <td 
+  class="cell-nilai" 
+  data-mark='${dataAbsensi.buttonCell && dataAbsensi.buttonCell.mark ? JSON.stringify(dataAbsensi.buttonCell.mark) : "{}"}'>
+  
+  <div class="nilai-ringkas">
+    ${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.nilai) ? dataAbsensi.buttonCell.nilai : ''}
+  </div>
+  
+  <div class="warna-ringkas">
+    ${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}
+  </div>
+  
+  <button type="button" class="lihat-quran-btn">Lihat Quran</button>
+</td>
   <td class="total-all-juz">0</td>
 `;
 santriTableBody.appendChild(row);
@@ -1783,68 +1792,36 @@ function simpanKeStorage() {
   if (!currentIdSiswa) return;
   const key = getStorageKey();
   localStorage.setItem(key, JSON.stringify(markData));
+
+  // Simpan juga ke tabel (disembunyikan di data-* attribute)
+  const row = [...document.querySelectorAll("table tbody tr")]
+    .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
+  if (row) {
+    const buttonCell = [...row.cells].find(td => td.querySelector(".lihat-quran-btn"));
+    if (buttonCell) {
+      buttonCell.dataset.markDetail = JSON.stringify(markData);
+    }
+  }
 }
 
 function ambilDariStorage() {
   if (!currentIdSiswa) return;
   const key = getStorageKey();
   const saved = localStorage.getItem(key);
+
   if (saved) {
     markData = JSON.parse(saved);
   } else {
-    markData = {};
+    // fallback ke data di tabel jika ada
+    const row = [...document.querySelectorAll("table tbody tr")]
+      .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
+    const buttonCell = row ? [...row.cells].find(td => td.querySelector(".lihat-quran-btn")) : null;
+    if (buttonCell?.dataset.markDetail) {
+      markData = JSON.parse(buttonCell.dataset.markDetail);
+    } else {
+      markData = {};
+    }
   }
-}
-
-function simpanKeServer() {
-  if (!currentIdSiswa) return;
-
-  const key = getStorageKey();
-  const saved = localStorage.getItem(key);
-  if (!saved) {
-    console.warn("Tidak ada data mark di localStorage untuk dikirim ke server");
-    return;
-  }
-
-  const markDetail = JSON.parse(saved);
-
-  // Ambil data baris siswa dari tabel
-  const row = [...document.querySelectorAll("table tbody tr")]
-    .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
-
-  if (!row) return;
-
-  const buttonCellDivs = row.querySelector(".lihat-quran-btn").parentElement.querySelectorAll("div");
-
-  const dataSantri = {
-    id: currentIdSiswa,
-    nama: row.cells[1].innerText.trim(),
-    absensi: row.querySelector(".absensi")?.value || "",
-    semester: row.querySelector(".semester")?.value || "",
-    dari: row.querySelector(".surah-dari")?.value + ":" + row.querySelector(".ayat-dari")?.value,
-    sampai: row.querySelector(".surah-sampai")?.value + ":" + row.querySelector(".ayat-sampai")?.value,
-    totalJuz: row.querySelector(".total-juz")?.innerText.trim() || "",
-    juzTerbaca: row.querySelector(".juz-terbaca")?.innerText.trim() || "",
-    buttonCell: {
-      nilai: buttonCellDivs[0]?.innerText || "",
-      warna: buttonCellDivs[1]?.innerText || ""
-    },
-    totalAllJuz: row.querySelector(".total-all-juz")?.innerText.trim() || "",
-    markDetail // detail warna kata
-  };
-
-  fetch("/api/simpan_mark", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dataSantri)
-  })
-  .then(res => res.json())
-  .then(res => {
-    console.log("Data berhasil dikirim ke server:", res);
-  })
-  .catch(err => {
-    console.error("Gagal mengirim data ke server:", err);
-  });
 }
 
 function hitungNilai() {
@@ -1888,6 +1865,8 @@ function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
   if (row) {
     const buttonCell = [...row.cells].find(td => td.querySelector(".lihat-quran-btn"));
     if (buttonCell) {
+      buttonCell.dataset.markDetail = JSON.stringify(markData); // simpan tersembunyi
+
       buttonCell.innerHTML = `
         <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
         <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
@@ -2015,11 +1994,9 @@ document.getElementById("btn-simpan-mark").onclick = function() {
   const hasil = hitungNilai();
   updateNilaiDiTabel(hasil);
   simpanKeStorage();
-  simpanKeServer(); // kirim ke server juga
-  alert("Nilai tersimpan di localStorage dan dikirim ke server.");
+  alert("Nilai tersimpan di localStorage dan tabel.");
 };
 </script>
-
 
 
 
