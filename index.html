@@ -13,10 +13,19 @@
     }
 
     .lihat-quran-btn {
-  font-weight: bold;
-  padding: 0;
+  display: inline-block;
+  font-weight: 600;
+  font-size: 14px;
   color: #1E88E5;
-  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.lihat-quran-btn:hover {
+  background-color: rgba(30, 136, 229, 0.1); /* biru tipis di belakang */
+  color: #1565C0; /* biru lebih gelap */
 }
 
 
@@ -740,7 +749,7 @@ row.innerHTML = `
   <td>
     <div class="nilai-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.nilai) ? dataAbsensi.buttonCell.nilai : ''}</div>
     <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
-    <button type="button" class="lihat-quran-btn">Lihat Quran</button>
+    <a href="#" class="lihat-quran-btn">Lihat Quran</a>
   </td>
   <td class="total-all-juz">0</td>
 `;
