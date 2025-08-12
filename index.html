@@ -12,38 +12,17 @@
       background: #f4f6f8;
     }
 
-    button.lihat-quran-btn {
-  all: unset; /* reset semua style bawaan */
-  display: inline-block;
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.3px;
+    .lihat-quran-btn {
+  font-weight: bold;
+  display: inline; /* bukan block/inline-block */
+  padding: 0;
+  background: none;
+  border: none;
   color: #1E88E5;
-  padding: 2px 4px;
+  text-decoration: underline;
   cursor: pointer;
-  position: relative;
-  transition: color 0.00s ease;
 }
 
-/* underline animasi halus */
-button.lihat-quran-btn::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -2px;
-  width: 0%;
-  height: 2px;
-  background-color: currentColor;
-  transition: width 0.00s ease;
-}
-
-button.lihat-quran-btn:hover {
-  color: #ffffff;
-}
-
-button.lihat-quran-btn:hover::after {
-  width: 100%;
-}
 
 #santri-table th:first-child,
 #santri-table td:first-child {
@@ -728,31 +707,28 @@ function aturDropdownKelas(user) {
           const dari = (dataAbsensi.dari || "1:1").split(":");
           const sampai = (dataAbsensi.sampai || "1:1").split(":");
 
-          // asumsi: dataAbsensi sudah didefinisikan untuk setiap santri, mis.
-// const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
-
-row.innerHTML = `
-  <td>${i + 1}</td>
-  <td>${santri.nama}</td>
-  <td>
-    <select class="absensi">
-      <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
-      <option value="Alpha" ${dataAbsensi.absensi === "Alpha" ? "selected" : ""}>Alpha</option>
-      <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
-      <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
-    </select>
-  </td>
-  <td>
-    <select class="surah-dari">${surahOptions}</select>
-    <select class="ayat-dari"></select>
-  </td>
-  <td>
-    <select class="surah-sampai">${surahOptions}</select>
-    <select class="ayat-sampai"></select>
-  </td>
-  <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
-  <td class="total-juz">${dataAbsensi.totalJuz ?? 0}</td>
-  <td>
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${santri.nama}</td>
+            <td>
+              <select class="absensi">
+                <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
+                <option value="Alpha" ${dataAbsensi.absensi === "Alpha" ? "selected" : ""}>Alpha</option>
+                <option value="Sakit" ${dataAbsensi.absensi === "Sakit" ? "selected" : ""}>Sakit</option>
+                <option value="Izin" ${dataAbsensi.absensi === "Izin" ? "selected" : ""}>Izin</option>
+              </select>
+            </td>
+            <td>
+              <select class="surah-dari">${surahOptions}</select>
+              <select class="ayat-dari"></select>
+            </td>
+            <td>
+              <select class="surah-sampai">${surahOptions}</select>
+              <select class="ayat-sampai"></select>
+            </td>
+            <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
+            <td class="total-juz">${dataAbsensi.totalJuz || 0}</td>
+            <td>
             <select class="semester">
               <option value="1" ${santri.semester == 1 ? 'selected' : ''}>Semester 1</option>
               <option value="2" ${santri.semester == 2 ? 'selected' : ''}>Semester 2</option>
@@ -762,15 +738,11 @@ row.innerHTML = `
               <option value="6" ${santri.semester == 6 ? 'selected' : ''}>Semester 6</option>
             </select>
             </td>
-  <td>
-    <div class="nilai-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.nilai) ? dataAbsensi.buttonCell.nilai : ''}</div>
-    <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
-    <button type="button" class="lihat-quran-btn">Lihat Quran</button>
-  </td>
-  <td class="total-all-juz">0</td>
-`;
-santriTableBody.appendChild(row);
+            <td><a href="#" class="lihat-quran-btn">Lihat Quran</a></td>
+            <td class="total-all-juz">0</td>
+          `;
 
+          santriTableBody.appendChild(row);
 
           const surahDari = row.querySelector(".surah-dari");
           const ayatDari = row.querySelector(".ayat-dari");
@@ -946,10 +918,6 @@ function updateTotalJuz(row) {
       const ayatSampai = row.querySelector(".ayat-sampai").value;
       const totalJuz = row.querySelector(".total-juz").textContent;
       const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
-      const nilaiCell = row.querySelector(".lihat-quran-btn").parentElement; // td tempat tombol berada
-      const nilaiDiv = nilaiCell.querySelector("div:nth-child(1)")?.innerText.trim() || "";
-      const warnaDiv = nilaiCell.querySelector("div:nth-child(2)")?.innerText.trim() || "";
-      const buttonCell = { nilai: nilaiDiv, warna: warnaDiv };
       const totalAllJuz = row.querySelector(".total-all-juz").textContent || "0";
         
         data.push({
@@ -958,7 +926,6 @@ function updateTotalJuz(row) {
           sampai: `${surahSampai}:${ayatSampai}`,
           totalJuz,
           juzTerbaca,
-          buttonCell,
           totalAllJuz
         });
       });
