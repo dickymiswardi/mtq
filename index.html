@@ -12,28 +12,19 @@
       background: #f4f6f8;
     }
 
-    .lihat-quran-btn {
+    button.lihat-quran-btn {
+  all: unset; /* reset semua style bawaan */
   display: inline-block;
   font-weight: 600;
   font-size: 14px;
   color: #1E88E5;
-  padding: 4px 10px;
-  border-radius: 6px;
-  text-decoration: none;
-  transition: all 0.25s ease;
+  cursor: pointer;
+  transition: color 0.25s ease, text-decoration-color 0.25s ease;
 }
 
-.lihat-quran-btn:hover {
-  background-color: rgba(30, 136, 229, 0.1); /* biru tipis di belakang */
-  color: #1565C0; /* biru lebih gelap */
-}
-
-    .lihat-quran-btn:focus,
-.lihat-quran-btn:active {
-  outline: none !important;
-  background: none !important;
-  color: #1E88E5 !important;
-  box-shadow: none !important;
+button.lihat-quran-btn:hover {
+  color: #1565C0;
+  text-decoration: underline;
 }
 
 #santri-table th:first-child,
@@ -756,7 +747,7 @@ row.innerHTML = `
   <td>
     <div class="nilai-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.nilai) ? dataAbsensi.buttonCell.nilai : ''}</div>
     <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
-    <a href="#" class="lihat-quran-btn">Lihat Quran</a>
+    <button type="button" class="lihat-quran-btn">Lihat Quran</button>
   </td>
   <td class="total-all-juz">0</td>
 `;
@@ -1985,17 +1976,5 @@ document.getElementById("btn-simpan-mark").onclick = function() {
   }
 }
 </script>
-
-  <script>
-    document.querySelectorAll('.lihat-quran-btn').forEach(btn => {
-  btn.addEventListener('click', e => {
-    e.preventDefault();
-    // buka overlay
-    document.getElementById('overlay-quran').style.display = 'flex';
-    // hilangkan focus supaya tidak muncul background biru
-    btn.blur();
-  });
-});
-  </script>
 </body>
 </html>
