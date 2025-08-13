@@ -1869,7 +1869,8 @@ let markData = {};
 let currentIdSiswa = null;
 
 // ======================
-// SIMPAN KE SERVER (Netlify) ======================
+// SIMPAN & AMBIL DARI SERVER (per kelas & tanggal)
+// ======================
 async function simpanKeServer() {
   if (!currentIdSiswa) return;
   const kelas = document.getElementById('kelas')?.value || 'default';
@@ -1890,20 +1891,17 @@ async function simpanKeServer() {
   }
 }
 
-// ======================
-// AMBIL DARI SERVER (GitHub JSON) ======================
 async function ambilDariServer() {
   if (!currentIdSiswa) return;
-  const kelas = document.getElementById('kelas')?.value || 'kelas_1';
+  const kelas = document.getElementById('kelas')?.value || 'default';
   const tanggal = document.getElementById('tanggal')?.value || new Date().toISOString().slice(0,10);
-  const url = `https://raw.githubusercontent.com/dickymiswardi/usermtq/main/absensi/${kelas}_${tanggal}.json`;
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(`https://raw.githubusercontent.com/dickymiswardi/usermtq/main/absensi/${kelas}_${tanggal}.json`);
     if (!res.ok) throw new Error(res.statusText);
     const data = await res.json();
-    const siswa = data.find(s => s.id === currentIdSiswa);
-    markData = siswa?.marks || {};
+    const siswa = data.find(s => s.idSiswa === currentIdSiswa);
+    markData = siswa?.markData || {};
   } catch(err) {
     console.warn("Tidak ada data mark sebelumnya:", err.message);
     markData = {};
@@ -1911,7 +1909,8 @@ async function ambilDariServer() {
 }
 
 // ======================
-// HITUNG NILAI & UPDATE TABEL ======================
+// HITUNG NILAI & UPDATE TABEL
+// ======================
 function hitungNilai() {
   let totalMinus = 0;
   let hijau = 0, kuning = 0, merah = 0;
@@ -1961,7 +1960,8 @@ function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
 }
 
 // ======================
-// BIND KATA CLICK ======================
+// BIND KATA CLICK
+// ======================
 function buatKataKlik(surah, ayat, teks) {
   return teks.split(" ").map((kata, idx) => {
     const span = document.createElement("span");
@@ -2000,16 +2000,20 @@ function buatKataKlik(surah, ayat, teks) {
 }
 
 // ======================
-// LOAD DATA QURAN ======================
+// LOAD DATA QURAN
+// ======================
 let dataSiap = Promise.all([
   fetch('https://raw.githubusercontent.com/dickymiswardi/mtq/refs/heads/main/symbol1.json')
-    .then(res => res.json()).then(data => { quranData = data; }),
+    .then(res => res.json())
+    .then(data => { quranData = data; }),
   fetch('https://raw.githubusercontent.com/dickymiswardi/tadabbur/refs/heads/main/ayah_page_map.json')
-    .then(res => res.json()).then(data => { ayahPageMap = data; })
+    .then(res => res.json())
+    .then(data => { ayahPageMap = data; })
 ]).catch(err => console.error('Gagal memuat data:', err));
 
 // ======================
-// EVENT CLICK TABLE ======================
+// EVENT CLICK TABLE
+// ======================
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
     markData = {};
@@ -2030,6 +2034,7 @@ document.addEventListener('click', async function(e) {
     for (let s = surahDari; s <= surahSampai; s++) {
       const ayatMulai = (s === surahDari) ? ayatDari : 1;
       const ayatAkhir = (s === surahSampai) ? ayatSampai : 300;
+
       for (let a = ayatMulai; a <= ayatAkhir; a++) {
         const key = `${s}:${a}`;
         if (quranData[key]) {
@@ -2074,7 +2079,8 @@ document.addEventListener('click', async function(e) {
 });
 
 // ======================
-// BUTTON SIMPAN ======================
+// BUTTON SIMPAN
+// ======================
 document.getElementById("btn-simpan-mark").onclick = async function() {
   if (!currentIdSiswa) {
     alert("Silakan pilih santri terlebih dahulu dengan klik tombol 'Lihat Quran'.");
@@ -2086,7 +2092,6 @@ document.getElementById("btn-simpan-mark").onclick = async function() {
   alert("Nilai tersimpan di server GitHub.");
 };
 </script>
-
 
 
 
