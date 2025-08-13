@@ -2004,21 +2004,19 @@ document.addEventListener('click', async e => {
   // Ambil dari localStorage sebagai fallback
   const localMark = ambilDariStorage();
 
-  // Ambil dari server
-  let serverMark = {};
-  try {
-    const res = await fetch(`/.netlify/functions/getMarkData?kelas=${kelas}&tanggal=${tanggal}`);
-    if (res.ok) {
-      const dataServer = await res.json();
-      const santri = dataServer.find(s => s.id === currentIdSiswa);
-      if (santri && santri.markData) serverMark = santri.markData;
-    } else console.warn("Fetch server gagal:", res.status);
-  } catch(err) {
-    console.warn("Gagal load markData server:", err);
-  }
+ // Ambil markData dari server
+let markServer = {};
+try {
+  const res = await fetch(`/.netlify/functions/getMarkData?kelas=${kelas}&tanggal=${tanggal}`);
+  const dataServer = await res.json();
+  const santriServer = dataServer.find(s => s.id === currentIdSiswa);
+  if (santriServer && santriServer.marks) markServer = santriServer.marks;
+} catch(err) {
+  console.warn("Gagal load marks dari server:", err);
+}
 
-  // Server menimpa localStorage
-  markData = serverMark || localMark;
+// Server menimpa localStorage
+markData = { ...markData, ...markServer };
 
   // Siapkan halaman Quran
   const surahDari = parseInt(row.querySelector('.surah-dari').value);
