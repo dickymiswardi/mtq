@@ -186,14 +186,9 @@ button.lihat-quran-btn:hover::after {
     
     .total-all-juz span {
   font-weight: bold;
-  font-size: 14px;
-  background: #1E88E5;
+  background: #e0f2f1;
   border-radius: 4px;
-  padding: 2px 6px;
-  color: white;
-  display: inline-block;
-  min-width: 50px;
-  text-align: center;
+  padding: 1px 4px;
 }
     .container {
       max-width: 1400px;
@@ -774,9 +769,7 @@ row.innerHTML = `
     <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
     <button type="button" class="lihat-quran-btn">Lihat Quran</button>
   </td>
-<td class="total-all-juz">
-  <div><span>${(dataAbsensi.totalAllJuz !== undefined && dataAbsensi.totalAllJuz !== null) ? dataAbsensi.totalAllJuz : '-'}</span></div>
-</td>
+<td class="total-all-juz">0</td>
 `;
 santriTableBody.appendChild(row);
 
@@ -959,7 +952,6 @@ function updateTotalJuz(row) {
       const nilaiDiv = nilaiCell.querySelector("div:nth-child(1)")?.innerText.trim() || "";
       const warnaDiv = nilaiCell.querySelector("div:nth-child(2)")?.innerText.trim() || "";
       const buttonCell = { nilai: nilaiDiv, warna: warnaDiv };
-      const totalAllJuz = row.querySelector(".total-all-juz").textContent || "0";
         
         data.push({
           id, nama, absensi, semester,
@@ -967,8 +959,7 @@ function updateTotalJuz(row) {
           sampai: `${surahSampai}:${ayatSampai}`,
           totalJuz,
           juzTerbaca,
-          buttonCell,
-          totalAllJuz
+          buttonCell
         });
       });
 
