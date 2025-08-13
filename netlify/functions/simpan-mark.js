@@ -1,9 +1,9 @@
-// netlify/functions/simpan-mark-quran.js
+// netlify/functions/simpan-mark.js
 import fetch from "node-fetch";
 
 const owner = "dickymiswardi";
 const repo = "usermtq";
-const filePath = "mark-quran.json";
+const filePath = "mark-data.json";
 const branch = "main";
 const token = process.env.MTQ_TOKEN;
 
@@ -13,9 +13,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { id, kelas, tanggal, markData } = req.body;
+    const { idSiswa, markData } = req.body;
 
-    if (!id || !kelas || !tanggal || !markData) {
+    if (!idSiswa || !markData) {
       return res.status(400).json({ error: "Data tidak lengkap" });
     }
 
@@ -24,6 +24,7 @@ export default async function handler(req, res) {
     // Ambil file lama dari GitHub
     let oldContent = [];
     let sha = null;
+
     const getRes = await fetch(apiUrl, {
       headers: { Authorization: `token ${token}` },
     });
@@ -31,25 +32,20 @@ export default async function handler(req, res) {
     if (getRes.ok) {
       const fileData = await getRes.json();
       sha = fileData.sha;
-      oldContent = JSON.parse(
-        Buffer.from(fileData.content, "base64").toString("utf8")
-      );
+      oldContent = JSON.parse(Buffer.from(fileData.content, "base64").toString("utf8"));
     } else if (getRes.status !== 404) {
       throw new Error(`Gagal ambil file: ${getRes.statusText}`);
     }
 
-    // Perbarui / tambahkan data
-    const existingIndex = oldContent.findIndex(
-      (item) => item.id === id && item.kelas === kelas && item.tanggal === tanggal
-    );
-
+    // Update atau tambah data santri
+    const existingIndex = oldContent.findIndex(item => item.idSiswa === idSiswa);
     if (existingIndex !== -1) {
-      oldContent[existingIndex] = { id, kelas, tanggal, markData };
+      oldContent[existingIndex] = { idSiswa, markData };
     } else {
-      oldContent.push({ id, kelas, tanggal, markData });
+      oldContent.push({ idSiswa, markData });
     }
 
-    // Simpan ke GitHub
+    // Simpan kembali ke GitHub
     const putRes = await fetch(apiUrl, {
       method: "PUT",
       headers: {
@@ -57,7 +53,7 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        message: `Update mark-quran ${id} - ${kelas} - ${tanggal}`,
+        message: `Update markData idSiswa=${idSiswa}`,
         content: Buffer.from(JSON.stringify(oldContent, null, 2)).toString("base64"),
         sha,
         branch,
@@ -71,7 +67,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ success: true, data: oldContent });
   } catch (err) {
-    console.error("Error simpan mark-quran:", err);
+    console.error("Error simpan mark:", err);
     return res.status(500).json({ error: err.message });
   }
 }
