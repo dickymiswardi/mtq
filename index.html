@@ -2090,13 +2090,21 @@ async function simpanKeServer() {
       body: JSON.stringify(payload)
     });
 
-    if (!res.ok) {
-      const errData = await res.json();
-      console.error('Gagal simpan ke server:', errData);
-      alert(`Gagal menyimpan ke server: ${errData.error || res.statusText}`);
-      return;
-    }
-
+   if (!res.ok) {
+  let errMsg = res.statusText;
+  try {
+    const errData = await res.json();
+    errMsg = errData.error || errMsg;
+  } catch (e) {
+    // kalau bukan JSON, ambil text biasa
+    try {
+      errMsg = await res.text();
+    } catch {}
+  }
+  console.error('Gagal simpan ke server:', errMsg);
+  alert(`Gagal menyimpan ke server: ${errMsg}`);
+  return;
+}
     console.log('Data berhasil disimpan di server:', await res.json());
     alert('Nilai berhasil disimpan di server.');
   } catch (err) {
