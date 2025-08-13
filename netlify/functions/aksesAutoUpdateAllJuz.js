@@ -4,7 +4,7 @@ const GITHUB_REPO = 'dickymiswardi/usermtq';
 const FILE_PATH = 'autoUpdateAllJuz.json';
 const BRANCH = 'main';
 
-const TOKEN = process.env.MTQ_TOKEN; // gunakan MTQ_TOKEN sesuai permintaan
+const TOKEN = process.env.MTQ_TOKEN;
 
 export async function handler(event) {
   const headers = {
@@ -15,7 +15,6 @@ export async function handler(event) {
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${FILE_PATH}?ref=${BRANCH}`;
 
   if (event.httpMethod === 'GET') {
-    // Ambil isi file
     try {
       const res = await fetch(url, { headers });
       if (!res.ok) {
@@ -31,7 +30,6 @@ export async function handler(event) {
 
   if (event.httpMethod === 'POST') {
     try {
-      // Ambil sha dan isi file dulu
       const resGet = await fetch(url, { headers });
       if (!resGet.ok) throw new Error('Gagal ambil SHA file');
       const fileData = await resGet.json();
@@ -46,7 +44,6 @@ export async function handler(event) {
         existingJson = [];
       }
 
-      // Ambil data baru dari request body
       const body = JSON.parse(event.body);
       const newData = {
         updatedAt: new Date().toISOString(),
@@ -56,13 +53,19 @@ export async function handler(event) {
         data: body.data,
       };
 
-      // Tambah data baru ke array
-      existingJson.push(newData);
+      // Cari index data lama berdasarkan kelas yang sama
+      const existingIndex = existingJson.findIndex(item => item.kelas === newData.kelas);
 
-      // Encode ke base64
+      if (existingIndex !== -1) {
+        // Replace data lama dengan data baru
+        existingJson[existingIndex] = newData;
+      } else {
+        // Jika tidak ada, tambah data baru
+        existingJson.push(newData);
+      }
+
       const contentEncoded = Buffer.from(JSON.stringify(existingJson, null, 2)).toString('base64');
 
-      // PUT update file di GitHub
       const updateRes = await fetch(url, {
         method: 'PUT',
         headers: {
