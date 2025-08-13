@@ -2091,6 +2091,54 @@ function eksporSemuaMark() {
 document.getElementById("btn-ekspor-mark")?.addEventListener("click", eksporSemuaMark);
 </script>
 
+  <script>
+    async function ambilDataSantri(kelas, tanggal) {
+  try {
+    const res = await fetch(`/.netlify/functions/getData?kelas=${kelas}&tanggal=${tanggal}`);
+    if (!res.ok) throw new Error('Gagal ambil data dari server');
+    const data = await res.json(); // termasuk marks
+    return data; 
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}
+
+    function renderMarksDiTabel(santri) {
+  const tbody = document.querySelector("#santriTable tbody");
+  tbody.innerHTML = "";
+
+  santri.forEach(s => {
+    const row = document.createElement("tr");
+
+    const namaCell = document.createElement("td");
+    namaCell.textContent = s.nama;
+    row.appendChild(namaCell);
+
+    const marksCell = document.createElement("td");
+    marksCell.innerHTML = Object.entries(s.marks).map(([halaman, ayats]) => {
+      return Object.entries(ayats).map(([ayat, warna]) => {
+        const color = warna === "green" ? "#4caf50" :
+                      warna === "yellow" ? "#ffeb3b" :
+                      warna === "red" ? "#f44336" : "#ccc";
+        return `<span style="display:inline-block;width:12px;height:12px;margin:1px;background:${color};border-radius:2px;"></span>`;
+      }).join("");
+    }).join("<br>");
+    row.appendChild(marksCell);
+
+    tbody.appendChild(row);
+  });
+}
+
+
+    async function updateTabelSantri() {
+  const kelas = document.getElementById("kelas").value;
+  const tanggal = document.getElementById("tanggal").value;
+  const santri = await ambilDataSantri(kelas, tanggal);
+  renderMarksDiTabel(santri);
+}
+  </script>
+
 
 
 
