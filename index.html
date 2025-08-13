@@ -2092,51 +2092,140 @@ document.getElementById("btn-ekspor-mark")?.addEventListener("click", eksporSemu
 </script>
 
   <script>
-    async function ambilDataSantri(kelas, tanggal) {
+    // ======== Frontend Full JS Terintegrasi getData.js ========
+
+const kelasSelect = document.getElementById("kelas"); // select kelas
+const tanggalInput = document.getElementById("tanggal"); // input tanggal
+let currentSantri = null;
+let currentHalaman = null;
+let currentAyatArray = [];
+
+// ===== Ambil data santri lengkap dari server =====
+async function ambilDataSantri(kelas, tanggal) {
   try {
     const res = await fetch(`/.netlify/functions/getData?kelas=${kelas}&tanggal=${tanggal}`);
-    if (!res.ok) throw new Error('Gagal ambil data dari server');
-    const data = await res.json(); // termasuk marks
-    return data; 
+    if (!res.ok) throw new Error('Gagal ambil data santri');
+    const data = await res.json();
+    return data; // array santri lengkap termasuk marks
   } catch (err) {
     console.error(err);
     return [];
   }
 }
 
-    function renderMarksDiTabel(santri) {
+// ===== Render tabel santri =====
+async function renderTabelSantri() {
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
+  const santriData = await ambilDataSantri(kelas, tanggal);
   const tbody = document.querySelector("#santriTable tbody");
   tbody.innerHTML = "";
 
-  santri.forEach(s => {
+  santriData.forEach(s => {
     const row = document.createElement("tr");
+    row.dataset.id = s.id;
 
+    // Nama
     const namaCell = document.createElement("td");
     namaCell.textContent = s.nama;
     row.appendChild(namaCell);
 
-    const marksCell = document.createElement("td");
-    marksCell.innerHTML = Object.entries(s.marks).map(([halaman, ayats]) => {
-      return Object.entries(ayats).map(([ayat, warna]) => {
-        const color = warna === "green" ? "#4caf50" :
-                      warna === "yellow" ? "#ffeb3b" :
-                      warna === "red" ? "#f44336" : "#ccc";
-        return `<span style="display:inline-block;width:12px;height:12px;margin:1px;background:${color};border-radius:2px;"></span>`;
-      }).join("");
-    }).join("<br>");
-    row.appendChild(marksCell);
-
+    // Nilai + warna + tombol
+    const nilaiCell = document.createElement("td");
+    nilaiCell.innerHTML = `
+      <div class="nilai-ringkas">${s.buttonCell?.nilai || ''}</div>
+      <div class="warna-ringkas">${s.buttonCell?.warna || ''}</div>
+      <button type="button" class="lihat-quran-btn">Lihat Quran</button>
+    `;
+    row.appendChild(nilaiCell);
     tbody.appendChild(row);
+  });
+
+  // Event listener tombol Lihat Quran
+  document.querySelectorAll(".lihat-quran-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const row = btn.closest("tr");
+      const idSantri = parseInt(row.dataset.id);
+      const santri = santriData.find(s => s.id === idSantri);
+      if (!santri) return alert("Santri tidak ditemukan");
+
+      currentSantri = santri;
+      currentHalaman = santri.sampai;
+      currentAyatArray = generateAyatArray(santri.dari, santri.sampai);
+
+      // Ambil marks langsung dari santri.marks (getData.js sudah mengirim)
+      renderAyatOverlay(santri.marks?.[currentHalaman] || {}, currentAyatArray);
+
+      // Update nilai & predikat
+      document.getElementById("nilai-akhir").textContent = santri.buttonCell?.nilai || "-";
+      document.getElementById("predikat-akhir").textContent = santri.buttonCell?.nilai?.match(/\((.*)\)/)?.[1] || "-";
+
+      document.getElementById("overlay-quran").style.display = "flex";
+    });
   });
 }
 
+// ===== Render ayat di overlay dengan warna =====
+function renderAyatOverlay(marksHalaman, ayatArray) {
+  const quranDiv = document.getElementById("quran-text");
+  quranDiv.innerHTML = "";
 
-    async function updateTabelSantri() {
-  const kelas = document.getElementById("kelas").value;
-  const tanggal = document.getElementById("tanggal").value;
-  const santri = await ambilDataSantri(kelas, tanggal);
-  renderMarksDiTabel(santri);
+  ayatArray.forEach((ayat, index) => {
+    const span = document.createElement("span");
+    span.textContent = ayat + " ";
+
+    const warna = marksHalaman?.[index];
+    if (warna === "green") span.style.backgroundColor = "#4caf50";
+    else if (warna === "yellow") span.style.backgroundColor = "#ffeb3b";
+    else if (warna === "red") span.style.backgroundColor = "#f44336";
+
+    span.style.padding = "2px";
+    span.style.borderRadius = "3px";
+    quranDiv.appendChild(span);
+  });
 }
+
+// ===== Tombol Simpan Mark ke server =====
+document.getElementById("btn-simpan-mark").addEventListener("click", async () => {
+  if (!currentSantri) return;
+
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
+
+  const payload = [currentSantri]; // kirim satu santri saja
+
+  try {
+    const res = await fetch("/.netlify/functions/saveData", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({kelas, tanggal, data: payload})
+    });
+    if (!res.ok) throw new Error("Gagal simpan marks");
+    alert("Marks tersimpan!");
+  } catch(err) {
+    console.error(err);
+    alert(err.message);
+  }
+});
+
+// ===== Utility: buat array ayat dari "1:1" s.d. "2:16" =====
+function generateAyatArray(dari, sampai) {
+  const [suratDari, ayatDari] = dari.split(":").map(Number);
+  const [suratSampai, ayatSampai] = sampai.split(":").map(Number);
+  const arr = [];
+  for (let s = suratDari; s <= suratSampai; s++) {
+    const start = (s === suratDari) ? ayatDari : 1;
+    const end = (s === suratSampai) ? ayatSampai : 10; // contoh max 10 ayat per surat
+    for (let a = start; a <= end; a++) {
+      arr.push(`${s}:${a}`);
+    }
+  }
+  return arr;
+}
+
+// ===== Inisialisasi =====
+renderTabelSantri();
+
   </script>
 
 
