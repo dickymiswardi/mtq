@@ -2008,26 +2008,20 @@ document.addEventListener('click', async e => {
 let markServer = {};
 try {
   const res = await fetch(`/.netlify/functions/getMarkData?kelas=${kelas}&tanggal=${tanggal}`);
-  
-  if (!res.ok) throw new Error(`Server response ${res.status}`);
-  
   const dataServer = await res.json();
-  
-  if (!Array.isArray(dataServer)) {
-    console.warn("Data server bukan array:", dataServer);
+  if (Array.isArray(dataServer)) {
+    const santriServer = dataServer.find(s => s.id === currentIdSiswa);
+    if (santriServer && santriServer.marks) markServer = santriServer.marks;
   } else {
-    const santriServer = dataServer.find(s => parseInt(s.id) === currentIdSiswa);
-    if (santriServer && santriServer.marks && typeof santriServer.marks === "object") {
-      markServer = santriServer.marks;
-    }
+    console.warn("Data server bukan array:", dataServer);
   }
-
 } catch(err) {
   console.warn("Gagal load marks dari server:", err);
 }
 
-// Server menimpa localStorage, pastikan merge aman
+// Merge server marks ke localStorage marks
 markData = { ...markData, ...markServer };
+
 
 // Optional: simpan hasil merge kembali ke localStorage
 simpanKeStorage();
