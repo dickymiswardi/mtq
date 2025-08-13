@@ -19,31 +19,43 @@ export default async function handler(req, res) {
     }
 
     const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`;
+    let sha = null;
+    let existingData = [];
 
-    // Ambil SHA & data lama
+    // Coba ambil file lama
     const metaRes = await fetch(getUrl, {
       headers: { Authorization: `token ${token}` },
     });
-    if (!metaRes.ok) throw new Error(`Gagal ambil metadata file: ${metaRes.statusText}`);
 
-    const metaJson = await metaRes.json();
-    const sha = metaJson.sha;
+    if (metaRes.status === 200) {
+      // File sudah ada → ambil SHA
+      const metaJson = await metaRes.json();
+      sha = metaJson.sha;
 
-    // Ambil isi JSON asli
-    const fileRes = await fetch(getUrl, {
-      headers: { Authorization: `token ${token}`, Accept: "application/vnd.github.v3.raw" },
-    });
-    let existingData = await fileRes.json();
+      // Ambil isi file dalam bentuk JSON
+      const fileRes = await fetch(getUrl, {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github.v3.raw",
+        },
+      });
+      existingData = await fileRes.json();
+    } else if (metaRes.status === 404) {
+      // File belum ada → mulai dengan array kosong
+      existingData = [];
+    } else {
+      throw new Error(`Gagal ambil metadata file: ${metaRes.statusText}`);
+    }
 
-    // Hapus data lama untuk idSiswa & tanggalFile yang sama
+    // Hapus entri lama untuk idSiswa & tanggalFile yang sama
     existingData = existingData.filter(
       (item) => !(item.tanggalFile === tanggalFile && item.idSiswa === idSiswa)
     );
 
-    // Tambah data baru
+    // Tambahkan entri baru
     existingData.push({ tanggalFile, idSiswa, markQuran, nilai, predikat });
 
-    // Simpan kembali
+    // Simpan ke GitHub
     const putRes = await fetch(getUrl, {
       method: "PUT",
       headers: {
@@ -58,7 +70,9 @@ export default async function handler(req, res) {
       }),
     });
 
-    if (!putRes.ok) throw new Error(await putRes.text());
+    if (!putRes.ok) {
+      throw new Error(await putRes.text());
+    }
 
     return res.status(200).json({ success: true, message: "Mark Quran berhasil disimpan" });
   } catch (err) {
