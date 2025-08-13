@@ -409,14 +409,6 @@ button.lihat-quran-btn:hover::after {
     
   </div>
 </div>
-
-<script>
- togglePasswordBtn.addEventListener("click", () => {
-      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
-      passwordInput.setAttribute("type", type);
-      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
-    });
-</script>
   
     <!-- Dashboard -->
     <div id="dashboard-card" class="card" style="display: none;">
@@ -2125,5 +2117,13 @@ document.getElementById("btn-ekspor-mark")?.addEventListener("click", eksporSemu
   }
 }
 </script>
+
+  <script>
+ togglePasswordBtn.addEventListener("click", () => {
+      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
+      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
+    });
+  </script>
 </body>
 </html>
