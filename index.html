@@ -1862,7 +1862,6 @@ async function konfirmasiHapusSantri() {
 </script>
   
 
-        
 <script>
 let quranData = {};
 let ayahPageMap = {};
@@ -2044,12 +2043,29 @@ document.addEventListener('click', async function(e) {
     quranText.innerHTML = '';
 
     for (let page of halamanUrut) {
+      const pageStr = String(page).padStart(3,'0');
+      const fontUrl = `https://raw.githubusercontent.com/dickymiswardi/quran/refs/heads/main/fonts/QCF_P${pageStr}.TTF`;
+
+      try {
+        const font = new FontFace(`QCF_P${pageStr}`, `url(${fontUrl})`);
+        await font.load();
+        document.fonts.add(font);
+      } catch(err) {
+        console.warn(`Gagal load font page ${pageStr}`, err);
+      }
+
       const pageDiv = document.createElement('div');
+      pageDiv.style.fontFamily = `QCF_P${pageStr}, serif`;
+      pageDiv.style.fontSize = '30px';
+      pageDiv.style.lineHeight = '2.2';
+      pageDiv.style.direction = 'rtl';
       pageDiv.style.marginBottom = '20px';
+
       halamanMap[page].forEach(item => {
         buatKataKlik(item.surah, item.ayat, item.teks).forEach(k => pageDiv.appendChild(k));
         pageDiv.appendChild(document.createElement('br'));
       });
+
       quranText.appendChild(pageDiv);
     }
 
@@ -2067,6 +2083,7 @@ document.getElementById("btn-simpan-mark").onclick = function() {
   alert("Mark tersimpan di localStorage.");
 };
 </script>
+
 
 
 
