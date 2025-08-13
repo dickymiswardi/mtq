@@ -39,22 +39,21 @@ export default async function handler(req, res) {
         oldContent = [];
       }
     } else if (getRes.status === 404) {
-      // file belum ada → buat baru
+      // File belum ada → buat array kosong
       oldContent = [];
-      sha = null;
     } else {
       throw new Error(`Gagal ambil file: ${getRes.statusText}`);
     }
 
-    // Update atau tambah data santri
-    const existingIndex = oldContent.findIndex(item => item.idSiswa === idSiswa);
-    if (existingIndex !== -1) {
-      oldContent[existingIndex] = { idSiswa, markData };
+    // Update / tambah data
+    const index = oldContent.findIndex(item => item.idSiswa === idSiswa);
+    if (index !== -1) {
+      oldContent[index] = { idSiswa, markData };
     } else {
       oldContent.push({ idSiswa, markData });
     }
 
-    // Simpan kembali ke GitHub
+    // Simpan ke GitHub
     const putRes = await fetch(apiUrl, {
       method: "PUT",
       headers: {
@@ -62,21 +61,21 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        message: `Update mark-data idSiswa=${idSiswa}`,
+        message: `Update mark-data idSiswa ${idSiswa}`,
         content: Buffer.from(JSON.stringify(oldContent, null, 2)).toString("base64"),
-        sha: sha || undefined,
+        sha,
         branch,
       }),
     });
 
     if (!putRes.ok) {
       const errData = await putRes.json();
-      throw new Error(errData.message || "Gagal menyimpan file ke GitHub");
+      throw new Error(errData.message || "Gagal menyimpan ke GitHub");
     }
 
     return res.status(200).json({ success: true, data: oldContent });
   } catch (err) {
-    console.error("Error simpan mark:", err);
+    console.error("Error simpan-mark:", err);
     return res.status(500).json({ error: err.message });
   }
 }
