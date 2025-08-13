@@ -1283,7 +1283,7 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
     return;
   }
 
-  // Ambil tanggal otomatis
+  // Ambil tanggal otomatis dari server
   const rangeDari = document.getElementById("rangeDari");
   const rangeSampai = document.getElementById("rangeSampai");
   try {
@@ -1295,17 +1295,18 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
       if (rangeSampai) rangeSampai.value = kelasData.toDate || "";
     }
   } catch (err) {
-    console.error(err);
+    console.error("Gagal ambil tanggal otomatis:", err);
   }
 
-  const dari = rangeDari.value;
-  const sampai = rangeSampai.value;
-
+  const dari = rangeDari?.value;
+  const sampai = rangeSampai?.value;
   if (!dari || !sampai) return;
 
-  // Fetch absensi
+  // Ambil absensi & hitung total
   try {
-    const resAbs = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
+    const resAbs = await fetch(
+      `/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`
+    );
     const allData = await resAbs.json();
 
     const rekap = {};
@@ -1324,17 +1325,37 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
         const totalJuz = rekap[id].totalJuz.toFixed(2);
         let semester = parseInt(row.querySelector(".semester")?.value) || rekap[id].semester;
         const tuntas = totalJuz >= (batasSemester[semester] || 0);
-        cell.innerHTML = `${totalJuz} <span style="color:${tuntas?'green':'red'}; font-size:11px">${tuntas?'TUNTAS':'BELUM'}</span>`;
+        cell.innerHTML =
+          `${totalJuz} <span style="color:${tuntas ? 'green' : 'red'}; font-size:11px">` +
+          `${tuntas ? 'TUNTAS' : 'BELUM'}</span>`;
       } else {
         cell.innerHTML = "0.00 <span style='color:red;font-size:11px'>BELUM</span>";
       }
     });
   } catch (err) {
-    console.error(err);
+    console.error("Gagal ambil data absensi:", err);
   }
 }
 
+// Jalankan saat pertama kali halaman selesai dimuat
 window.addEventListener("DOMContentLoaded", hitungTotalAllJuzOtomatis);
+
+// Pastikan otomatis jalan lagi setelah tabel diperbarui
+function afterTableRendered() {
+  setTimeout(hitungTotalAllJuzOtomatis, 50);
+}
+
+// Integrasi ke loadSantriData atau fungsi render tabel
+const originalLoadSantriData = loadSantriData;
+window.loadSantriData = async function(...args) {
+  await originalLoadSantriData.apply(this, args);
+  afterTableRendered();
+};
+
+// Kalau ganti tanggal atau kelas, otomatis muat ulang tabel & hitung
+tanggalInput?.addEventListener("change", () => loadSantriData());
+kelasSelect?.addEventListener("change", () => loadSantriData());
+
 
   </script>
 
