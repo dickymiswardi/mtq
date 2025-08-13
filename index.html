@@ -683,16 +683,41 @@ function aturDropdownKelas(user) {
   dashboardCard.style.display = "block";
 
   const today = new Date().toLocaleDateString('sv-SE'); // Format: YYYY-MM-DD
-
-  tanggalInput.max = today;
-  tanggalInput.valueAsDate = new Date();
-
+  const tanggalInput = document.getElementById("tanggal");
   const startDate = document.getElementById("start-date");
   const endDate = document.getElementById("end-date");
 
+  // Set batas maksimum hari ini
+  if (tanggalInput) tanggalInput.max = today;
   if (startDate) startDate.max = today;
   if (endDate) endDate.max = today;
-      
+
+  // Ambil dari localStorage jika ada
+  const savedTanggal = localStorage.getItem("tanggalTerakhir");
+  const savedStart = localStorage.getItem("startDateTerakhir");
+  const savedEnd = localStorage.getItem("endDateTerakhir");
+
+  if (tanggalInput) {
+    tanggalInput.value = savedTanggal || today;
+    tanggalInput.addEventListener("change", () => {
+      localStorage.setItem("tanggalTerakhir", tanggalInput.value);
+    });
+  }
+
+  if (startDate) {
+    startDate.value = savedStart || today;
+    startDate.addEventListener("change", () => {
+      localStorage.setItem("startDateTerakhir", startDate.value);
+    });
+  }
+
+  if (endDate) {
+    endDate.value = savedEnd || today;
+    endDate.addEventListener("change", () => {
+      localStorage.setItem("endDateTerakhir", endDate.value);
+    });
+  }
+
   loadSantriData();
 }
 
@@ -1258,7 +1283,7 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
     return;
   }
 
-  // Ambil tanggal otomatis dari server
+  // Ambil tanggal otomatis
   const rangeDari = document.getElementById("rangeDari");
   const rangeSampai = document.getElementById("rangeSampai");
   try {
@@ -1275,9 +1300,10 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
 
   const dari = rangeDari.value;
   const sampai = rangeSampai.value;
+
   if (!dari || !sampai) return;
 
-  // Fetch absensi range tanggal
+  // Fetch absensi
   try {
     const resAbs = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
     const allData = await resAbs.json();
@@ -1289,27 +1315,18 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
       rekap[id].totalJuz += parseFloat(item.totalJuz || 0);
     });
 
-    // Target per semester
     const batasSemester = { 1: 8, 2: 13, 3: 18, 4: 23, 5: 28, 6: 30 };
 
-    // Update tabel
     rows.forEach(row => {
       const id = parseInt(row.children[0].textContent);
       const cell = row.querySelector(".total-all-juz");
-
       if (rekap[id]) {
-        const totalJuz = rekap[id].totalJuz;
-        let semester = parseInt(row.querySelector(".semester")?.value) || rekap[id].semester || 1;
-        const target = batasSemester[semester] || 0;
-        const persen = target > 0 ? (totalJuz / target) * 100 : 0;
-
-        if (persen >= 100) {
-          cell.innerHTML = `${totalJuz.toFixed(2)} <span style="color:green; font-size:11px">TUNTAS</span>`;
-        } else {
-          cell.innerHTML = `${totalJuz.toFixed(2)} <span style="color:red; font-size:11px">${persen.toFixed(1)}%</span>`;
-        }
+        const totalJuz = rekap[id].totalJuz.toFixed(2);
+        let semester = parseInt(row.querySelector(".semester")?.value) || rekap[id].semester;
+        const tuntas = totalJuz >= (batasSemester[semester] || 0);
+        cell.innerHTML = `${totalJuz} <span style="color:${tuntas?'green':'red'}; font-size:11px">${tuntas?'TUNTAS':'BELUM'}</span>`;
       } else {
-        cell.innerHTML = `0.00 <span style="color:red;font-size:11px">0%</span>`;
+        cell.innerHTML = "0.00 <span style='color:red;font-size:11px'>BELUM</span>";
       }
     });
   } catch (err) {
