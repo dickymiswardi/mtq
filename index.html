@@ -966,65 +966,73 @@ function updateTotalJuz(row) {
     tanggalInput.addEventListener("change", loadSantriData);
 
     saveBtn.addEventListener("click", async () => {
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
-      const rows = santriTableBody.querySelectorAll("tr");
-      const data = [];
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
+  const rows = santriTableBody.querySelectorAll("tr");
+  const data = [];
 
-      rows.forEach((row, i) => {
-      const id = parseInt(row.children[0].textContent);      // ambil dari kolom nomor
-      const nama = row.children[1].textContent;               // kolom nama
-      const semester = row.querySelector(".semester").value;  // BENAR
-      const absensi = row.querySelector(".absensi").value;
-      const surahDari = row.querySelector(".surah-dari").value;
-      const ayatDari = row.querySelector(".ayat-dari").value;
-      const surahSampai = row.querySelector(".surah-sampai").value;
-      const ayatSampai = row.querySelector(".ayat-sampai").value;
-      const totalJuz = row.querySelector(".total-juz").textContent;
-      const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
-      const nilaiCell = row.querySelector(".lihat-quran-btn").parentElement; // td tempat tombol berada
-      const nilaiDiv = nilaiCell.querySelector("div:nth-child(1)")?.innerText.trim() || "";
-      const warnaDiv = nilaiCell.querySelector("div:nth-child(2)")?.innerText.trim() || "";
-      const buttonCell = { nilai: nilaiDiv, warna: warnaDiv };
-        
-        data.push({
-          id, nama, absensi, semester,
-          dari: `${surahDari}:${ayatDari}`,
-          sampai: `${surahSampai}:${ayatSampai}`,
-          totalJuz,
-          juzTerbaca,
-          buttonCell
-        });
-      });
+  rows.forEach((row) => {
+    const id = parseInt(row.children[0].textContent);
+    const nama = row.children[1].textContent;
+    const semester = row.querySelector(".semester").value;
+    const absensi = row.querySelector(".absensi").value;
+    const surahDari = row.querySelector(".surah-dari").value;
+    const ayatDari = row.querySelector(".ayat-dari").value;
+    const surahSampai = row.querySelector(".surah-sampai").value;
+    const ayatSampai = row.querySelector(".ayat-sampai").value;
+    const totalJuz = row.querySelector(".total-juz").textContent;
+    const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
 
-      saveBtn.disabled = true;
-      saveBtn.textContent = "⏳ Menyimpan...";
+    const nilaiCell = row.querySelector(".lihat-quran-btn").parentElement;
+    const nilaiDiv = nilaiCell.querySelector("div:nth-child(1)")?.innerText.trim() || "";
+    const warnaDiv = nilaiCell.querySelector("div:nth-child(2)")?.innerText.trim() || "";
+    const buttonCell = { nilai: nilaiDiv, warna: warnaDiv };
 
-      try {
-        const res = await fetch("/.netlify/functions/saveData", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tanggal, kelas, data })
-        });
-        const result = await res.json();
-        if (result.success) {
-          saveBtn.textContent = "✅ Tersimpan";
-          setTimeout(() => {
-            saveBtn.textContent = "Simpan Data Mutaba'ah";
-            saveBtn.disabled = false;
-          }, 2000);
-        } else {
-          alert("❌ Gagal menyimpan data!");
-          saveBtn.disabled = false;
-          saveBtn.textContent = "Simpan Data Mutaba'ah";
-        }
-      } catch (err) {
-        alert("⚠️ Error menyimpan data!");
-        console.error(err);
-        saveBtn.disabled = false;
-        saveBtn.textContent = "Simpan Data Mutaba'ah";
-      }
+    // ✅ Ambil markData dari row.markData (yang sudah tersimpan saat "Lihat Quran")
+    const marks = row.markData || {};
+
+    data.push({
+      id,
+      nama,
+      absensi,
+      semester,
+      dari: `${surahDari}:${ayatDari}`,
+      sampai: `${surahSampai}:${ayatSampai}`,
+      totalJuz,
+      juzTerbaca,
+      buttonCell,
+      marks // ✅ simpan markData
     });
+  });
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = "⏳ Menyimpan...";
+
+  try {
+    const res = await fetch("/.netlify/functions/saveData", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tanggal, kelas, data })
+    });
+    const result = await res.json();
+    if (result.success) {
+      saveBtn.textContent = "✅ Tersimpan";
+      setTimeout(() => {
+        saveBtn.textContent = "Simpan Data Mutaba'ah";
+        saveBtn.disabled = false;
+      }, 2000);
+    } else {
+      alert("❌ Gagal menyimpan data!");
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Simpan Data Mutaba'ah";
+    }
+  } catch (err) {
+    alert("⚠️ Error menyimpan data!");
+    console.error(err);
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Simpan Data Mutaba'ah";
+  }
+});
 
     downloadBtn.addEventListener("click", async () => {
   const kelas = kelasSelect.value;
@@ -1869,43 +1877,26 @@ let markData = {};
 let currentIdSiswa = null;
 
 // ======================
-// SIMPAN & AMBIL DARI SERVER (per kelas & tanggal)
+// STORAGE
 // ======================
-async function simpanKeServer() {
-  if (!currentIdSiswa) return;
+function getStorageKey() {
   const kelas = document.getElementById('kelas')?.value || 'default';
-  const tanggal = document.getElementById('tanggal')?.value || new Date().toISOString().slice(0,10);
-
-  try {
-    const res = await fetch("/.netlify/functions/saveData", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tanggal, kelas, data: [{ idSiswa: currentIdSiswa, markData }] })
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || res.statusText);
-    console.log("Mark data berhasil disimpan di server");
-  } catch (err) {
-    console.error("Gagal simpan mark data:", err);
-    alert("Gagal menyimpan ke server: " + err.message);
-  }
+  const tanggal = document.getElementById('tanggal')?.value || 'default';
+  return `marks_${kelas}_${tanggal}_${currentIdSiswa}`;
 }
 
-async function ambilDariServer() {
+function simpanKeStorage() {
   if (!currentIdSiswa) return;
-  const kelas = document.getElementById('kelas')?.value || 'default';
-  const tanggal = document.getElementById('tanggal')?.value || new Date().toISOString().slice(0,10);
+  const key = getStorageKey();
+  localStorage.setItem(key, JSON.stringify(markData));
+}
 
-  try {
-    const res = await fetch(`https://raw.githubusercontent.com/dickymiswardi/usermtq/main/absensi/${kelas}_${tanggal}.json`);
-    if (!res.ok) throw new Error(res.statusText);
-    const data = await res.json();
-    const siswa = data.find(s => s.idSiswa === currentIdSiswa);
-    markData = siswa?.markData || {};
-  } catch(err) {
-    console.warn("Tidak ada data mark sebelumnya:", err.message);
-    markData = {};
-  }
+function ambilDariStorage() {
+  if (!currentIdSiswa) return;
+  const key = getStorageKey();
+  const saved = localStorage.getItem(key);
+  if (saved) markData = JSON.parse(saved);
+  else markData = {};
 }
 
 // ======================
@@ -1955,6 +1946,10 @@ function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
         <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
         <button class="lihat-quran-btn">Lihat Quran</button>
       `;
+      // Simpan markData lengkap di data attribute row
+      row.dataset.mark = JSON.stringify(markData);
+      // Optional: simpan juga di properti row langsung
+      row.markData = JSON.parse(JSON.stringify(markData));
     }
   }
 }
@@ -1970,7 +1965,7 @@ function buatKataKlik(surah, ayat, teks) {
     span.dataset.key = `${surah}:${ayat}`;
     span.dataset.idx = idx;
 
-    span.onclick = async () => {
+    span.onclick = () => {
       const warnaSekarang = markData[surah+":"+ayat]?.[idx] || null;
       let warnaBaru = null;
       if (warnaSekarang === null) warnaBaru = "green";
@@ -1979,22 +1974,17 @@ function buatKataKlik(surah, ayat, teks) {
       else warnaBaru = null;
 
       if (!markData[surah+":"+ayat]) markData[surah+":"+ayat] = {};
-      if (warnaBaru) {
-        markData[surah+":"+ayat][idx] = warnaBaru;
-        span.style.backgroundColor = warnaBaru;
-      } else {
-        delete markData[surah+":"+ayat][idx];
-        span.style.backgroundColor = "";
-      }
+      if (warnaBaru) markData[surah+":"+ayat][idx] = warnaBaru;
+      else delete markData[surah+":"+ayat][idx];
 
-      await simpanKeServer();
+      span.style.backgroundColor = warnaBaru || "";
+      simpanKeStorage();
       const hasil = hitungNilai();
       updateNilaiDiTabel(hasil);
     };
 
-    if (markData[surah+":"+ayat]?.[idx]) {
-      span.style.backgroundColor = markData[surah+":"+ayat][idx];
-    }
+    if (markData[surah+":"+ayat]?.[idx]) span.style.backgroundColor = markData[surah+":"+ayat][idx];
+
     return span;
   });
 }
@@ -2004,11 +1994,9 @@ function buatKataKlik(surah, ayat, teks) {
 // ======================
 let dataSiap = Promise.all([
   fetch('https://raw.githubusercontent.com/dickymiswardi/mtq/refs/heads/main/symbol1.json')
-    .then(res => res.json())
-    .then(data => { quranData = data; }),
+    .then(res => res.json()).then(data => { quranData = data; }),
   fetch('https://raw.githubusercontent.com/dickymiswardi/tadabbur/refs/heads/main/ayah_page_map.json')
-    .then(res => res.json())
-    .then(data => { ayahPageMap = data; })
+    .then(res => res.json()).then(data => { ayahPageMap = data; })
 ]).catch(err => console.error('Gagal memuat data:', err));
 
 // ======================
@@ -2022,8 +2010,7 @@ document.addEventListener('click', async function(e) {
 
     const row = e.target.closest('tr');
     currentIdSiswa = parseInt(row.cells[0].innerText.trim());
-
-    await ambilDariServer();
+    ambilDariStorage();
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
@@ -2053,18 +2040,13 @@ document.addEventListener('click', async function(e) {
     for (let page of halamanUrut) {
       const pageStr = String(page).padStart(3, '0');
       const fontUrl = `https://raw.githubusercontent.com/dickymiswardi/quran/refs/heads/main/fonts/QCF_P${pageStr}.TTF`;
-      try {
-        const font = new FontFace(`QCF_P${pageStr}`, `url(${fontUrl})`);
-        await font.load();
-        document.fonts.add(font);
-      } catch {}
+      try { const font = new FontFace(`QCF_P${pageStr}`, `url(${fontUrl})`); await font.load(); document.fonts.add(font); } catch {}
       const pageDiv = document.createElement('div');
       pageDiv.style.fontFamily = `QCF_P${pageStr}`;
       pageDiv.style.marginBottom = '20px';
 
       halamanMap[page].forEach(item => {
-        const kataElems = buatKataKlik(item.surah, item.ayat, item.teks);
-        kataElems.forEach(k => pageDiv.appendChild(k));
+        buatKataKlik(item.surah, item.ayat, item.teks).forEach(k => pageDiv.appendChild(k));
         pageDiv.appendChild(document.createElement('br'));
       });
       quranText.appendChild(pageDiv);
@@ -2079,18 +2061,42 @@ document.addEventListener('click', async function(e) {
 });
 
 // ======================
-// BUTTON SIMPAN
+// BUTTON SIMPAN MARK
 // ======================
-document.getElementById("btn-simpan-mark").onclick = async function() {
-  if (!currentIdSiswa) {
-    alert("Silakan pilih santri terlebih dahulu dengan klik tombol 'Lihat Quran'.");
-    return;
-  }
+document.getElementById("btn-simpan-mark").onclick = function() {
+  if (!currentIdSiswa) return alert("Silakan pilih santri terlebih dahulu dengan klik tombol 'Lihat Quran'.");
   const hasil = hitungNilai();
   updateNilaiDiTabel(hasil);
-  await simpanKeServer();
-  alert("Nilai tersimpan di server GitHub.");
+  simpanKeStorage();
+  alert("Nilai tersimpan di localStorage.");
 };
+
+// ======================
+// FUNGSI AMBIL SEMUA MARK DARI TABEL
+// ======================
+function ambilSemuaMarkDariTabel() {
+  return [...document.querySelectorAll("table tbody tr")].map(r => ({
+    idSiswa: parseInt(r.cells[0].innerText),
+    markData: JSON.parse(r.dataset.mark || "{}")
+  }));
+}
+
+// ======================
+// FUNGSI EKSPOR KE JSON
+// ======================
+function eksporSemuaMark() {
+  const data = ambilSemuaMarkDariTabel();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'markData_rekap.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Optional: tombol export
+document.getElementById("btn-ekspor-mark")?.addEventListener("click", eksporSemuaMark);
 </script>
 
 
