@@ -1191,7 +1191,7 @@ async function hitungTotalAllJuzFromTable() {
         const batas = batasSemester[semester] || 0;
         const tuntas = totalJuz >= batas && batas > 0;
 
-        cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? "green" : "red"}; font-size: 11px;">${tuntas ? "TUNTAS" : "BELUM"}</span>`;
+        cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? "green" : "red"}; font-size: 15px;">${tuntas ? "TUNTAS" : "BELUM"}</span>`;
 
         // Siapkan data untuk simpan ke file JSON
         dataToSave.push({
@@ -1333,10 +1333,10 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
         const label = tuntas ? "TUNTAS" : `${prosentase}%`;
 
         cell.innerHTML =
-          `${totalJuz} <span style="color:${tuntas ? 'green' : 'red'}; font-size:11px">` +
+          `${totalJuz} <span style="color:${tuntas ? 'green' : 'red'}; font-size:15px">` +
           `${label}</span>`;
       } else {
-        cell.innerHTML = "0.00 <span style='color:red;font-size:11px'>0%</span>";
+        cell.innerHTML = "0.00 <span style='color:red;font-size:15px'>0%</span>";
       }
     });
   } catch (err) {
