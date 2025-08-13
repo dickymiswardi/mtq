@@ -1324,12 +1324,19 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
       if (rekap[id]) {
         const totalJuz = rekap[id].totalJuz.toFixed(2);
         let semester = parseInt(row.querySelector(".semester")?.value) || rekap[id].semester;
-        const tuntas = totalJuz >= (batasSemester[semester] || 0);
+        const target = batasSemester[semester] || 0;
+
+        let prosentase = target > 0 ? Math.floor((rekap[id].totalJuz / target) * 100) : 0;
+        if (prosentase > 100) prosentase = 100; // batasi maksimum 100%
+
+        const tuntas = prosentase >= 100;
+        const label = tuntas ? "TUNTAS" : `${prosentase}%`;
+
         cell.innerHTML =
           `${totalJuz} <span style="color:${tuntas ? 'green' : 'red'}; font-size:11px">` +
-          `${tuntas ? 'TUNTAS' : 'BELUM'}</span>`;
+          `${label}</span>`;
       } else {
-        cell.innerHTML = "0.00 <span style='color:red;font-size:11px'>BELUM</span>";
+        cell.innerHTML = "0.00 <span style='color:red;font-size:11px'>0%</span>";
       }
     });
   } catch (err) {
@@ -1347,7 +1354,7 @@ function afterTableRendered() {
 
 // Integrasi ke loadSantriData atau fungsi render tabel
 const originalLoadSantriData = loadSantriData;
-window.loadSantriData = async function(...args) {
+window.loadSantriData = async function (...args) {
   await originalLoadSantriData.apply(this, args);
   afterTableRendered();
 };
@@ -1355,7 +1362,6 @@ window.loadSantriData = async function(...args) {
 // Kalau ganti tanggal atau kelas, otomatis muat ulang tabel & hitung
 tanggalInput?.addEventListener("change", () => loadSantriData());
 kelasSelect?.addEventListener("change", () => loadSantriData());
-
 
   </script>
 
