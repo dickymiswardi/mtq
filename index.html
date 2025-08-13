@@ -1893,12 +1893,11 @@ function hitungNilai() {
   let totalMinus = 0;
   let hijau = 0, kuning = 0, merah = 0;
 
-  // Cek apakah ada data yang sudah ditandai
   let adaMark = false;
 
   for (let ayat in markData) {
     for (let idx in markData[ayat]) {
-      adaMark = true; // Ada setidaknya satu tanda
+      adaMark = true;
       if (markData[ayat][idx] === "green") { totalMinus += 0.5; hijau++; }
       if (markData[ayat][idx] === "yellow") { totalMinus += 1; kuning++; }
       if (markData[ayat][idx] === "red") { totalMinus += 2; merah++; }
@@ -1996,7 +1995,7 @@ document.addEventListener('click', async function(e) {
     const row = e.target.closest('tr');
     currentIdSiswa = parseInt(row.cells[0].innerText.trim());
 
-    ambilDariStorage(); // Ambil data yang pernah disimpan
+    ambilDariStorage();
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
@@ -2051,6 +2050,30 @@ document.addEventListener('click', async function(e) {
   }
 });
 
+// ==== Fungsi kirim data ke Netlify Function ====
+async function simpanKeServer() {
+  const key = getStorageKey();
+  const payload = {
+    idSiswa: currentIdSiswa,
+    kelas: document.getElementById('kelas')?.value || 'default',
+    tanggal: document.getElementById('tanggal')?.value || 'default',
+    marks: markData
+  };
+  try {
+    const res = await fetch('/.netlify/functions/save-marks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    console.log('Data berhasil disimpan di server:', data);
+    alert('Nilai juga berhasil disimpan di server.');
+  } catch (err) {
+    console.error('Gagal simpan ke server:', err);
+    alert('Gagal menyimpan ke server.');
+  }
+}
+
 document.getElementById("btn-simpan-mark").onclick = function() {
   if (!currentIdSiswa) {
     alert("Silakan pilih santri terlebih dahulu dengan klik tombol 'Lihat Quran'.");
@@ -2059,9 +2082,11 @@ document.getElementById("btn-simpan-mark").onclick = function() {
   const hasil = hitungNilai();
   updateNilaiDiTabel(hasil);
   simpanKeStorage();
+  simpanKeServer(); // Kirim ke server
   alert("Nilai tersimpan di penyimpanan lokal (localStorage).");
 };
 </script>
+
 
 
 
