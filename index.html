@@ -557,6 +557,8 @@ background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:cen
   let surahList = [];
   let pagesMap = {};
 
+  
+
   // === Fungsi atur dropdown kelas ===
 function aturDropdownKelas(user) {
   const semuaKelas = ["kelas_1", "kelas_2", "kelas_3", "kelas_4", "kelas_5", "kelas_6"];
@@ -578,27 +580,14 @@ function aturDropdownKelas(user) {
   semuaKelas.forEach(kls => {
     const opt = document.createElement("option");
     opt.value = kls;
-    opt.textContent = namaKelasCustom[kls] || kls;
+    opt.textContent = namaKelasCustom[kls] || kls; // pakai custom kalau ada
     opt.disabled = !kelasDiizinkan.includes(kls);
     kelasSelect.appendChild(opt);
   });
 
-  // Ambil kelas terakhir dari localStorage
-  const savedKelas = localStorage.getItem("kelasTerakhir");
-
-  if (savedKelas && kelasDiizinkan.includes(savedKelas)) {
-    // Kalau kelas terakhir masih diizinkan, pilih itu
-    kelasSelect.value = savedKelas;
-  } else {
-    // Kalau tidak ada atau tidak diizinkan, pilih kelas aktif pertama
-    const pertamaAktif = Array.from(kelasSelect.options).find(o => !o.disabled);
-    if (pertamaAktif) kelasSelect.value = pertamaAktif.value;
-  }
-
-  // Simpan setiap kali user ganti kelas
-  kelasSelect.addEventListener("change", () => {
-    localStorage.setItem("kelasTerakhir", kelasSelect.value);
-  });
+  // Pilih kelas aktif pertama
+  const pertamaAktif = Array.from(kelasSelect.options).find(o => !o.disabled);
+  if (pertamaAktif) kelasSelect.value = pertamaAktif.value;
 }
 
   // === Tampilkan dashboard ===
@@ -1879,24 +1868,6 @@ let ayahPageMap = {};
 let markData = {};
 let currentIdSiswa = null;
 
-// ===== Simpan & Ambil Setting Kelas + Tanggal =====
-function simpanSetting() {
-  localStorage.setItem('kelas_terakhir', document.getElementById('kelas')?.value || '');
-  localStorage.setItem('tanggal_terakhir', document.getElementById('tanggal')?.value || '');
-}
-
-function ambilSetting() {
-  const kelasTersimpan = localStorage.getItem('kelas_terakhir');
-  const tanggalTersimpan = localStorage.getItem('tanggal_terakhir');
-  if (kelasTersimpan) document.getElementById('kelas').value = kelasTersimpan;
-  if (tanggalTersimpan) document.getElementById('tanggal').value = tanggalTersimpan;
-}
-
-document.addEventListener('DOMContentLoaded', ambilSetting);
-document.getElementById('kelas').addEventListener('change', simpanSetting);
-document.getElementById('tanggal').addEventListener('change', simpanSetting);
-
-// ===== Kunci Storage Marks per Siswa, Kelas, Tanggal =====
 function getStorageKey() {
   const kelas = document.getElementById('kelas')?.value || 'default';
   const tanggal = document.getElementById('tanggal')?.value || 'default';
@@ -1905,32 +1876,43 @@ function getStorageKey() {
 
 function simpanKeStorage() {
   if (!currentIdSiswa) return;
-  localStorage.setItem(getStorageKey(), JSON.stringify(markData));
+  const key = getStorageKey();
+  localStorage.setItem(key, JSON.stringify(markData));
 }
 
 function ambilDariStorage() {
   if (!currentIdSiswa) return;
-  const saved = localStorage.getItem(getStorageKey());
-  markData = saved ? JSON.parse(saved) : {};
+  const key = getStorageKey();
+  const saved = localStorage.getItem(key);
+  if (saved) {
+    markData = JSON.parse(saved);
+  } else {
+    markData = {};
+  }
 }
 
-// ===== Hitung Nilai & Predikat =====
 function hitungNilai() {
-  let totalMinus = 0, hijau = 0, kuning = 0, merah = 0;
+  let totalMinus = 0;
+  let hijau = 0, kuning = 0, merah = 0;
+
+  // Cek apakah ada data yang sudah ditandai
   let adaMark = false;
 
   for (let ayat in markData) {
     for (let idx in markData[ayat]) {
-      adaMark = true;
+      adaMark = true; // Ada setidaknya satu tanda
       if (markData[ayat][idx] === "green") { totalMinus += 0.5; hijau++; }
       if (markData[ayat][idx] === "yellow") { totalMinus += 1; kuning++; }
       if (markData[ayat][idx] === "red") { totalMinus += 2; merah++; }
     }
   }
 
-  let nilai = adaMark ? Math.max(0, 100 - totalMinus) : 0;
-  let predikat = "-";
-  if (adaMark) {
+  let nilai, predikat;
+  if (!adaMark) {
+    nilai = 0;
+    predikat = "-";
+  } else {
+    nilai = Math.max(0, 100 - totalMinus);
     if (nilai <= 59) predikat = "ROSIB (E)";
     else if (nilai <= 69) predikat = "MAQBUL (D)";
     else if (nilai <= 79) predikat = "JAYYID (C)";
@@ -1944,7 +1926,6 @@ function hitungNilai() {
   return { nilai, predikat, hijau, kuning, merah };
 }
 
-// ===== Update Nilai di Tabel =====
 function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
   if (!currentIdSiswa) return;
   const row = [...document.querySelectorAll("table tbody tr")]
@@ -1962,7 +1943,6 @@ function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
   }
 }
 
-// ===== Fungsi Buat Kata Klik =====
 function buatKataKlik(surah, ayat, teks) {
   return teks.split(" ").map((kata, idx) => {
     const span = document.createElement("span");
@@ -1989,7 +1969,8 @@ function buatKataKlik(surah, ayat, teks) {
       }
 
       simpanKeStorage();
-      updateNilaiDiTabel(hitungNilai());
+      const hasil = hitungNilai();
+      updateNilaiDiTabel(hasil);
     };
 
     if (markData[surah+":"+ayat]?.[idx]) {
@@ -1999,7 +1980,6 @@ function buatKataKlik(surah, ayat, teks) {
   });
 }
 
-// ===== Load Data Quran & Map Halaman =====
 let dataSiap = Promise.all([
   fetch('https://raw.githubusercontent.com/dickymiswardi/mtq/refs/heads/main/symbol1.json')
     .then(res => res.json())
@@ -2009,7 +1989,6 @@ let dataSiap = Promise.all([
     .then(data => { ayahPageMap = data; })
 ]).catch(err => console.error('Gagal memuat data:', err));
 
-// ===== Event Tombol Lihat Quran =====
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
     markData = {};
@@ -2018,7 +1997,8 @@ document.addEventListener('click', async function(e) {
 
     const row = e.target.closest('tr');
     currentIdSiswa = parseInt(row.cells[0].innerText.trim());
-    ambilDariStorage();
+
+    ambilDariStorage(); // Ambil data yang pernah disimpan
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
@@ -2029,6 +2009,7 @@ document.addEventListener('click', async function(e) {
     for (let s = surahDari; s <= surahSampai; s++) {
       const ayatMulai = (s === surahDari) ? ayatDari : 1;
       const ayatAkhir = (s === surahSampai) ? ayatSampai : 300;
+
       for (let a = ayatMulai; a <= ayatAkhir; a++) {
         const key = `${s}:${a}`;
         if (quranData[key]) {
@@ -2064,67 +2045,25 @@ document.addEventListener('click', async function(e) {
       quranText.appendChild(pageDiv);
     }
 
-    updateNilaiDiTabel(hitungNilai());
+    const hasil = hitungNilai();
+    updateNilaiDiTabel(hasil);
+
     document.getElementById('overlay').style.display = 'none';
     document.getElementById('overlay-quran').style.display = 'flex';
   }
 });
-
-// ===== Kirim Data ke Server =====
-async function simpanKeServer() {
-  if (!currentIdSiswa) return;
-
-  const hasil = hitungNilai();
-  const payload = {
-    tanggalFile: document.getElementById('tanggal')?.value || 'default',
-    idSiswa: currentIdSiswa,
-    markQuran: markData,
-    nilai: hasil.nilai,
-    predikat: hasil.predikat
-  };
-
-  try {
-    const res = await fetch('/.netlify/functions/simpan-mark-quran', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-   if (!res.ok) {
-  let errMsg = res.statusText;
-  try {
-    const errData = await res.json();
-    errMsg = errData.error || errMsg;
-  } catch (e) {
-    // kalau bukan JSON, ambil text biasa
-    try {
-      errMsg = await res.text();
-    } catch {}
-  }
-  console.error('Gagal simpan ke server:', errMsg);
-  alert(`Gagal menyimpan ke server: ${errMsg}`);
-  return;
-}
-    console.log('Data berhasil disimpan di server:', await res.json());
-    alert('Nilai berhasil disimpan di server.');
-  } catch (err) {
-    console.error('Error saat simpan ke server:', err);
-    alert('Gagal menyimpan ke server.');
-  }
-}
 
 document.getElementById("btn-simpan-mark").onclick = function() {
   if (!currentIdSiswa) {
     alert("Silakan pilih santri terlebih dahulu dengan klik tombol 'Lihat Quran'.");
     return;
   }
-  updateNilaiDiTabel(hitungNilai());
+  const hasil = hitungNilai();
+  updateNilaiDiTabel(hasil);
   simpanKeStorage();
-  simpanKeServer();
   alert("Nilai tersimpan di penyimpanan lokal (localStorage).");
 };
 </script>
-
 
 
 
