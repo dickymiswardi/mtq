@@ -1869,10 +1869,14 @@ let markData = {};
 let currentIdSiswa = null;
 
 // ======================
-// STORAGE → SERVER
+// SIMPAN / AMBIL SERVER
 // ======================
 async function simpanKeServer() {
   if (!currentIdSiswa) return;
+  const btn = document.getElementById("btn-simpan-mark");
+  btn.disabled = true;
+  const oldText = btn.innerText;
+  btn.innerText = "Menyimpan...";
 
   try {
     const res = await fetch("/.netlify/functions/simpan-mark", {
@@ -1886,12 +1890,14 @@ async function simpanKeServer() {
   } catch (err) {
     console.error("Gagal simpan mark data:", err);
     alert("Gagal menyimpan ke server: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerText = oldText;
   }
 }
 
 async function ambilDariServer() {
   if (!currentIdSiswa) return;
-
   try {
     const res = await fetch('https://raw.githubusercontent.com/dickymiswardi/usermtq/refs/heads/main/mark-data.json');
     if (!res.ok) throw new Error(res.statusText);
@@ -1983,7 +1989,6 @@ function buatKataKlik(surah, ayat, teks) {
         span.style.backgroundColor = "";
       }
 
-      await simpanKeServer(); // ganti simpan storage → server
       const hasil = hitungNilai();
       updateNilaiDiTabel(hasil);
     };
@@ -2019,7 +2024,7 @@ document.addEventListener('click', async function(e) {
     const row = e.target.closest('tr');
     currentIdSiswa = parseInt(row.cells[0].innerText.trim());
 
-    await ambilDariServer(); // ganti ambil storage → server
+    await ambilDariServer(); // ambil data dari server
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
