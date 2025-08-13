@@ -32,8 +32,17 @@ export default async function handler(req, res) {
     if (getRes.ok) {
       const fileData = await getRes.json();
       sha = fileData.sha;
-      oldContent = JSON.parse(Buffer.from(fileData.content, "base64").toString("utf8"));
-    } else if (getRes.status !== 404) {
+      try {
+        oldContent = JSON.parse(Buffer.from(fileData.content, "base64").toString("utf8"));
+        if (!Array.isArray(oldContent)) oldContent = [];
+      } catch {
+        oldContent = [];
+      }
+    } else if (getRes.status === 404) {
+      // file belum ada → buat baru
+      oldContent = [];
+      sha = null;
+    } else {
       throw new Error(`Gagal ambil file: ${getRes.statusText}`);
     }
 
@@ -53,9 +62,9 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        message: `Update markData idSiswa=${idSiswa}`,
+        message: `Update mark-data idSiswa=${idSiswa}`,
         content: Buffer.from(JSON.stringify(oldContent, null, 2)).toString("base64"),
-        sha,
+        sha: sha || undefined,
         branch,
       }),
     });
