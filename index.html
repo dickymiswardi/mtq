@@ -1189,9 +1189,13 @@ async function hitungTotalAllJuzFromTable() {
         if (!semester && rekap[id].semester) semester = rekap[id].semester;
 
         const batas = batasSemester[semester] || 0;
-        const tuntas = totalJuz >= batas && batas > 0;
+        let prosentase = batas > 0 ? Math.floor((rekap[id].totalJuz / batas) * 100) : 0;
+        if (prosentase > 100) prosentase = 100;
 
-        cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? "green" : "red"}; font-size: 15px;">${tuntas ? "TUNTAS" : "BELUM"}</span>`;
+        const tuntas = prosentase >= 100;
+        const label = tuntas ? "TUNTAS" : `${prosentase}%`;
+
+        cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? "green" : "red"}; font-size: 14px;">${label}</span>`;
 
         // Siapkan data untuk simpan ke file JSON
         dataToSave.push({
@@ -1201,8 +1205,7 @@ async function hitungTotalAllJuzFromTable() {
           tuntas
         });
       } else {
-        cell.textContent = "0.00 BELUM";
-        cell.style.color = "red";
+        cell.innerHTML = "0.00 <span style='color:red;font-size:16px'>0%</span>";
       }
     });
 
@@ -1333,10 +1336,10 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
         const label = tuntas ? "TUNTAS" : `${prosentase}%`;
 
         cell.innerHTML =
-          `${totalJuz} <span style="color:${tuntas ? 'green' : 'red'}; font-size:15px">` +
+          `${totalJuz} <span style="color:${tuntas ? 'green' : 'red'}; font-size:14px">` +
           `${label}</span>`;
       } else {
-        cell.innerHTML = "0.00 <span style='color:red;font-size:15px'>0%</span>";
+        cell.innerHTML = "0.00 <span style='color:red;font-size:16px'>0%</span>";
       }
     });
   } catch (err) {
