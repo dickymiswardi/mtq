@@ -1112,7 +1112,6 @@ function updateTotalJuz(row) {
 });
 
 
-// Hitung Manual All Juz
 async function hitungTotalAllJuzFromTable() {
   const kelas = kelasSelect.value;
   const dari = document.getElementById("rangeDari").value;
@@ -1248,21 +1247,20 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
 
 
 
-  // Hitung Otomatis All Juz
-   async function hitungTotalAllJuzOtomatis(silent = true) {
+
+   async function hitungTotalAllJuzOtomatis() {
   const kelas = kelasSelect.value;
 
-  // Tunggu tabel terisi dulu
+  // Tunggu tabel terisi
   const rows = santriTableBody.querySelectorAll("tr");
   if (rows.length === 0) {
-    setTimeout(() => hitungTotalAllJuzOtomatis(silent), 200);
+    setTimeout(hitungTotalAllJuzOtomatis, 200);
     return;
   }
 
-  // Ambil tanggal otomatis dari getAutoUpdateAllJuz
+  // Ambil tanggal otomatis dari server
   const rangeDari = document.getElementById("rangeDari");
   const rangeSampai = document.getElementById("rangeSampai");
-
   try {
     const res = await fetch("/.netlify/functions/getAutoUpdateAllJuz");
     const allData = await res.json();
@@ -1272,68 +1270,55 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
       if (rangeSampai) rangeSampai.value = kelasData.toDate || "";
     }
   } catch (err) {
-    console.error("Gagal ambil tanggal otomatis:", err);
+    console.error(err);
   }
 
-  const dari = rangeDari?.value;
-  const sampai = rangeSampai?.value;
-
+  const dari = rangeDari.value;
+  const sampai = rangeSampai.value;
   if (!dari || !sampai) return;
 
-  // Jika mode manual (silent = false), tampilkan overlay
-  if (!silent) overlay.style.display = "flex";
-
+  // Fetch absensi range tanggal
   try {
-    // Ambil data absensi
     const resAbs = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
-    if (!resAbs.ok) throw new Error("Gagal ambil data absensi.");
-    const absensiData = await resAbs.json();
+    const allData = await resAbs.json();
 
-    // Rekap total juz per santri
     const rekap = {};
-    absensiData.forEach(item => {
+    allData.forEach(item => {
       const id = item.id;
       if (!rekap[id]) rekap[id] = { totalJuz: 0, semester: item.semester || null };
       rekap[id].totalJuz += parseFloat(item.totalJuz || 0);
     });
 
+    // Target per semester
     const batasSemester = { 1: 8, 2: 13, 3: 18, 4: 23, 5: 28, 6: 30 };
 
     // Update tabel
     rows.forEach(row => {
       const id = parseInt(row.children[0].textContent);
       const cell = row.querySelector(".total-all-juz");
+
       if (rekap[id]) {
-        const totalJuz = rekap[id].totalJuz.toFixed(2);
-        let semester = parseInt(row.querySelector(".semester")?.value) || rekap[id].semester;
-        const tuntas = totalJuz >= (batasSemester[semester] || 0);
-        cell.innerHTML = `${totalJuz} <span style="color:${tuntas?'green':'red'}; font-size:11px">${tuntas?'TUNTAS':'BELUM'}</span>`;
+        const totalJuz = rekap[id].totalJuz;
+        let semester = parseInt(row.querySelector(".semester")?.value) || rekap[id].semester || 1;
+        const target = batasSemester[semester] || 0;
+        const persen = target > 0 ? (totalJuz / target) * 100 : 0;
+
+        if (persen >= 100) {
+          cell.innerHTML = `${totalJuz.toFixed(2)} <span style="color:green; font-size:11px">TUNTAS</span>`;
+        } else {
+          cell.innerHTML = `${totalJuz.toFixed(2)} <span style="color:red; font-size:11px">${persen.toFixed(1)}%</span>`;
+        }
       } else {
-        cell.innerHTML = "0.00 <span style='color:red;font-size:11px'>BELUM</span>";
+        cell.innerHTML = `0.00 <span style="color:red;font-size:11px">0%</span>`;
       }
     });
-
-    if (!silent) {
-      alert("✅ Total All Juz berhasil dihitung.");
-    }
   } catch (err) {
     console.error(err);
-    if (!silent) alert("❌ Terjadi kesalahan: " + err.message);
-  } finally {
-    if (!silent) overlay.style.display = "none";
   }
 }
 
-// Jalankan otomatis saat halaman pertama kali load
-window.addEventListener("DOMContentLoaded", () => hitungTotalAllJuzOtomatis(true));
+window.addEventListener("DOMContentLoaded", hitungTotalAllJuzOtomatis);
 
-// Jalankan ulang otomatis setiap kali kelas atau tanggal diubah
-kelasSelect.addEventListener("change", () => hitungTotalAllJuzOtomatis(true));
-document.getElementById("rangeDari").addEventListener("change", () => hitungTotalAllJuzOtomatis(true));
-document.getElementById("rangeSampai").addEventListener("change", () => hitungTotalAllJuzOtomatis(true));
-
-// Tombol manual (mode non-silent)
-document.getElementById("btnHitungTotalJuz").addEventListener("click", () => hitungTotalAllJuzOtomatis(false));
   </script>
 
   <script>
