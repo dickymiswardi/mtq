@@ -578,14 +578,27 @@ function aturDropdownKelas(user) {
   semuaKelas.forEach(kls => {
     const opt = document.createElement("option");
     opt.value = kls;
-    opt.textContent = namaKelasCustom[kls] || kls; // pakai custom kalau ada
+    opt.textContent = namaKelasCustom[kls] || kls;
     opt.disabled = !kelasDiizinkan.includes(kls);
     kelasSelect.appendChild(opt);
   });
 
-  // Pilih kelas aktif pertama
-  const pertamaAktif = Array.from(kelasSelect.options).find(o => !o.disabled);
-  if (pertamaAktif) kelasSelect.value = pertamaAktif.value;
+  // Ambil kelas terakhir dari localStorage
+  const savedKelas = localStorage.getItem("kelasTerakhir");
+
+  if (savedKelas && kelasDiizinkan.includes(savedKelas)) {
+    // Kalau kelas terakhir masih diizinkan, pilih itu
+    kelasSelect.value = savedKelas;
+  } else {
+    // Kalau tidak ada atau tidak diizinkan, pilih kelas aktif pertama
+    const pertamaAktif = Array.from(kelasSelect.options).find(o => !o.disabled);
+    if (pertamaAktif) kelasSelect.value = pertamaAktif.value;
+  }
+
+  // Simpan setiap kali user ganti kelas
+  kelasSelect.addEventListener("change", () => {
+    localStorage.setItem("kelasTerakhir", kelasSelect.value);
+  });
 }
 
   // === Tampilkan dashboard ===
