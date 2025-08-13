@@ -1,4 +1,3 @@
-// netlify/functions/simpan-mark-quran.js
 import fetch from "node-fetch";
 
 const owner = "dickymiswardi";
@@ -7,15 +6,22 @@ const filePath = "mark-quran.json";
 const branch = "main";
 const token = process.env.MTQ_TOKEN;
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
+export async function handler(event, context) {
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: "Method Not Allowed" }),
+    };
   }
 
   try {
-    const { tanggalFile, idSiswa, markQuran, nilai, predikat } = req.body;
+    const { tanggalFile, idSiswa, markQuran, nilai, predikat } = JSON.parse(event.body || "{}");
+
     if (!tanggalFile || !idSiswa || !markQuran) {
-      return res.status(400).json({ error: "Data tidak lengkap" });
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Data tidak lengkap" }),
+      };
     }
 
     const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`;
@@ -74,8 +80,14 @@ export default async function handler(req, res) {
       throw new Error(await putRes.text());
     }
 
-    return res.status(200).json({ success: true, message: "Mark Quran berhasil disimpan" });
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true, message: "Mark Quran berhasil disimpan" }),
+    };
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message }),
+    };
   }
 }
