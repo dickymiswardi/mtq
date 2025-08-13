@@ -1896,7 +1896,7 @@ function ambilDariStorage() {
 // ======================
 async function ambilMarksDariServer(idSiswa, kelas, tanggal) {
   try {
-    const res = await fetch(`/.netlify/functions/getData?kelas=${kelas}&tanggal=${tanggal}`);
+    const res = await fetch(`/.netlify/functions/getMarkData?kelas=${kelas}&tanggal=${tanggal}`);
     if (!res.ok) throw new Error("Gagal ambil data santri dari server");
     const data = await res.json();
     const santri = data.find(s => s.id === idSiswa);
