@@ -1255,6 +1255,80 @@ document.getElementById("btnHitungTotalJuz").addEventListener("click", hitungTot
 
 
 
+
+
+   // Fungsi hitung total juz otomatis tanpa overlay dan alert
+async function hitungTotalAllJuzOtomatis() {
+  const kelas = kelasSelect.value;
+  if (!kelas) return;
+
+  try {
+    // Ambil tanggal otomatis dari backend
+    const resTanggal = await fetch('/.netlify/functions/getAutoUpdateAllJuz');
+    if (!resTanggal.ok) throw new Error('Gagal ambil tanggal dari server');
+    const allData = await resTanggal.json();
+    const kelasData = allData.find(item => item.kelas === kelas);
+
+    const dari = kelasData?.fromDate;
+    const sampai = kelasData?.toDate;
+    if (!dari || !sampai) return;
+
+    // Ambil data absensi rentang tanggal
+    const res = await fetch(`/.netlify/functions/getAbsensiRange?kelas=${kelas}&start=${dari}&end=${sampai}`);
+    if (!res.ok) throw new Error("Gagal ambil data absensi.");
+    const allDataAbsensi = await res.json();
+
+    const rows = santriTableBody.querySelectorAll("tr");
+    const rekap = {};
+
+    // Rekap total juz per santri dari data absensi
+    allDataAbsensi.forEach(item => {
+      const id = item.id;
+      if (!rekap[id]) {
+        rekap[id] = { totalJuz: 0, semester: item.semester || null };
+      }
+      rekap[id].totalJuz += parseFloat(item.totalJuz || 0);
+    });
+
+    // Batas ketuntasan per semester
+    const batasSemester = { 1: 8, 2: 13, 3: 18, 4: 23, 5: 28, 6: 30 };
+
+    // Update tabel dan siapkan data untuk disimpan
+    const dataToSave = [];
+    rows.forEach(row => {
+      const id = parseInt(row.children[0].textContent);
+      const cell = row.querySelector(".total-all-juz");
+
+      if (rekap[id]) {
+        const totalJuz = rekap[id].totalJuz.toFixed(2);
+        let semester = parseInt(row.querySelector(".semester")?.value);
+        if (!semester && rekap[id].semester) semester = rekap[id].semester;
+
+        const batas = batasSemester[semester] || 0;
+        const tuntas = totalJuz >= batas && batas > 0;
+
+        cell.innerHTML = `${totalJuz} <span style="color: ${tuntas ? "green" : "red"}; font-size: 11px;">${tuntas ? "TUNTAS" : "BELUM"}</span>`;
+
+        dataToSave.push({ id, totalJuz: parseFloat(totalJuz), semester, tuntas });
+      } else {
+        cell.textContent = "0.00 BELUM";
+        cell.style.color = "red";
+      }
+    });
+
+    // Kirim data hasil rekap ke backend
+    await fetch('/.netlify/functions/aksesAutoUpdateAllJuz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fromDate: dari, toDate: sampai, kelas, data: dataToSave }),
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Jalankan otomatis saat halaman selesai load
+window.addEventListener("DOMContentLoaded", hitungTotalAllJuzOtomatis);
   </script>
 
   <script>
