@@ -795,14 +795,14 @@ row.innerHTML = `
     <button type="button" class="lihat-quran-btn">Lihat Quran</button>
   </td>
 <td class="total-all-juz">
-  <img src="https://raw.githubusercontent.com/dickymiswardi/mtq/main/spheres.gif" style="width:20px;height:20px;">
+  <img src="https://raw.githubusercontent.com/dickymiswardi/mtq/main/spheres.gif" style="width:70px;height:18px;">
 </td>
 `;
 santriTableBody.appendChild(row);
 
 document.querySelectorAll("td.total-all-juz").forEach(td => {
   if (td.textContent.trim() === "0") {
-    td.innerHTML = `<img src="https://raw.githubusercontent.com/dickymiswardi/mtq/main/spheres.gif" style="width:20px;height:20px;">`;
+    td.innerHTML = `<img src="https://raw.githubusercontent.com/dickymiswardi/mtq/main/spheres.gif" style="width:70px;height:18px;">`;
   }
 });
           
