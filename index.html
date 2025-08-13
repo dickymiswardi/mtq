@@ -1869,41 +1869,39 @@ let markData = {};
 let currentIdSiswa = null;
 
 // ======================
-// SIMPAN / AMBIL SERVER
+// SIMPAN & AMBIL DARI SERVER (per kelas & tanggal)
 // ======================
 async function simpanKeServer() {
   if (!currentIdSiswa) return;
-  const btn = document.getElementById("btn-simpan-mark");
-  btn.disabled = true;
-  const oldText = btn.innerText;
-  btn.innerText = "Menyimpan...";
+  const kelas = document.getElementById('kelas')?.value || 'default';
+  const tanggal = document.getElementById('tanggal')?.value || new Date().toISOString().slice(0,10);
 
   try {
-    const res = await fetch("/.netlify/functions/simpan-mark", {
+    const res = await fetch("/.netlify/functions/saveData", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idSiswa: currentIdSiswa, markData })
+      body: JSON.stringify({ tanggal, kelas, data: [{ idSiswa: currentIdSiswa, markData }] })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || res.statusText);
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || res.statusText);
     console.log("Mark data berhasil disimpan di server");
   } catch (err) {
     console.error("Gagal simpan mark data:", err);
     alert("Gagal menyimpan ke server: " + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerText = oldText;
   }
 }
 
 async function ambilDariServer() {
   if (!currentIdSiswa) return;
+  const kelas = document.getElementById('kelas')?.value || 'default';
+  const tanggal = document.getElementById('tanggal')?.value || new Date().toISOString().slice(0,10);
+
   try {
-    const res = await fetch('https://raw.githubusercontent.com/dickymiswardi/usermtq/refs/heads/main/mark-data.json');
+    const res = await fetch(`https://raw.githubusercontent.com/dickymiswardi/usermtq/main/absensi/${kelas}_${tanggal}.json`);
     if (!res.ok) throw new Error(res.statusText);
     const data = await res.json();
-    const santriData = data.find(s => s.idSiswa === currentIdSiswa);
-    markData = santriData?.markData || {};
+    const siswa = data.find(s => s.idSiswa === currentIdSiswa);
+    markData = siswa?.markData || {};
   } catch(err) {
     console.warn("Tidak ada data mark sebelumnya:", err.message);
     markData = {};
@@ -1911,7 +1909,7 @@ async function ambilDariServer() {
 }
 
 // ======================
-// HITUNG NILAI & UPDATE
+// HITUNG NILAI & UPDATE TABEL
 // ======================
 function hitungNilai() {
   let totalMinus = 0;
@@ -1989,6 +1987,7 @@ function buatKataKlik(surah, ayat, teks) {
         span.style.backgroundColor = "";
       }
 
+      await simpanKeServer();
       const hasil = hitungNilai();
       updateNilaiDiTabel(hasil);
     };
@@ -2024,7 +2023,7 @@ document.addEventListener('click', async function(e) {
     const row = e.target.closest('tr');
     currentIdSiswa = parseInt(row.cells[0].innerText.trim());
 
-    await ambilDariServer(); // ambil data dari server
+    await ambilDariServer();
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
@@ -2093,6 +2092,7 @@ document.getElementById("btn-simpan-mark").onclick = async function() {
   alert("Nilai tersimpan di server GitHub.");
 };
 </script>
+
 
 
 
