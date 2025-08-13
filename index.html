@@ -1268,7 +1268,7 @@ function getDateRangeArray(start, end) {
   const rangeDari = document.getElementById("rangeDari");
   const rangeSampai = document.getElementById("rangeSampai");
 
-  // Set batas maksimum ke tanggal lokal hari ini
+  // Set batas maksimum ke tanggal lokal hari ini untuk rangeDari saja
   if (rangeDari) {
     rangeDari.max = todayStr;
     if (!rangeDari.value || rangeDari.value > todayStr) {
@@ -1277,8 +1277,11 @@ function getDateRangeArray(start, end) {
   }
 
   if (rangeSampai) {
-    rangeSampai.max = todayStr;
-    if (!rangeSampai.value || rangeSampai.value > todayStr) {
+    // Hapus pembatas max di sini agar bebas tanggal sampai kapan saja
+    rangeSampai.removeAttribute("max");
+
+    // Kalau mau, set nilai default, tapi bebas tanggal
+    if (!rangeSampai.value) {
       rangeSampai.value = todayStr;
     }
   }
@@ -1286,6 +1289,7 @@ function getDateRangeArray(start, end) {
   // Tampilkan overlay
   document.getElementById("juzOverlay").style.display = "flex";
 }
+
 
   </script>
 
