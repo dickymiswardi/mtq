@@ -966,65 +966,73 @@ function updateTotalJuz(row) {
     tanggalInput.addEventListener("change", loadSantriData);
 
     saveBtn.addEventListener("click", async () => {
-      const kelas = kelasSelect.value;
-      const tanggal = tanggalInput.value;
-      const rows = santriTableBody.querySelectorAll("tr");
-      const data = [];
+  const kelas = kelasSelect.value;
+  const tanggal = tanggalInput.value;
+  const rows = santriTableBody.querySelectorAll("tr");
+  const data = [];
 
-      rows.forEach((row, i) => {
-      const id = parseInt(row.children[0].textContent);      // ambil dari kolom nomor
-      const nama = row.children[1].textContent;               // kolom nama
-      const semester = row.querySelector(".semester").value;  // BENAR
-      const absensi = row.querySelector(".absensi").value;
-      const surahDari = row.querySelector(".surah-dari").value;
-      const ayatDari = row.querySelector(".ayat-dari").value;
-      const surahSampai = row.querySelector(".surah-sampai").value;
-      const ayatSampai = row.querySelector(".ayat-sampai").value;
-      const totalJuz = row.querySelector(".total-juz").textContent;
-      const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
-      const nilaiCell = row.querySelector(".lihat-quran-btn").parentElement; // td tempat tombol berada
-      const nilaiDiv = nilaiCell.querySelector("div:nth-child(1)")?.innerText.trim() || "";
-      const warnaDiv = nilaiCell.querySelector("div:nth-child(2)")?.innerText.trim() || "";
-      const buttonCell = { nilai: nilaiDiv, warna: warnaDiv };
-        
-        data.push({
-          id, nama, absensi, semester,
-          dari: `${surahDari}:${ayatDari}`,
-          sampai: `${surahSampai}:${ayatSampai}`,
-          totalJuz,
-          juzTerbaca,
-          buttonCell
-        });
-      });
+  rows.forEach((row) => {
+    const id = parseInt(row.children[0].textContent);
+    const nama = row.children[1].textContent;
+    const semester = row.querySelector(".semester").value;
+    const absensi = row.querySelector(".absensi").value;
+    const surahDari = row.querySelector(".surah-dari").value;
+    const ayatDari = row.querySelector(".ayat-dari").value;
+    const surahSampai = row.querySelector(".surah-sampai").value;
+    const ayatSampai = row.querySelector(".ayat-sampai").value;
+    const totalJuz = row.querySelector(".total-juz").textContent;
+    const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
 
-      saveBtn.disabled = true;
-      saveBtn.textContent = "⏳ Menyimpan...";
+    const nilaiCell = row.querySelector(".lihat-quran-btn").parentElement;
+    const nilaiDiv = nilaiCell.querySelector("div:nth-child(1)")?.innerText.trim() || "";
+    const warnaDiv = nilaiCell.querySelector("div:nth-child(2)")?.innerText.trim() || "";
+    const buttonCell = { nilai: nilaiDiv, warna: warnaDiv };
 
-      try {
-        const res = await fetch("/.netlify/functions/saveData", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tanggal, kelas, data })
-        });
-        const result = await res.json();
-        if (result.success) {
-          saveBtn.textContent = "✅ Tersimpan";
-          setTimeout(() => {
-            saveBtn.textContent = "Simpan Data Mutaba'ah";
-            saveBtn.disabled = false;
-          }, 2000);
-        } else {
-          alert("❌ Gagal menyimpan data!");
-          saveBtn.disabled = false;
-          saveBtn.textContent = "Simpan Data Mutaba'ah";
-        }
-      } catch (err) {
-        alert("⚠️ Error menyimpan data!");
-        console.error(err);
-        saveBtn.disabled = false;
-        saveBtn.textContent = "Simpan Data Mutaba'ah";
-      }
+    // ✅ Ambil markData dari row.markData (yang sudah tersimpan saat "Lihat Quran")
+    const marks = row.markData || {};
+
+    data.push({
+      id,
+      nama,
+      absensi,
+      semester,
+      dari: `${surahDari}:${ayatDari}`,
+      sampai: `${surahSampai}:${ayatSampai}`,
+      totalJuz,
+      juzTerbaca,
+      buttonCell,
+      marks // ✅ simpan markData
     });
+  });
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = "⏳ Menyimpan...";
+
+  try {
+    const res = await fetch("/.netlify/functions/saveData", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tanggal, kelas, data })
+    });
+    const result = await res.json();
+    if (result.success) {
+      saveBtn.textContent = "✅ Tersimpan";
+      setTimeout(() => {
+        saveBtn.textContent = "Simpan Data Mutaba'ah";
+        saveBtn.disabled = false;
+      }, 2000);
+    } else {
+      alert("❌ Gagal menyimpan data!");
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Simpan Data Mutaba'ah";
+    }
+  } catch (err) {
+    alert("⚠️ Error menyimpan data!");
+    console.error(err);
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Simpan Data Mutaba'ah";
+  }
+});
 
     downloadBtn.addEventListener("click", async () => {
   const kelas = kelasSelect.value;
@@ -1933,17 +1941,14 @@ function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
   if (row) {
     const buttonCell = [...row.cells].find(td => td.querySelector(".lihat-quran-btn"));
     if (buttonCell) {
-      // Tampilkan nilai + visual + JSON markData
       buttonCell.innerHTML = `
         <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
         <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
-        <pre style="font-size:10px; max-height:60px; overflow:auto; background:#f5f5f5; padding:2px; border-radius:3px;">
-${JSON.stringify(markData, null, 2)}
-        </pre>
         <button class="lihat-quran-btn">Lihat Quran</button>
       `;
-      // Simpan markData lengkap di data attribute row dan properti row
+      // Simpan markData lengkap di data attribute row
       row.dataset.mark = JSON.stringify(markData);
+      // Optional: simpan juga di properti row langsung
       row.markData = JSON.parse(JSON.stringify(markData));
     }
   }
@@ -2090,8 +2095,10 @@ function eksporSemuaMark() {
   URL.revokeObjectURL(url);
 }
 
+// Optional: tombol export
 document.getElementById("btn-ekspor-mark")?.addEventListener("click", eksporSemuaMark);
 </script>
+
 
 
 
