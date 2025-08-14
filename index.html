@@ -499,7 +499,7 @@ button.lihat-quran-btn:hover::after {
   
   <div id="overlay-quran" style="display:none; position:fixed; top:0; left:0;
      width:100%; height:100%; background:rgba(0,0,0,0.5);
-     z-index:10000; justify-content:center; align-items:center;">
+     z-index:10000; justify-content:center; align-items:center; overflow-y:auto;">
   <div style="background:white; padding:20px; border-radius:8px;
        max-width:800px; max-height:80%; overflow:auto;">
     <h3>Ayat Al-Qur'an</h3>
@@ -511,8 +511,8 @@ button.lihat-quran-btn:hover::after {
     <br>
     <button id="btn-nilai-100">Nilai 100</button>
     <button id="btn-simpan-mark">Simpan</button>
-    <button id="save-btn-modal">Simpan Data Mutaba'ah</button> <!-- ID beda -->
-    <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
+    <button id="save-btn-modal">Simpan Data Mutaba'ah</button>
+    <button id="btn-tutup-overlay">Tutup</button>
   </div>
 </div>
 
@@ -2130,6 +2130,20 @@ document.getElementById("btn-nilai-100").onclick = function() {
       togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
     });
   </script>
+
+  <script>
+  function bukaOverlayQuran() {
+    document.getElementById('overlay-quran').style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Nonaktifkan scroll halaman utama
+  }
+
+  function tutupOverlayQuran() {
+    document.getElementById('overlay-quran').style.display = 'none';
+    document.body.style.overflow = ''; // Aktifkan scroll halaman utama
+  }
+
+  document.getElementById('btn-tutup-overlay').addEventListener('click', tutupOverlayQuran);
+</script>
 
 </body>
 </html>
