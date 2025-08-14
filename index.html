@@ -429,7 +429,6 @@ button.lihat-quran-btn:hover::after {
         <thead>
           <tr>
             <th>No</th>
-            <th>Nomor Induk</th>
             <th>Nama</th>
             <th>Absensi</th>
             <th>Setoran Dari</th>
@@ -759,7 +758,6 @@ function aturDropdownKelas(user) {
 row.innerHTML = `
   <td>${i + 1}</td>
   <td>${santri.nama}</td>
-  <td>${santri.nomorinduk}</td>
   <td>
     <select class="absensi">
       <option value="Hadir" ${dataAbsensi.absensi === "Hadir" ? "selected" : ""}>Hadir</option>
@@ -955,7 +953,6 @@ function updateTotalJuz(row) {
   rows.forEach((row) => {
     const id = parseInt(row.children[0].textContent);
     const nama = row.children[1].textContent;
-    const nomorinduk = row.children[2].textContent;
     const semester = row.querySelector(".semester").value;
     const absensi = row.querySelector(".absensi").value;
     const surahDari = row.querySelector(".surah-dari").value;
@@ -975,7 +972,6 @@ function updateTotalJuz(row) {
     data.push({
       id,
       nama,
-      nomorinduk,
       absensi,
       semester,
       dari: `${surahDari}:${ayatDari}`,
