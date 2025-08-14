@@ -514,11 +514,10 @@ button.lihat-quran-btn:hover::after {
     <button id="save-btn-modal">Simpan Data Mutaba'ah</button> <!-- ID beda -->
     <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
     <hr>
-    <!-- Audio Recording Controls -->
-    <div>
-      <button id="btn-start-record">🎤 Mulai Rekam</button>
-      <button id="btn-stop-record" disabled>⏹️ Selesai Rekam</button>
-      <div id="audio-preview"></div>
+    <h4>Rekam Audio</h4>
+    <button id="start-rec">Mulai Rekam</button>
+    <button id="stop-rec" disabled>Selesai Rekam</button>
+    <div id="audio-preview"></div>
     </div>
   </div>
 </div>
@@ -1871,6 +1870,7 @@ let markData = {};
 let currentIdSiswa = null;
 let mediaRecorder;
 let audioChunks = [];
+let audioFileName = null; 
 
 // ======================
 // STORAGE
@@ -2107,42 +2107,86 @@ document.getElementById("btn-nilai-100").onclick = function() {
 // ======================
 // RECORDING AUDIO
 // ======================
-const btnStart = document.getElementById("btn-start-record");
-const btnStop = document.getElementById("btn-stop-record");
+const startRec = document.getElementById("start-rec");
+const stopRec = document.getElementById("stop-rec");
 const audioPreview = document.getElementById("audio-preview");
 
-btnStart.addEventListener("click", async () => {
+startRec.onclick = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm", audioBitsPerSecond: 128000 });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
     audioChunks = [];
-    mediaRecorder.ondataavailable = e => { audioChunks.push(e.data); };
+
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
     mediaRecorder.onstop = () => {
-      const blob = new Blob(audioChunks, { type: "audio/webm" });
+      const blob = new Blob(audioChunks, { type: 'audio/webm' });
       const url = URL.createObjectURL(blob);
       audioPreview.innerHTML = `<audio controls src="${url}"></audio>`;
-      
-      // Simpan Base64 untuk dikirim ke backend
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        markData.audioBase64 = reader.result.split(",")[1]; // hanya base64
-        markData.audioName = `audio_${currentIdSiswa}_${Date.now()}.webm`;
-      };
-      reader.readAsDataURL(blob);
+      audioFileName = `audio_${Date.now()}.webm`;
     };
+
     mediaRecorder.start();
-    btnStart.disabled = true;
-    btnStop.disabled = false;
+    startRec.disabled = true;
+    stopRec.disabled = false;
   } catch (err) {
-    alert("⚠️ Gagal akses mikrofon: " + err.message);
+    alert("Gagal akses mikrofon: " + err.message);
+  }
+};
+
+stopRec.onclick = () => {
+  mediaRecorder.stop();
+  startRec.disabled = false;
+  stopRec.disabled = true;
+};
+
+// === Revisi saveBtn modal untuk mengirim audio ke server ===
+document.getElementById("save-btn-modal").addEventListener("click", async () => {
+  if (!currentIdSiswa) return alert("Klik 'Lihat Quran' dulu.");
+
+  // Ambil data santri seperti biasa
+  const kelas = document.getElementById("kelas").value;
+  const tanggal = document.getElementById("tanggal").value;
+  const rows = santriTableBody.querySelectorAll("tr");
+  const data = [];
+
+  rows.forEach(row => {
+    const id = parseInt(row.children[0].textContent);
+    const nama = row.children[1].textContent;
+    const marks = row.markData || {};
+    data.push({ id, nama, marks });
+  });
+
+  // Jika ada rekaman, konversi blob ke base64
+  let audioBase64 = null;
+  if (audioChunks.length) {
+    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    audioBase64 = await blobToBase64(blob);
+  }
+
+  try {
+    const res = await fetch("/.netlify/functions/saveData", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tanggal, kelas, data, audioBase64, audioFileName })
+    });
+    const result = await res.json();
+    if (result.success) alert("✅ Data Mutaba'ah & audio tersimpan!");
+    else alert("❌ Gagal menyimpan data!");
+  } catch (err) {
+    console.error(err);
+    alert("⚠️ Error saat menyimpan data!");
   }
 });
 
-btnStop.addEventListener("click", () => {
-  if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
-  btnStart.disabled = false;
-  btnStop.disabled = true;
-});
+// Helper
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 </script>
 
 
