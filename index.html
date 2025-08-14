@@ -510,7 +510,8 @@ button.lihat-quran-btn:hover::after {
     </div>
     <br>
     <button id="btn-nilai-100">Nilai 100</button>
-    <button id="save-btn">Simpan</button>
+    <button id="btn-simpan-mark">Simpan</button>
+    <button id="save-btn">Simpan Data Mutaba'ah</button>
     <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
   </div>
 </div>
@@ -2084,6 +2085,18 @@ document.getElementById("btn-nilai-100").onclick = function() {
   // Update tabel
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
+
+
+  // Tombol Simpan Data Mutaba'ah
+  document.getElementById("save-btn").addEventListener("click", function() {
+    simpanDataMutabaah(); // ganti dengan fungsi milikmu
+  });
+
+  // Contoh fungsi simpan mutabaah
+  function simpanDataMutabaah() {
+    console.log("Data Mutaba'ah disimpan!");
+    // logika simpan ke server
+  }
 </script>
 
 
