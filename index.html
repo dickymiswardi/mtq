@@ -889,17 +889,20 @@ function updateTotalJuz(row) {
 
     let ayatYangDihitung = 0;
 
-    if (halamanAwal === halamanAkhir) {
+        if (halamanAwal === halamanAkhir) {
       // Jika di halaman yang sama
       ayatYangDihitung = ayatSampai - ayatDari + 1;
+    } else if (h === halamanAwal && halamanAkhir === halamanAwal + 1) {
+      // Kasus khusus: beda halaman hanya 1
+      const totalAyatKecil = (ayatDiHalaman - ayatDari + 1) + ayatSampai;
+      ayatYangDihitung = totalAyatKecil; // langsung hitung gabungan ayat
+      // Hentikan loop setelah halaman awal supaya tidak hitung ganda
+      h = halamanAkhir; 
     } else if (h === halamanAwal) {
-      // Halaman awal: hitung sisa ayat dari ayatDari sampai akhir halaman
       ayatYangDihitung = ayatDiHalaman - ayatDari + 1;
     } else if (h === halamanAkhir) {
-      // Halaman akhir: hitung dari ayat 1 sampai ayatSampai
       ayatYangDihitung = ayatSampai;
     } else {
-      // Halaman penuh
       ayatYangDihitung = ayatDiHalaman;
     }
 
