@@ -516,6 +516,20 @@ button.lihat-quran-btn:hover::after {
   </div>
 </div>
 
+<script>
+  // Pastikan dijalankan setelah modal dan tombol sudah ada di DOM
+document.addEventListener("click", function(e) {
+  if (e.target && e.target.id === "save-btn") {
+    simpanDataMutabaah();
+  }
+});
+
+function simpanDataMutabaah() {
+  console.log("Data Mutaba'ah disimpan!");
+  // logika simpan ke server
+}
+</script>
+
 
 
 <!-- Overlay Hitung Total All Juz -->
@@ -2085,18 +2099,6 @@ document.getElementById("btn-nilai-100").onclick = function() {
   // Update tabel
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
-
-
-  // Tombol Simpan Data Mutaba'ah
-  document.getElementById("save-btn").addEventListener("click", function() {
-    simpanDataMutabaah(); // ganti dengan fungsi milikmu
-  });
-
-  // Contoh fungsi simpan mutabaah
-  function simpanDataMutabaah() {
-    console.log("Data Mutaba'ah disimpan!");
-    // logika simpan ke server
-  }
 </script>
 
 
@@ -2129,9 +2131,7 @@ document.getElementById("btn-nilai-100").onclick = function() {
 
   <script>
  togglePasswordBtn.addEventListener("click", () => {
-      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
-      passwordInput.setAttribute("type", type);
-      togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
+      togglePasswordBtn.textContent = type === "password" ? "👁";
     });
   </script>
   
