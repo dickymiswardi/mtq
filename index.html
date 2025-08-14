@@ -436,7 +436,7 @@ button.lihat-quran-btn:hover::after {
             <th>Terbaca</th>
             <th>Total Juz</th>
             <th>Semester</th>
-            <th>Cek Quran</th>
+            <th>Nilai</th>
             <th id="totalAllJuzHeader" style="cursor:pointer; text-decoration:underline;">Ketuntasan</th>
           </tr>
         </thead>
@@ -789,7 +789,7 @@ row.innerHTML = `
   <td>
     <div class="nilai-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.nilai) ? dataAbsensi.buttonCell.nilai : ''}</div>
     <div class="warna-ringkas">${(dataAbsensi.buttonCell && dataAbsensi.buttonCell.warna) ? dataAbsensi.buttonCell.warna : ''}</div>
-    <button type="button" class="lihat-quran-btn">Lihat Quran</button>
+    <button type="button" class="lihat-quran-btn">Lembar Penilaian</button>
   </td>
 <td class="total-all-juz">
   <img src="https://raw.githubusercontent.com/dickymiswardi/mtq/main/spheres.gif" style="width:70px;height:18px;">
@@ -1947,7 +1947,7 @@ function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
       buttonCell.innerHTML = `
         <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
         <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
-        <button class="lihat-quran-btn">Lihat Quran</button>
+        <button class="lihat-quran-btn">Lembar Penilaian</button>
       `;
       row.markData = JSON.parse(JSON.stringify(markData));
     }
@@ -2073,7 +2073,7 @@ document.addEventListener('click', async function(e) {
 // BUTTON SIMPAN KE STORAGE
 // ======================
 document.getElementById("btn-simpan-mark").onclick = function() {
-  if (!currentIdSiswa) return alert("Klik 'Lihat Quran' dulu.");
+  if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
   simpanKeStorage();
   alert("Mark tersimpan di localStorage.");
 };
@@ -2082,7 +2082,7 @@ document.getElementById("btn-simpan-mark").onclick = function() {
 // BUTTON NILAI 100
 // ======================
 document.getElementById("btn-nilai-100").onclick = function() {
-  if (!currentIdSiswa) return alert("Klik 'Lihat Quran' dulu.");
+  if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
 
   // Kosongkan semua mark agar tidak mengurangi nilai
   markData = {};
