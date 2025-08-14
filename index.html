@@ -511,7 +511,7 @@ button.lihat-quran-btn:hover::after {
     <br>
     <button id="btn-nilai-100">Nilai 100</button>
     <button id="btn-simpan-mark">Simpan</button>
-    <button id="save-btn">Simpan</button>
+    <button id="save-btn-modal">Simpan Data Mutaba'ah</button> <!-- ID beda -->
     <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
   </div>
 </div>
@@ -944,7 +944,7 @@ function updateTotalJuz(row) {
     kelasSelect.addEventListener("change", loadSantriData);
     tanggalInput.addEventListener("change", loadSantriData);
 
-    saveBtn.addEventListener("click", async () => {
+    async function simpanDataMutabaah(saveBtn) {
   const kelas = kelasSelect.value;
   const tanggal = tanggalInput.value;
   const rows = santriTableBody.querySelectorAll("tr");
@@ -967,7 +967,6 @@ function updateTotalJuz(row) {
     const warnaDiv = nilaiCell.querySelector("div:nth-child(2)")?.innerText.trim() || "";
     const buttonCell = { nilai: nilaiDiv, warna: warnaDiv };
 
-    // ✅ Ambil markData dari row.markData (yang sudah tersimpan saat "Lihat Quran")
     const marks = row.markData || {};
 
     data.push({
@@ -980,7 +979,7 @@ function updateTotalJuz(row) {
       totalJuz,
       juzTerbaca,
       buttonCell,
-      marks // ✅ simpan markData
+      marks
     });
   });
 
@@ -1011,7 +1010,16 @@ function updateTotalJuz(row) {
     saveBtn.disabled = false;
     saveBtn.textContent = "Simpan Data Mutaba'ah";
   }
+}
+
+// Pasang event listener ke dua tombol Save
+document.getElementById("save-btn").addEventListener("click", function () {
+  simpanDataMutabaah(this);
 });
+document.getElementById("save-btn-modal").addEventListener("click", function () {
+  simpanDataMutabaah(this);
+});
+
 
     downloadBtn.addEventListener("click", async () => {
   const kelas = kelasSelect.value;
@@ -2123,21 +2131,5 @@ document.getElementById("btn-nilai-100").onclick = function() {
     });
   </script>
 
-
-  <button id="save-btn">Simpan</button>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  const btn = document.getElementById("save-btn");
-  btn.addEventListener("click", function() {
-    simpanDataMutabaah();
-  });
-
-  function simpanDataMutabaah() {
-    console.log("Data Mutaba'ah disimpan!");
-    // logika simpan ke server di sini
-  }
-});
-</script>
 </body>
 </html>
