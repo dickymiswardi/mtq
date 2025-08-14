@@ -513,6 +513,13 @@ button.lihat-quran-btn:hover::after {
     <!-- <button id="btn-simpan-mark">Simpan</button> -->
     <button id="save-btn-modal">Simpan Data Mutaba'ah</button> <!-- ID beda -->
     <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
+    <hr>
+    <!-- Audio Recording Controls -->
+    <div>
+      <button id="btn-start-record">🎤 Mulai Rekam</button>
+      <button id="btn-stop-record" disabled>⏹️ Selesai Rekam</button>
+      <div id="audio-preview"></div>
+    </div>
   </div>
 </div>
 
@@ -1862,6 +1869,8 @@ let quranData = {};
 let ayahPageMap = {};
 let markData = {};
 let currentIdSiswa = null;
+let mediaRecorder;
+let audioChunks = [];
 
 // ======================
 // STORAGE
@@ -2094,6 +2103,46 @@ document.getElementById("btn-nilai-100").onclick = function() {
   // Update tabel
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
+
+// ======================
+// RECORDING AUDIO
+// ======================
+const btnStart = document.getElementById("btn-start-record");
+const btnStop = document.getElementById("btn-stop-record");
+const audioPreview = document.getElementById("audio-preview");
+
+btnStart.addEventListener("click", async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm", audioBitsPerSecond: 128000 });
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => { audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(audioChunks, { type: "audio/webm" });
+      const url = URL.createObjectURL(blob);
+      audioPreview.innerHTML = `<audio controls src="${url}"></audio>`;
+      
+      // Simpan Base64 untuk dikirim ke backend
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        markData.audioBase64 = reader.result.split(",")[1]; // hanya base64
+        markData.audioName = `audio_${currentIdSiswa}_${Date.now()}.webm`;
+      };
+      reader.readAsDataURL(blob);
+    };
+    mediaRecorder.start();
+    btnStart.disabled = true;
+    btnStop.disabled = false;
+  } catch (err) {
+    alert("⚠️ Gagal akses mikrofon: " + err.message);
+  }
+});
+
+btnStop.addEventListener("click", () => {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+  btnStart.disabled = false;
+  btnStop.disabled = true;
+});
 </script>
 
 
