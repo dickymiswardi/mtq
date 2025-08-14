@@ -511,6 +511,7 @@ button.lihat-quran-btn:hover::after {
     <br>
     <button id="btn-nilai-100">Nilai 100</button>
     <button id="btn-simpan-mark">Simpan</button>
+    <button id="save-btn">Simpan</button>
     <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
   </div>
 </div>
@@ -2121,6 +2122,22 @@ document.getElementById("btn-nilai-100").onclick = function() {
       togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
     });
   </script>
-  
+
+
+  <button id="save-btn">Simpan</button>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const btn = document.getElementById("save-btn");
+  btn.addEventListener("click", function() {
+    simpanDataMutabaah();
+  });
+
+  function simpanDataMutabaah() {
+    console.log("Data Mutaba'ah disimpan!");
+    // logika simpan ke server di sini
+  }
+});
+</script>
 </body>
 </html>
