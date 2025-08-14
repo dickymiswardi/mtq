@@ -860,63 +860,47 @@ function updateTotalJuz(row) {
   const surahSampai = row.querySelector(".surah-sampai").value.trim();
   const ayatSampai = Number(row.querySelector(".ayat-sampai").value.trim());
 
-  const keyDari = `${surahDari}:${ayatDari}`;
-  const keySampai = `${surahSampai}:${ayatSampai}`;
+  // Ambil daftar semua ayat (urut global) dari quranData atau struktur ayahPageMap
+  const semuaAyat = [];
+  for (let surah in ayahPageMap) {
+    for (let ayah in ayahPageMap[surah]) {
+      semuaAyat.push({
+        surah: surah,
+        ayah: Number(ayah),
+        halaman: ayahPageMap[surah][ayah]
+      });
+    }
+  }
 
-  const halamanAwal = pagesMap[keyDari] || 1;
-  const halamanAkhir = pagesMap[keySampai] || halamanAwal;
+  // Temukan index start & end
+  const idxStart = semuaAyat.findIndex(a => a.surah === surahDari && a.ayah === ayatDari);
+  const idxEnd   = semuaAyat.findIndex(a => a.surah === surahSampai && a.ayah === ayatSampai);
+
+  if (idxStart === -1 || idxEnd === -1) return;
+
+  let totalJuz = 0;
+  for (let i = idxStart; i <= idxEnd; i++) {
+    const { halaman } = semuaAyat[i];
+    if ((halaman >= 602 && halaman <= 604) || halaman === 21) continue; // skip halaman non-ayat
+    const ayatDiHalaman = jumlahAyatPerHalaman[halaman] || 1;
+    totalJuz += (0.05 / ayatDiHalaman);
+  }
+
+  totalJuz = totalJuz.toFixed(4); // presisi tinggi
+
+  // --- Cari juz yang tercakup ---
+  const halamanValid = [];
+  for (let i = idxStart; i <= idxEnd; i++) {
+    const { halaman } = semuaAyat[i];
+    if ((halaman >= 602 && halaman <= 604) || halaman === 21) continue;
+    halamanValid.push(halaman);
+  }
 
   const halamanAwalJuz = [
     1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
     202, 222, 242, 262, 282, 302, 322, 342, 362, 382,
     402, 422, 442, 462, 482, 502, 522, 542, 562, 582, 602
   ];
-
-  // Hitung total juz dengan bobot per halaman 0.05, dan bobot per ayat per halaman = 0.05 / jumlah ayat halaman
-  let totalJuz = 0;
-
-  for (let h = halamanAwal; h <= halamanAkhir; h++) {
-    if ((h >= 602 && h <= 604) || h === 21) continue;
-
-    const ayatDiHalaman = jumlahAyatPerHalaman[h];
-    if (ayatDiHalaman === undefined) {
-      console.warn(`Jumlah ayat tidak ditemukan untuk halaman ${h}`);
-      continue;
-    }
-
-    // Nilai per ayat pada halaman h
-    const nilaiPerAyatHalaman = 0.05 / ayatDiHalaman;
-
-    let ayatYangDihitung = 0;
-
-        if (halamanAwal === halamanAkhir) {
-      // Jika di halaman yang sama
-      ayatYangDihitung = ayatSampai - ayatDari + 1;
-    } else if (h === halamanAwal && halamanAkhir === halamanAwal + 1) {
-      // Kasus khusus: beda halaman hanya 1
-      const totalAyatKecil = (ayatDiHalaman - ayatDari + 1) + ayatSampai;
-      ayatYangDihitung = totalAyatKecil; // langsung hitung gabungan ayat
-      // Hentikan loop setelah halaman awal supaya tidak hitung ganda
-      h = halamanAkhir; 
-    } else if (h === halamanAwal) {
-      ayatYangDihitung = ayatDiHalaman - ayatDari + 1;
-    } else if (h === halamanAkhir) {
-      ayatYangDihitung = ayatSampai;
-    } else {
-      ayatYangDihitung = ayatDiHalaman;
-    }
-
-    totalJuz += ayatYangDihitung * nilaiPerAyatHalaman;
-  }
-
-  totalJuz = totalJuz.toFixed(2);
-
-  // Cari juz-juz yang tercakup berdasarkan halaman valid
-  const halamanValid = [];
-  for (let h = halamanAwal; h <= halamanAkhir; h++) {
-    if ((h >= 602 && h <= 604) || h === 21) continue;
-    halamanValid.push(h);
-  }
 
   const juzTercakup = [];
   for (let i = 0; i < halamanAwalJuz.length; i++) {
@@ -955,6 +939,7 @@ function updateTotalJuz(row) {
   row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
   row.querySelector(".total-juz").textContent = totalJuz;
 }
+
 
 
     kelasSelect.addEventListener("change", loadSantriData);
