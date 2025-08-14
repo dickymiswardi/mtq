@@ -509,10 +509,12 @@ button.lihat-quran-btn:hover::after {
       Nilai: <span id="nilai-akhir">100</span> — Predikat: <span id="predikat-akhir">MUMTAZ</span>
     </div>
     <br>
+    <button id="btn-nilai-100">Nilai 100</button>
     <button id="btn-simpan-mark">Simpan</button>
     <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
   </div>
 </div>
+
 
 
 <!-- Overlay Hitung Total All Juz -->
@@ -1999,7 +2001,6 @@ document.addEventListener('click', async function(e) {
     const kelas = document.getElementById('kelas').value;
     const tanggal = document.getElementById('tanggal').value;
 
-    // Ambil marks dari server
     markData = await ambilMarksDariServer(currentIdSiswa, kelas, tanggal);
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
@@ -2065,6 +2066,23 @@ document.getElementById("btn-simpan-mark").onclick = function() {
   if (!currentIdSiswa) return alert("Klik 'Lihat Quran' dulu.");
   simpanKeStorage();
   alert("Mark tersimpan di localStorage.");
+};
+
+// ======================
+// BUTTON NILAI 100
+// ======================
+document.getElementById("btn-nilai-100").onclick = function() {
+  if (!currentIdSiswa) return alert("Klik 'Lihat Quran' dulu.");
+
+  // Kosongkan semua mark agar tidak mengurangi nilai
+  markData = {};
+  
+  // Set nilai langsung jadi 100
+  document.getElementById("nilai-akhir").innerText = "100.0";
+  document.getElementById("predikat-akhir").innerText = "MUMTAZ (A)";
+
+  // Update tabel
+  updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
 </script>
 
