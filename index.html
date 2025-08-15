@@ -2069,7 +2069,7 @@ function buatKataKlik(surah, ayat, teks) {
 // ======================
 // LOAD DATA QURAN
 // ======================
-let dataSiap = fetch('/.netlify/functions/get-quranDataMark')
+let dataSiap = fetch('/.netlify/functions/get-symbol1DataMark')
   .then(res => res.json())
   .then(data => {
     quranData = data.symbol;
