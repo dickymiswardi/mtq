@@ -970,7 +970,17 @@ function updateTotalJuz(row) {
   const rows = santriTableBody.querySelectorAll("tr");
   const data = [];
 
-  rows.forEach((row) => {
+  // Fungsi helper untuk convert blob ke base64
+  async function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  for (const row of rows) {
     const id = parseInt(row.children[0].textContent);
     const nama = row.children[1].textContent;
     const semester = row.querySelector(".semester").value;
@@ -988,6 +998,12 @@ function updateTotalJuz(row) {
     const buttonCell = { nilai: nilaiDiv, warna: warnaDiv };
 
     const marks = row.markData || {};
+    let audioBase64 = null;
+
+    // Kalau ada audio blob, convert jadi base64
+    if (marks.audioBlob instanceof Blob) {
+      audioBase64 = await blobToBase64(marks.audioBlob);
+    }
 
     data.push({
       id,
@@ -999,9 +1015,12 @@ function updateTotalJuz(row) {
       totalJuz,
       juzTerbaca,
       buttonCell,
-      marks
+      marks: {
+        ...marks,
+        audioBlob: audioBase64 // masukkan base64
+      }
     });
-  });
+  }
 
   saveBtn.disabled = true;
   saveBtn.textContent = "⏳ Menyimpan...";
