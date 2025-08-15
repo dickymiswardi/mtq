@@ -528,8 +528,8 @@ button.lihat-quran-btn:hover::after {
     <pre>Recordings</pre>
     <ol id="recordingsList"></ol>
     <hr>
-
-	<ol id="recordingsList"></ol>
+    	
+    <ol id="recordingsList"></ol>
 
     <!-- ===== BUTTON ===== -->
     <button id="btn-nilai-100">Nilai 100</button>
@@ -1887,8 +1887,7 @@ let quranData = {};
 let ayahPageMap = {};
 let markData = {};
 let currentIdSiswa = null;
-let recordingsList = document.getElementById("recordingsList"); // global
-
+let recordingsList = document.getElementById("recordingsList");
 
 // ======================
 // AMBIL DATA MARKS + AUDIO DARI NETLIFY FUNCTION
@@ -1974,6 +1973,7 @@ async function ambilMarksDariServer(idSiswa, kelas, tanggal) {
   }
 }
 
+
 // ======================
 // HITUNG NILAI & UPDATE TABEL
 // ======================
@@ -1984,6 +1984,7 @@ function hitungNilai() {
 
   for (let ayat in markData) {
     for (let idx in markData[ayat]) {
+      if (idx === 'audio') continue; // lewati audio
       adaMark = true;
       if (markData[ayat][idx] === "green") { totalMinus += 0.5; hijau++; }
       if (markData[ayat][idx] === "yellow") { totalMinus += 1; kuning++; }
@@ -2016,13 +2017,24 @@ function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
   if (row) {
     const buttonCell = [...row.cells].find(td => td.querySelector(".lihat-quran-btn"));
     if (buttonCell) {
-      buttonCell.innerHTML = `
-        <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
-        <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
-        <button class="lihat-quran-btn">Lembar Penilaian</button>
-      `;
-      row.markData = JSON.parse(JSON.stringify(markData));
+      let nilaiDiv = buttonCell.querySelector('.nilai-text');
+      let warnaDiv = buttonCell.querySelector('.warna-text');
+
+      if (!nilaiDiv) {
+        nilaiDiv = document.createElement('div');
+        nilaiDiv.className = 'nilai-text';
+        buttonCell.prepend(nilaiDiv);
+      }
+      if (!warnaDiv) {
+        warnaDiv = document.createElement('div');
+        warnaDiv.className = 'warna-text';
+        buttonCell.prepend(warnaDiv);
+      }
+
+      nilaiDiv.innerHTML = `<strong>${nilai.toFixed(1)}</strong> (${predikat})`;
+      warnaDiv.innerHTML = `🟩${hijau} 🟨${kuning} 🟥${merah}`;
     }
+    row.markData = JSON.parse(JSON.stringify(markData));
   }
 }
 
@@ -2071,19 +2083,24 @@ let dataSiap = fetch('/.netlify/functions/get-symbol1DataMark')
   .catch(err => console.error('Gagal memuat data:', err));
 
 // ======================
-// EVENT CLICK TABEL (Lihat Quran)
+// EVENT CLICK "LEMBAR PENILAIAN"
 // ======================
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
-    document.getElementById('overlay-quran').style.display = 'flex';
-    await dataSiap;
+    const overlay = document.getElementById('overlay-quran');
+    overlay.style.display = 'flex';
 
     const row = e.target.closest('tr');
     currentIdSiswa = parseInt(row.cells[0].innerText.trim());
     const kelas = document.getElementById('kelas').value;
     const tanggal = document.getElementById('tanggal').value;
 
-    markData = await ambilMarksDariServer(currentIdSiswa, kelas, tanggal);
+    // Ambil marks + audio
+    markData = await ambilMarksDariNetlify(currentIdSiswa, kelas, tanggal);
+    tampilkanAudioDariMarks(markData);
+
+    // Load Quran
+    await dataSiap;
 
     const surahDari = parseInt(row.querySelector('.surah-dari').value);
     const ayatDari = parseInt(row.querySelector('.ayat-dari').value);
@@ -2142,11 +2159,11 @@ document.addEventListener('click', async function(e) {
 });
 
 // ======================
-// TOMBOL SIMPAN KE STORAGE
+// TOMBOL SIMPAN
 // ======================
 document.getElementById("btn-simpan-mark").onclick = function() {
   if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
-  simpanKeStorage();
+  localStorage.setItem(`marks_${currentIdSiswa}`, JSON.stringify(markData));
   alert("Mark tersimpan di localStorage.");
 };
 
@@ -2161,6 +2178,7 @@ document.getElementById("btn-nilai-100").onclick = function() {
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
 </script>
+
 
 
 
