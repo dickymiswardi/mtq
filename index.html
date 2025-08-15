@@ -1914,6 +1914,23 @@ async function ambilMarksDariNetlify(id, kelas, tanggal) {
 // TAMPILKAN AUDIO
 // ======================
 function tampilkanAudioDariMarks(marks) {
+  if (!currentIdSiswa) return;
+
+  // Temukan row santri sesuai currentIdSiswa
+  const row = [...document.querySelectorAll("table tbody tr")]
+    .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
+  if (!row) return;
+
+  // Cari container khusus untuk audio di row, atau buat jika belum ada
+  let recordingsList = row.querySelector('.recordings-list');
+  if (!recordingsList) {
+    recordingsList = document.createElement('ul');
+    recordingsList.className = 'recordings-list';
+    // Masukkan di sel terakhir (atau sesuaikan sel audio)
+    row.cells[row.cells.length - 1].appendChild(recordingsList);
+  }
+
+  // Bersihkan dulu isi container
   recordingsList.innerHTML = '';
 
   if (marks.audio && marks.audio.length > 0) {
@@ -1924,7 +1941,7 @@ function tampilkanAudioDariMarks(marks) {
           <source src="/.netlify/functions/getAudio?file=${filename}" type="${getMimeType(filename)}">
           Browser Anda tidak mendukung audio.
         </audio>
-        <span>Rekaman ${i+1}</span>
+        <span>Rekaman ${i + 1}</span>
       `;
       recordingsList.appendChild(li);
     });
