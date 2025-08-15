@@ -508,13 +508,36 @@ button.lihat-quran-btn:hover::after {
     <div>
       Nilai: <span id="nilai-akhir">100</span> — Predikat: <span id="predikat-akhir">MUMTAZ</span>
     </div>
+
     <br>
     <button id="btn-nilai-100">Nilai 100</button>
-    <!-- <button id="btn-simpan-mark">Simpan</button> -->
-    <button id="save-btn-modal">Simpan Data Mutaba'ah</button> <!-- ID beda -->
+    <button id="save-btn-modal">Simpan Data Mutaba'ah</button>
     <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
+
+    <hr>
+    <!-- Bagian Recorder -->
+    <div id="audio-recorder-ui">
+      <p>Format rekaman:</p>
+      <select id="encodingTypeSelect">
+        <option value="wav">WAV (.wav)</option>
+        <option value="mp3">MP3 (.mp3)</option>
+        <option value="ogg">Ogg Vorbis (.ogg)</option>
+      </select>
+      <div style="margin-top:10px;">
+        <button id="recordButton">⏺ Rekam</button>
+        <button id="stopButton" disabled>⏹ Stop</button>
+      </div>
+      <div id="formats" style="margin-top:10px;"></div>
+      <pre id="log" style="background:#111;color:#0f0;padding:10px;min-height:60px;"></pre>
+      <h4>Hasil Rekaman:</h4>
+      <ol id="recordingsList"></ol>
+    </div>
   </div>
 </div>
+
+<!-- Script Recorder -->
+<script src="js/WebAudioRecorder.min.js"></script>
+<script src="js/app.js"></script>
 
 
 
