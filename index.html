@@ -1891,6 +1891,7 @@ let recordingsList = document.getElementById("recordingsList");
 // ======================
 // AMBIL DATA MARKS + AUDIO DARI NETLIFY FUNCTION
 // ======================
+// Ambil marks dari server tapi pertahankan audio lama
 async function ambilMarksDariNetlify(id, kelas, tanggal) {
   try {
     const res = await fetch(`/.netlify/functions/getMarksAudio?id=${id}&kelas=${kelas}&tanggal=${tanggal}`);
@@ -1898,9 +1899,9 @@ async function ambilMarksDariNetlify(id, kelas, tanggal) {
     const data = await res.json();
     const marksBaru = data.marks || {};
 
-    // Pastikan audio lama tetap ada
+    // Merge audio lama
     if (markData.audio && markData.audio.length > 0) {
-      marksBaru.audio = markData.audio;
+      marksBaru.audio = Array.from(new Set([...(markData.audio || []), ...(marksBaru.audio || [])]));
     }
 
     return marksBaru;
@@ -1908,31 +1909,28 @@ async function ambilMarksDariNetlify(id, kelas, tanggal) {
     console.error(err);
     return markData || {}; // fallback ke markData lama
   }
-}
+	}
 
 // ======================
 // TAMPILKAN AUDIO
 // ======================
 function tampilkanAudioDariMarks(marks) {
+function tampilkanAudioDariMarks(marks) {
   if (!currentIdSiswa) return;
 
-  // Temukan row santri sesuai currentIdSiswa
   const row = [...document.querySelectorAll("table tbody tr")]
     .find(r => parseInt(r.cells[0].innerText.trim()) === currentIdSiswa);
   if (!row) return;
 
-  // Cari container khusus untuk audio di row, atau buat jika belum ada
   let recordingsList = row.querySelector('.recordings-list');
   if (!recordingsList) {
     recordingsList = document.createElement('ul');
     recordingsList.className = 'recordings-list';
-    // Masukkan di sel terakhir (atau sesuaikan sel audio)
     row.cells[row.cells.length - 1].appendChild(recordingsList);
   }
 
-  recordingsList.innerHTML = ''; // kosongkan container dulu
+  recordingsList.innerHTML = '';
 
-  // Gunakan marks.audio langsung, mirip konsep asli
   if (marks.audio && marks.audio.length > 0) {
     marks.audio.forEach((filename, i) => {
       const li = document.createElement('li');
