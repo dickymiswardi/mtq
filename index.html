@@ -1914,6 +1914,7 @@ async function ambilMarksDariNetlify(id, kelas, tanggal) {
 // TAMPILKAN AUDIO
 // ======================
 function tampilkanAudioDariMarks(marks) {
+function tampilkanAudioDariMarks(marks) {
   if (!currentIdSiswa) return;
 
   // Temukan row santri sesuai currentIdSiswa
@@ -1930,9 +1931,9 @@ function tampilkanAudioDariMarks(marks) {
     row.cells[row.cells.length - 1].appendChild(recordingsList);
   }
 
-  // Bersihkan dulu isi container
-  recordingsList.innerHTML = '';
+  recordingsList.innerHTML = ''; // kosongkan container dulu
 
+  // Gunakan marks.audio langsung, mirip konsep asli
   if (marks.audio && marks.audio.length > 0) {
     marks.audio.forEach((filename, i) => {
       const li = document.createElement('li');
