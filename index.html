@@ -2196,28 +2196,60 @@ async function ambilAudioDariServer(idSiswa, kelas, tanggal) {
 // TAMPILKAN AUDIO DI MODAL
 // ======================
 async function tampilkanAudioModal(idSiswa, kelas, tanggal) {
-  const audioList = document.getElementById("modal-audio-list");
-  audioList.innerHTML = ""; // bersihkan sebelumnya
+    try {
+        const audioList = document.getElementById("modal-audio-list");
+        if (!audioList) throw new Error("Elemen #modal-audio-list tidak ditemukan");
+        audioList.innerHTML = ""; // bersihkan sebelumnya
 
-  const files = await ambilAudioDariServer(idSiswa, kelas, tanggal);
+        // Ambil daftar file audio dari server / GitHub
+        const files = await ambilAudioDariServer(idSiswa, kelas, tanggal);
 
-  files.forEach(fileName => {
-    const li = document.createElement("li");
+        if (!files || files.length === 0) {
+            const li = document.createElement("li");
+            li.textContent = "Belum ada rekaman audio.";
+            audioList.appendChild(li);
+        } else {
+            files.forEach(fileName => {
+                const li = document.createElement("li");
 
-    // buat elemen audio
-    const au = document.createElement("audio");
-    au.controls = true;
-    au.src = `/.netlify/functions/stream-audio?file=${encodeURIComponent(fileName)}`;
+                // Buat elemen audio
+                const au = document.createElement("audio");
+                au.controls = true;
 
-    // tambahkan ke list
-    li.appendChild(au);
-    audioList.appendChild(li);
-  });
+                // Gunakan Netlify Function stream-audio untuk mendapatkan URL file
+                au.src = `/.netlify/functions/stream-audio?file=${encodeURIComponent(fileName)}`;
 
-  // tampilkan modal
-  const modal = document.getElementById("modal-audio");
-  modal.style.display = "block";
+                li.appendChild(au);
+                audioList.appendChild(li);
+            });
+        }
+
+        // Tampilkan modal overlay
+        const modal = document.getElementById("modal-audio");
+        if (!modal) throw new Error("Elemen #modal-audio tidak ditemukan");
+        modal.style.display = "block";
+
+    } catch (err) {
+        console.error("Gagal tampilkan audio modal:", err);
+        alert("⚠️ Gagal menampilkan audio. Silakan coba lagi.");
+    }
 }
+
+// ======================
+// AMBIL AUDIO DARI SERVER
+// ======================
+async function ambilAudioDariServer(idSiswa, kelas, tanggal) {
+    try {
+        const res = await fetch(`/.netlify/functions/getAudioData?kelas=${kelas}&tanggal=${tanggal}`);
+        if (!res.ok) throw new Error("Gagal ambil data audio dari server");
+
+        const data = await res.json();
+        const santri = data.find(s => s.id === idSiswa);
+        return santri?.marks?.audio || [];
+    } catch (err) {
+        console.error("Error ambilAudioDariServer:", err);
+        return [];
+    }
 </script>
 
 
