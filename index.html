@@ -1907,7 +1907,7 @@ async function ambilMarksDariNetlify(id, kelas, tanggal) {
 // ======================
 // TAMPILKAN AUDIO
 // ======================
-function tampilkanAudioDariMarks(marks, baseUrl = "https://raw.githubusercontent.com/dickymiswardi/usermtq/main/audio/") {
+function tampilkanAudioDariMarks(marks) {
   recordingsList.innerHTML = '';
 
   if (marks.audio && marks.audio.length > 0) {
@@ -1915,7 +1915,7 @@ function tampilkanAudioDariMarks(marks, baseUrl = "https://raw.githubusercontent
       const li = document.createElement('li');
       li.innerHTML = `
         <audio controls>
-          <source src="${baseUrl}${filename}" type="audio/wav">
+          <source src="/.netlify/functions/getAudio?file=${filename}" type="${getMimeType(filename)}">
           Browser Anda tidak mendukung audio.
         </audio>
         <span>Rekaman ${i+1}</span>
@@ -1925,6 +1925,13 @@ function tampilkanAudioDariMarks(marks, baseUrl = "https://raw.githubusercontent
   } else {
     recordingsList.innerHTML = '<li>Tidak ada rekaman audio.</li>';
   }
+}
+
+function getMimeType(filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+  if (ext === 'mp3') return 'audio/mpeg';
+  if (ext === 'ogg') return 'audio/ogg';
+  return 'audio/wav';
 }
 
 
