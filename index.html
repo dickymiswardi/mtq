@@ -1896,10 +1896,17 @@ async function ambilMarksDariNetlify(id, kelas, tanggal) {
     const res = await fetch(`/.netlify/functions/getMarksAudio?id=${id}&kelas=${kelas}&tanggal=${tanggal}`);
     if (!res.ok) throw new Error('Gagal ambil marks dari server');
     const data = await res.json();
-    return data.marks || {};
+    const marksBaru = data.marks || {};
+
+    // Pastikan audio lama tetap ada
+    if (markData.audio && markData.audio.length > 0) {
+      marksBaru.audio = markData.audio;
+    }
+
+    return marksBaru;
   } catch(err) {
     console.error(err);
-    return {};
+    return markData || {}; // fallback ke markData lama
   }
 }
 
