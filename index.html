@@ -1909,23 +1909,24 @@ async function ambilMarksDariNetlify(id, kelas, tanggal) {
 // ======================
 function tampilkanAudioDariMarks(marks, baseUrl = "https://raw.githubusercontent.com/dickymiswardi/usermtq/main/audio/") {
   recordingsList.innerHTML = '';
-  for (const ayat in marks) {
-    if (marks[ayat].audio && marks[ayat].audio.length > 0) {
-      marks[ayat].audio.forEach((filename, i) => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-          <audio controls>
-            <source src="${baseUrl}${filename}" type="audio/wav">
-            Browser Anda tidak mendukung audio.
-          </audio>
-          <span>Ayat ${ayat} – Rekaman ${i+1}</span>
-        `;
-        recordingsList.appendChild(li);
-      });
-    }
+
+  if (marks.audio && marks.audio.length > 0) {
+    marks.audio.forEach((filename, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <audio controls>
+          <source src="${baseUrl}${filename}" type="audio/wav">
+          Browser Anda tidak mendukung audio.
+        </audio>
+        <span>Rekaman ${i+1}</span>
+      `;
+      recordingsList.appendChild(li);
+    });
+  } else {
+    recordingsList.innerHTML = '<li>Tidak ada rekaman audio.</li>';
   }
-  if (!recordingsList.innerHTML) recordingsList.innerHTML = '<li>Tidak ada rekaman audio.</li>';
 }
+
 
 // ======================
 // HITUNG NILAI & UPDATE TABEL
