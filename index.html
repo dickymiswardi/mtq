@@ -1887,61 +1887,6 @@ let markData = {};
 let currentIdSiswa = null;
 let recordingsList = document.getElementById("recordingsList"); // global
 
-
-  
-
-
-
-
-document.addEventListener('click', async function(e) {
-  if (e.target.classList.contains('lihat-quran-btn')) {
-    // Set siswa aktif
-    const row = e.target.closest('tr');
-    currentIdSiswa = parseInt(row.cells[0].innerText.trim());
-
-    // Ambil markData per siswa (dari server/localStorage)
-    markData = await ambilMarksDariServer(currentIdSiswa, kelas, tanggal);
-
-    // ===== BERSIHKAN REKAMAN SEBELUM TAMPIL =====
-    recordingsList.innerHTML = '';
-
-    // Jika ada audio sebelumnya di markData, tampilkan
-    if (markData.audio && markData.audio.length > 0) {
-      markData.audio.forEach(url => {
-        const li = document.createElement('li');
-        const au = document.createElement('audio');
-        au.controls = true;
-        au.src = url;
-        li.appendChild(au);
-        recordingsList.appendChild(li);
-      });
-    }
-  }
-});
-
-
-document.getElementById("save-btn-modal").onclick = async function() {
-    if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
-
-    const row = [...document.querySelectorAll("table tbody tr")]
-                .find(r => parseInt(r.cells[0].innerText) === currentIdSiswa);
-
-    const buttonCell = {
-        nilai: parseFloat(document.getElementById("nilai-akhir").innerText),
-        warna: row ? row.querySelector("div:nth-child(2)")?.innerText : ""
-    };
-
-    data.push({
-        id: currentIdSiswa,
-        nama: row.cells[1].innerText,
-        marks: markData,   // audio hanya untuk siswa ini
-        buttonCell
-    });
-
-    await simpanKeServer();
-};
-
-	
 // ======================
 // STORAGE
 // ======================
@@ -2078,7 +2023,7 @@ let dataSiap = fetch('/.netlify/functions/get-symbol1DataMark')
   .catch(err => console.error('Gagal memuat data:', err));
 
 // ======================
-// EVENT CLICK TABEL
+// EVENT CLICK TABEL (Lihat Quran)
 // ======================
 document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
@@ -2149,7 +2094,7 @@ document.addEventListener('click', async function(e) {
 });
 
 // ======================
-// BUTTON SIMPAN KE STORAGE
+// TOMBOL SIMPAN KE STORAGE
 // ======================
 document.getElementById("btn-simpan-mark").onclick = function() {
   if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
@@ -2158,82 +2103,15 @@ document.getElementById("btn-simpan-mark").onclick = function() {
 };
 
 // ======================
-// BUTTON NILAI 100
+// TOMBOL NILAI 100
 // ======================
 document.getElementById("btn-nilai-100").onclick = function() {
   if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
-
-  // Kosongkan semua mark agar tidak mengurangi nilai
   markData = {};
-  
-  // Set nilai langsung jadi 100
   document.getElementById("nilai-akhir").innerText = "100.0";
   document.getElementById("predikat-akhir").innerText = "MUMTAZ (A)";
-
-  // Update tabel
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
-
-
-// ======================
-// AMBIL AUDIO DARI SERVER
-// ======================
-async function ambilAudioDariServer(idSiswa, kelas, tanggal) {
-  try {
-    const res = await fetch(`/.netlify/functions/getAudioData?kelas=${kelas}&tanggal=${tanggal}`);
-    if (!res.ok) throw new Error("Gagal ambil data audio dari server");
-    
-    const data = await res.json();
-    const audioFiles = data[idSiswa] || [];
-    return audioFiles;
-  } catch(err) {
-    console.error(err);
-    return [];
-  }
-}
-
-// ======================
-// TAMPILKAN AUDIO DI MODAL
-// ======================
-async function tampilkanAudioModal(idSiswa, kelas, tanggal) {
-    try {
-        const audioList = document.getElementById("modal-audio-list");
-        if (!audioList) throw new Error("Elemen #modal-audio-list tidak ditemukan");
-        audioList.innerHTML = ""; // bersihkan sebelumnya
-
-        // Ambil daftar file audio dari server / GitHub
-        const files = await ambilAudioDariServer(idSiswa, kelas, tanggal);
-
-        if (!files || files.length === 0) {
-            const li = document.createElement("li");
-            li.textContent = "Belum ada rekaman audio.";
-            audioList.appendChild(li);
-        } else {
-            files.forEach(fileName => {
-                const li = document.createElement("li");
-
-                // Buat elemen audio
-                const au = document.createElement("audio");
-                au.controls = true;
-
-                // Gunakan Netlify Function stream-audio untuk mendapatkan URL file
-                au.src = `/.netlify/functions/stream-audio?file=${encodeURIComponent(fileName)}`;
-
-                li.appendChild(au);
-                audioList.appendChild(li);
-            });
-        }
-
-        // Tampilkan modal overlay
-        const modal = document.getElementById("modal-audio");
-        if (!modal) throw new Error("Elemen #modal-audio tidak ditemukan");
-        modal.style.display = "block";
-
-    } catch (err) {
-        console.error("Gagal tampilkan audio modal:", err);
-        alert("⚠️ Gagal menampilkan audio. Silakan coba lagi.");
-    }
-}
 
 // ======================
 // AMBIL AUDIO DARI SERVER
@@ -2250,7 +2128,54 @@ async function ambilAudioDariServer(idSiswa, kelas, tanggal) {
         console.error("Error ambilAudioDariServer:", err);
         return [];
     }
+}
+
+// ======================
+// TAMPILKAN AUDIO DI MODAL
+// ======================
+async function tampilkanAudioModal(idSiswa, kelas, tanggal) {
+    try {
+        const audioList = document.getElementById("modal-audio-list");
+        if (!audioList) throw new Error("Elemen #modal-audio-list tidak ditemukan");
+        audioList.innerHTML = "";
+
+        const files = await ambilAudioDariServer(idSiswa, kelas, tanggal);
+
+        if (!files || files.length === 0) {
+            const li = document.createElement("li");
+            li.textContent = "Belum ada rekaman audio.";
+            audioList.appendChild(li);
+        } else {
+            files.forEach(fileName => {
+                const li = document.createElement("li");
+                const au = document.createElement("audio");
+                au.controls = true;
+                au.src = `/.netlify/functions/stream-audio?file=${encodeURIComponent(fileName)}`;
+                li.appendChild(au);
+                audioList.appendChild(li);
+            });
+        }
+
+        const modal = document.getElementById("modal-audio");
+        if (!modal) throw new Error("Elemen #modal-audio tidak ditemukan");
+        modal.style.display = "block";
+    } catch (err) {
+        console.error("Gagal tampilkan audio modal:", err);
+        alert("⚠️ Gagal menampilkan audio. Silakan coba lagi.");
+    }
+}
+
+// ======================
+// TOMBOL LIHAT AUDIO
+// ======================
+document.getElementById("btn-lihat-audio").onclick = () => {
+  if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
+  const kelas = document.getElementById("kelas").value;
+  const tanggal = document.getElementById("tanggal").value;
+  tampilkanAudioModal(currentIdSiswa, kelas, tanggal);
+};
 </script>
+
 
 
 
