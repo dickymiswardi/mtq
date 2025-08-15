@@ -126,7 +126,7 @@ function stopRecording() {
 function createDownloadLink(blob, encoding) {
     var url = URL.createObjectURL(blob);
 
-    // pastikan markData selalu dari row yang aktif
+    // ===== Simpan ke markData khusus row =====
     if (!markData.audio) markData.audio = [];
     markData.audio.push(url);
 
@@ -145,6 +145,7 @@ function createDownloadLink(blob, encoding) {
 
     recordingsList.appendChild(li);
 
-    // update tabel sesuai row
+    // update nilai di tabel untuk row itu
     updateNilaiDiTabel(hitungNilai());
+    __log(`Recording selesai: ${link.download}`);
 }
