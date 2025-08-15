@@ -1891,7 +1891,6 @@ let recordingsList = document.getElementById("recordingsList");
 // ======================
 // AMBIL DATA MARKS + AUDIO DARI NETLIFY FUNCTION
 // ======================
-// Ambil marks dari server tapi pertahankan audio lama
 async function ambilMarksDariNetlify(id, kelas, tanggal) {
   try {
     const res = await fetch(`/.netlify/functions/getMarksAudio?id=${id}&kelas=${kelas}&tanggal=${tanggal}`);
@@ -1899,17 +1898,21 @@ async function ambilMarksDariNetlify(id, kelas, tanggal) {
     const data = await res.json();
     const marksBaru = data.marks || {};
 
-    // Pastikan audio lama tetap ada
+    // Gabungkan audio lama jika ada
     if (markData.audio && markData.audio.length > 0) {
-      marksBaru.audio = markData.audio;
+      marksBaru.audio = [...new Set([...(marksBaru.audio || []), ...markData.audio])];
     }
 
-    return marksBaru;
+    // Pastikan markData diupdate
+    markData = marksBaru;
+
+    return markData;
   } catch(err) {
     console.error(err);
     return markData || {}; // fallback ke markData lama
   }
 }
+
 
 // ======================
 // TAMPILKAN AUDIO
