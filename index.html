@@ -528,6 +528,8 @@ button.lihat-quran-btn:hover::after {
     <pre>Recordings</pre>
     <ol id="recordingsList"></ol>
     <hr>
+    	
+    <ol id="recordingsList"></ol>
 
     <!-- ===== BUTTON ===== -->
     <button id="btn-nilai-100">Nilai 100</button>
@@ -1886,6 +1888,47 @@ let ayahPageMap = {};
 let markData = {};
 let currentIdSiswa = null;
 let recordingsList = document.getElementById("recordingsList"); // global
+
+
+// --- Fungsi ambil marks + audio dari Netlify Function ---
+async function ambilMarksDariNetlify(id, kelas, tanggal) {
+  try {
+    const res = await fetch(`/.netlify/functions/getMarksAudio?id=${id}&kelas=${kelas}&tanggal=${tanggal}`);
+    if (!res.ok) throw new Error('Gagal ambil marks dari server');
+    const data = await res.json();
+    return data.marks || {};
+  } catch(err) {
+    console.error(err);
+    return {};
+  }
+}
+
+// --- Fungsi tampilkan audio ---
+function tampilkanAudioDariMarks(marks, baseUrl = "https://raw.githubusercontent.com/dickymiswardi/usermtq/main/audio/") {
+  recordingsList.innerHTML = '';
+  for (const ayat in marks) {
+    if (marks[ayat].audio && marks[ayat].audio.length > 0) {
+      marks[ayat].audio.forEach((filename, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <audio controls>
+            <source src="${baseUrl}${filename}" type="audio/wav">
+            Browser Anda tidak mendukung audio.
+          </audio>
+          <span>Ayat ${ayat} – Rekaman ${i+1}</span>
+        `;
+        recordingsList.appendChild(li);
+      });
+    }
+  }
+  if (!recordingsList.innerHTML) recordingsList.innerHTML = '<li>Tidak ada rekaman audio.</li>';
+}
+
+// --- Contoh event klik tombol "Lihat Quran" di tabel ---
+document.addEventListener('click', async function(e) {
+  if (e.target.classList.contains('lihat-quran-btn')) {
+    const overlay = document.getElementById('overlay-quran');
+    overlay.style.display = 'flex';
 
 // ======================
 // STORAGE
