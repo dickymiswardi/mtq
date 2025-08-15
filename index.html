@@ -1899,9 +1899,9 @@ async function ambilMarksDariNetlify(id, kelas, tanggal) {
     const data = await res.json();
     const marksBaru = data.marks || {};
 
-    // Merge audio lama
+    // Pastikan audio lama tetap ada
     if (markData.audio && markData.audio.length > 0) {
-      marksBaru.audio = Array.from(new Set([...(markData.audio || []), ...(marksBaru.audio || [])]));
+      marksBaru.audio = markData.audio;
     }
 
     return marksBaru;
@@ -1909,12 +1909,11 @@ async function ambilMarksDariNetlify(id, kelas, tanggal) {
     console.error(err);
     return markData || {}; // fallback ke markData lama
   }
-	}
+}
 
 // ======================
 // TAMPILKAN AUDIO
 // ======================
-function tampilkanAudioDariMarks(marks) {
 function tampilkanAudioDariMarks(marks) {
   if (!currentIdSiswa) return;
 
