@@ -1887,26 +1887,31 @@ let markData = {};
 let currentIdSiswa = null;
 
 
-  document.addEventListener('click', function(e) {
+  document.addEventListener('click', async function(e) {
   if (e.target.classList.contains('lihat-quran-btn')) {
-    const row = e.target.closest('tr');
-    currentIdSiswa = parseInt(row.cells[0].innerText);
+    document.getElementById('overlay-quran').style.display = 'flex';
+    await dataSiap;
 
-    // pastikan markData per row
-    if (!row.markData) row.markData = {};  
+    const row = e.target.closest('tr');
+    currentIdSiswa = parseInt(row.cells[0].innerText.trim());
+
+    // Ambil marks dari server
+    const marksServer = await ambilMarksDariServer(currentIdSiswa, kelas, tanggal);
+
+    // ===== Penting: pastikan markData per row =====
+    if (!row.markData) row.markData = marksServer || {};
     markData = row.markData;
 
-    document.getElementById('overlay-quran').style.display = 'flex';
-    // ... load Quran dsb
+    ...
   }
 });
+
 
 document.getElementById("save-btn-modal").onclick = async function() {
     if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
 
     const row = [...document.querySelectorAll("table tbody tr")]
                 .find(r => parseInt(r.cells[0].innerText) === currentIdSiswa);
-
     if (!row) return;
 
     const buttonCell = {
@@ -1914,6 +1919,7 @@ document.getElementById("save-btn-modal").onclick = async function() {
         warna: row.querySelector("div:nth-child(2)")?.innerText || ""
     };
 
+    // ===== Simpan data siswa khusus row =====
     data.push({
         id: currentIdSiswa,
         nama: row.cells[1].innerText,
@@ -1922,6 +1928,11 @@ document.getElementById("save-btn-modal").onclick = async function() {
     });
 
     await simpanKeServer();
+};
+
+document.querySelector("#overlay-quran button[onclick*='Tutup']").onclick = function() {
+    document.getElementById('overlay-quran').style.display = 'none';
+    recordingsList.innerHTML = ""; // kosongkan list audio
 };
 
 // ======================
