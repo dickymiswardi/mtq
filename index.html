@@ -2156,6 +2156,30 @@ document.getElementById("btn-nilai-100").onclick = function() {
   document.getElementById("predikat-akhir").innerText = "MUMTAZ (A)";
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
+
+	// Ambil marks baru dari server/JSON
+const marksBaru = await ambilMarksDariNetlify(currentIdSiswa, kelas, tanggal);
+
+// Gabungkan audio lama dengan audio baru
+if (!markData.audio) markData.audio = [];
+marksBaru.audio?.forEach(f => {
+  if (!markData.audio.includes(f)) {
+    markData.audio.push(f);
+  }
+});
+
+// Gabungkan marks kata (hijau/kuning/merah)
+for (let key in marksBaru) {
+  if (key === "audio") continue;
+  if (!markData[key]) markData[key] = {};
+  Object.assign(markData[key], marksBaru[key]);
+}
+
+// Sekarang markData sudah gabungan: audio lama + marks baru
+tampilkanAudioDariMarks(markData);
+const hasil = hitungNilai();
+updateNilaiDiTabel(hasil);
+	
 </script>
 
 
