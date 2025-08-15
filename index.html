@@ -1885,17 +1885,63 @@ let quranData = {};
 let ayahPageMap = {};
 let markData = {};
 let currentIdSiswa = null;
+let recordingsList = document.getElementById("recordingsList"); // global
 
 
   
 
 
 
-document.querySelector("#overlay-quran button[onclick*='Tutup']").onclick = function() {
-    document.getElementById('overlay-quran').style.display = 'none';
-    recordingsList.innerHTML = ""; // kosongkan list audio
+
+document.addEventListener('click', async function(e) {
+  if (e.target.classList.contains('lihat-quran-btn')) {
+    // Set siswa aktif
+    const row = e.target.closest('tr');
+    currentIdSiswa = parseInt(row.cells[0].innerText.trim());
+
+    // Ambil markData per siswa (dari server/localStorage)
+    markData = await ambilMarksDariServer(currentIdSiswa, kelas, tanggal);
+
+    // ===== BERSIHKAN REKAMAN SEBELUM TAMPIL =====
+    recordingsList.innerHTML = '';
+
+    // Jika ada audio sebelumnya di markData, tampilkan
+    if (markData.audio && markData.audio.length > 0) {
+      markData.audio.forEach(url => {
+        const li = document.createElement('li');
+        const au = document.createElement('audio');
+        au.controls = true;
+        au.src = url;
+        li.appendChild(au);
+        recordingsList.appendChild(li);
+      });
+    }
+  }
+});
+
+
+document.getElementById("save-btn-modal").onclick = async function() {
+    if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
+
+    const row = [...document.querySelectorAll("table tbody tr")]
+                .find(r => parseInt(r.cells[0].innerText) === currentIdSiswa);
+
+    const buttonCell = {
+        nilai: parseFloat(document.getElementById("nilai-akhir").innerText),
+        warna: row ? row.querySelector("div:nth-child(2)")?.innerText : ""
+    };
+
+    data.push({
+        id: currentIdSiswa,
+        nama: row.cells[1].innerText,
+        marks: markData,   // audio hanya untuk siswa ini
+        buttonCell
+    });
+
+    await simpanKeServer();
 };
 
+	
 // ======================
 // STORAGE
 // ======================
