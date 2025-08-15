@@ -1887,27 +1887,43 @@ let markData = {};
 let currentIdSiswa = null;
 
 
-  document.getElementById("save-btn-modal").onclick = async function() {
+  document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('lihat-quran-btn')) {
+    const row = e.target.closest('tr');
+    currentIdSiswa = parseInt(row.cells[0].innerText);
+
+    // pastikan markData per row
+    if (!row.markData) row.markData = {};  
+    markData = row.markData;
+
+    document.getElementById('overlay-quran').style.display = 'flex';
+    // ... load Quran dsb
+  }
+});
+
+document.getElementById("save-btn-modal").onclick = async function() {
     if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
 
     const row = [...document.querySelectorAll("table tbody tr")]
                 .find(r => parseInt(r.cells[0].innerText) === currentIdSiswa);
 
+    if (!row) return;
+
     const buttonCell = {
         nilai: parseFloat(document.getElementById("nilai-akhir").innerText),
-        warna: row ? row.querySelector("div:nth-child(2)")?.innerText : ""
+        warna: row.querySelector("div:nth-child(2)")?.innerText || ""
     };
 
     data.push({
         id: currentIdSiswa,
         nama: row.cells[1].innerText,
-        marks: markData,   // termasuk audio
+        marks: row.markData,   // <-- pakai markData milik row
         buttonCell
     });
 
-    // simpan ke server
     await simpanKeServer();
 };
+
 // ======================
 // STORAGE
 // ======================
