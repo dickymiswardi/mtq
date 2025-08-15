@@ -123,33 +123,45 @@ function stopRecording() {
 	__log('Recording stopped');
 }
 
-function createDownloadLink(blob,encoding) {
-	
-	var url = URL.createObjectURL(blob);
-	var au = document.createElement('audio');
-	var li = document.createElement('li');
-	var link = document.createElement('a');
+function createDownloadLink(blob, encoding) {
+    // buat URL blob
+    var url = URL.createObjectURL(blob);
 
-	//add controls to the <audio> element
-	au.controls = true;
-	au.src = url;
+    // ===== Simpan hasil rekaman ke markData =====
+    if (!markData.audio) markData.audio = [];
+    markData.audio.push(url); // bisa juga simpan { url, encoding } jika mau detail
 
-	//link the a element to the blob
-	link.href = url;
-	link.download = new Date().toISOString() + '.'+encoding;
-	link.innerHTML = link.download;
+    // buat elemen audio
+    var au = document.createElement('audio');
+    au.controls = true;
+    au.src = url;
 
-	//add the new audio and a elements to the li element
-	li.appendChild(au);
-	li.appendChild(link);
+    // buat link download
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = new Date().toISOString() + '.' + encoding;
+    link.innerHTML = link.download;
 
-	//add the li element to the ordered list
-	recordingsList.appendChild(li);
+    // buat list item untuk audio + link
+    var li = document.createElement('li');
+    li.appendChild(au);
+    li.appendChild(link);
+
+    // tambahkan ke daftar rekaman
+    recordingsList.appendChild(li);
+
+    // ===== Update nilai di tabel jika siswa aktif =====
+    if (currentIdSiswa) {
+        const hasil = hitungNilai(); // bisa hitung nilai + markData
+        updateNilaiDiTabel(hasil);
+    }
+
+    __log(`Recording selesai: ${link.download}`);
 }
 
-
-
-//helper function
+// ===== Helper log =====
 function __log(e, data) {
-	log.innerHTML += "\n" + e + " " + (data || '');
+    const logEl = document.getElementById('log');
+    if (!logEl) return;
+    logEl.innerHTML += "\n" + e + " " + (data || '');
 }
