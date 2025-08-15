@@ -2173,6 +2173,51 @@ document.getElementById("btn-nilai-100").onclick = function() {
   // Update tabel
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
+
+
+// ======================
+// AMBIL AUDIO DARI SERVER
+// ======================
+async function ambilAudioDariServer(idSiswa, kelas, tanggal) {
+  try {
+    const res = await fetch(`/.netlify/functions/getAudioData?kelas=${kelas}&tanggal=${tanggal}`);
+    if (!res.ok) throw new Error("Gagal ambil data audio dari server");
+    
+    const data = await res.json();
+    const audioFiles = data[idSiswa] || [];
+    return audioFiles;
+  } catch(err) {
+    console.error(err);
+    return [];
+  }
+}
+
+// ======================
+// TAMPILKAN AUDIO DI MODAL
+// ======================
+async function tampilkanAudioModal(idSiswa, kelas, tanggal) {
+  const audioList = document.getElementById("modal-audio-list");
+  audioList.innerHTML = ""; // bersihkan sebelumnya
+
+  const files = await ambilAudioDariServer(idSiswa, kelas, tanggal);
+
+  files.forEach(fileName => {
+    const li = document.createElement("li");
+
+    // buat elemen audio
+    const au = document.createElement("audio");
+    au.controls = true;
+    au.src = `/.netlify/functions/stream-audio?file=${encodeURIComponent(fileName)}`;
+
+    // tambahkan ke list
+    li.appendChild(au);
+    audioList.appendChild(li);
+  });
+
+  // tampilkan modal
+  const modal = document.getElementById("modal-audio");
+  modal.style.display = "block";
+}
 </script>
 
 
