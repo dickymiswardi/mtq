@@ -124,44 +124,27 @@ function stopRecording() {
 }
 
 function createDownloadLink(blob, encoding) {
-    // buat URL blob
     var url = URL.createObjectURL(blob);
 
-    // ===== Simpan hasil rekaman ke markData =====
+    // pastikan markData selalu dari row yang aktif
     if (!markData.audio) markData.audio = [];
-    markData.audio.push(url); // bisa juga simpan { url, encoding } jika mau detail
+    markData.audio.push(url);
 
-    // buat elemen audio
     var au = document.createElement('audio');
     au.controls = true;
     au.src = url;
 
-    // buat link download
     var link = document.createElement('a');
     link.href = url;
     link.download = new Date().toISOString() + '.' + encoding;
     link.innerHTML = link.download;
 
-    // buat list item untuk audio + link
     var li = document.createElement('li');
     li.appendChild(au);
     li.appendChild(link);
 
-    // tambahkan ke daftar rekaman
     recordingsList.appendChild(li);
 
-    // ===== Update nilai di tabel jika siswa aktif =====
-    if (currentIdSiswa) {
-        const hasil = hitungNilai(); // bisa hitung nilai + markData
-        updateNilaiDiTabel(hasil);
-    }
-
-    __log(`Recording selesai: ${link.download}`);
-}
-
-// ===== Helper log =====
-function __log(e, data) {
-    const logEl = document.getElementById('log');
-    if (!logEl) return;
-    logEl.innerHTML += "\n" + e + " " + (data || '');
+    // update tabel sesuai row
+    updateNilaiDiTabel(hitungNilai());
 }
