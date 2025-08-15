@@ -2112,68 +2112,6 @@ document.getElementById("btn-nilai-100").onclick = function() {
   document.getElementById("predikat-akhir").innerText = "MUMTAZ (A)";
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
-
-// ======================
-// AMBIL AUDIO DARI SERVER
-// ======================
-async function ambilAudioDariServer(idSiswa, kelas, tanggal) {
-    try {
-        const res = await fetch(`/.netlify/functions/getAudioData?kelas=${kelas}&tanggal=${tanggal}`);
-        if (!res.ok) throw new Error("Gagal ambil data audio dari server");
-
-        const data = await res.json();
-        const santri = data.find(s => s.id === idSiswa);
-        return santri?.marks?.audio || [];
-    } catch (err) {
-        console.error("Error ambilAudioDariServer:", err);
-        return [];
-    }
-}
-
-// ======================
-// TAMPILKAN AUDIO DI MODAL
-// ======================
-async function tampilkanAudioModal(idSiswa, kelas, tanggal) {
-    try {
-        const audioList = document.getElementById("modal-audio-list");
-        if (!audioList) throw new Error("Elemen #modal-audio-list tidak ditemukan");
-        audioList.innerHTML = "";
-
-        const files = await ambilAudioDariServer(idSiswa, kelas, tanggal);
-
-        if (!files || files.length === 0) {
-            const li = document.createElement("li");
-            li.textContent = "Belum ada rekaman audio.";
-            audioList.appendChild(li);
-        } else {
-            files.forEach(fileName => {
-                const li = document.createElement("li");
-                const au = document.createElement("audio");
-                au.controls = true;
-                au.src = `/.netlify/functions/stream-audio?file=${encodeURIComponent(fileName)}`;
-                li.appendChild(au);
-                audioList.appendChild(li);
-            });
-        }
-
-        const modal = document.getElementById("modal-audio");
-        if (!modal) throw new Error("Elemen #modal-audio tidak ditemukan");
-        modal.style.display = "block";
-    } catch (err) {
-        console.error("Gagal tampilkan audio modal:", err);
-        alert("⚠️ Gagal menampilkan audio. Silakan coba lagi.");
-    }
-}
-
-// ======================
-// TOMBOL LIHAT AUDIO
-// ======================
-document.getElementById("btn-lihat-audio").onclick = () => {
-  if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
-  const kelas = document.getElementById("kelas").value;
-  const tanggal = document.getElementById("tanggal").value;
-  tampilkanAudioModal(currentIdSiswa, kelas, tanggal);
-};
 </script>
 
 
