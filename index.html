@@ -502,40 +502,39 @@ button.lihat-quran-btn:hover::after {
      z-index:10000; justify-content:center; align-items:center;">
   <div style="background:white; padding:20px; border-radius:8px;
        max-width:800px; max-height:80%; overflow:auto;">
+       
     <h3>Ayat Al-Qur'an</h3>
     <div id="quran-text" style="white-space:pre-wrap; line-height:2.2; direction:rtl; font-size:30px;"></div>
     <hr>
     <div>
       Nilai: <span id="nilai-akhir">100</span> — Predikat: <span id="predikat-akhir">MUMTAZ</span>
     </div>
-    <br>
-    <button id="btn-nilai-100">Nilai 100</button>
-    <!-- <button id="btn-simpan-mark">Simpan</button> -->
-    <button id="save-btn-modal">Simpan Data Mutaba'ah</button> <!-- ID beda -->
+
+    <!-- Recorder Section -->
     <hr>
-    <!-- Bagian Recorder -->
-    <div id="audio-recorder-ui">
-      <p>Format rekaman:</p>
+    <div style="margin-top:10px;">
+      <h4>Rekam Audio Penilaian</h4>
+      <p>Convert recorded audio to:</p>
       <select id="encodingTypeSelect">
-        <option value="wav">WAV (.wav)</option>
-        <option value="mp3">MP3 (.mp3)</option>
+        <option value="wav">Waveform Audio (.wav)</option>
+        <option value="mp3">MP3 (MPEG-1 Audio Layer III) (.mp3)</option>
         <option value="ogg">Ogg Vorbis (.ogg)</option>
       </select>
-      <div style="margin-top:10px;">
-        <button id="recordButton">⏺ Rekam</button>
-        <button id="stopButton" disabled>⏹ Stop</button>
+      <div id="controls">
+        <button id="recordButton">Record</button>
+        <button id="stopButton" disabled>Stop</button>
       </div>
-      <div id="formats" style="margin-top:10px;"></div>
-      <pre id="log" style="background:#111;color:#0f0;padding:10px;min-height:60px;"></pre>
-      <h4>Hasil Rekaman:</h4>
-      <ol id="recordingsList"></ol>
+      <div id="formats"></div>
+      <audio id="audio-player" controls style="display:block; margin-top:8px;"></audio>
+    </div>
+
+    <br>
+    <button id="btn-nilai-100">Nilai 100</button>
+    <button id="save-btn-modal">Simpan Data Mutaba'ah</button>
     <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
   </div>
 </div>
 
-<!-- Script Recorder -->
-<script src="js/WebAudioRecorder.min.js"></script>
-<script src="js/app.js"></script>
 
 
 <!-- Overlay Hitung Total All Juz -->
@@ -970,17 +969,7 @@ function updateTotalJuz(row) {
   const rows = santriTableBody.querySelectorAll("tr");
   const data = [];
 
-  // Fungsi helper untuk convert blob ke base64
-  async function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-
-  for (const row of rows) {
+  rows.forEach((row) => {
     const id = parseInt(row.children[0].textContent);
     const nama = row.children[1].textContent;
     const semester = row.querySelector(".semester").value;
@@ -998,12 +987,6 @@ function updateTotalJuz(row) {
     const buttonCell = { nilai: nilaiDiv, warna: warnaDiv };
 
     const marks = row.markData || {};
-    let audioBase64 = null;
-
-    // Kalau ada audio blob, convert jadi base64
-    if (marks.audioBlob instanceof Blob) {
-      audioBase64 = await blobToBase64(marks.audioBlob);
-    }
 
     data.push({
       id,
@@ -1015,12 +998,9 @@ function updateTotalJuz(row) {
       totalJuz,
       juzTerbaca,
       buttonCell,
-      marks: {
-        ...marks,
-        audioBlob: audioBase64 // masukkan base64
-      }
+      marks
     });
-  }
+  });
 
   saveBtn.disabled = true;
   saveBtn.textContent = "⏳ Menyimpan...";
@@ -1950,6 +1930,7 @@ function hitungNilai() {
   let adaMark = false;
 
   for (let ayat in markData) {
+    if (ayat === "_audio") continue; // lewati data audio
     for (let idx in markData[ayat]) {
       adaMark = true;
       if (markData[ayat][idx] === "green") { totalMinus += 0.5; hijau++; }
@@ -2037,6 +2018,30 @@ let dataSiap = fetch('/.netlify/functions/get-quranDataMark')
   })
   .catch(err => console.error('Gagal memuat data:', err));
 
+// === [ADD] util key audio ===
+function getAudioKey() {
+  const kelas = document.getElementById('kelas')?.value || 'default';
+  const tanggal = document.getElementById('tanggal')?.value || 'default';
+  return `${kelas}_${tanggal}_${currentIdSiswa}`;
+}
+
+// === [ADD] render preview audio dari markData ke <ol id="recordingsList"> ===
+function renderAudioPreview() {
+  const list = document.getElementById('recordingsList');
+  if (!list) return;
+  list.innerHTML = '';
+  const key = getAudioKey();
+  const rec = markData?._audio?.[key];
+  if (rec?.data) {
+    const li = document.createElement('li');
+    const au = document.createElement('audio');
+    au.controls = true;
+    au.src = rec.data;
+    li.appendChild(au);
+    list.appendChild(li);
+  }
+}
+
 // ======================
 // EVENT CLICK TABEL
 // ======================
@@ -2105,6 +2110,9 @@ document.addEventListener('click', async function(e) {
 
     const hasil = hitungNilai();
     updateNilaiDiTabel(hasil);
+
+    // === [ADD] tampilkan audio jika sudah ada di markData ===
+    renderAudioPreview();
   }
 });
 
@@ -2122,35 +2130,91 @@ document.getElementById("btn-simpan-mark").onclick = function() {
 // ======================
 document.getElementById("btn-nilai-100").onclick = function() {
   if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
-
-  // Kosongkan semua mark agar tidak mengurangi nilai
   markData = {};
-  
-  // Set nilai langsung jadi 100
   document.getElementById("nilai-akhir").innerText = "100.0";
   document.getElementById("predikat-akhir").innerText = "MUMTAZ (A)";
-
-  // Update tabel
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
 
-  function stopRecordingAndSave(row) {
-  mediaRecorder.stop();
-  mediaRecorder.onstop = async () => {
-    const blob = new Blob(audioChunks, { type: 'audio/mp3' });
-    audioChunks = [];
+// ======================
+// REKAMAN AUDIO (integrasi markData)
+// ======================
+var gumStream, recorder, input, encodingType, audioContext;
+var encodeAfterRecord = true;
+var encodingTypeSelect = document.getElementById("encodingTypeSelect");
+var recordButton = document.getElementById("recordButton");
+var stopButton = document.getElementById("stopButton");
 
-    // Convert blob ke base64
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64Data = reader.result; // format: data:audio/mp3;base64,....
-      if (!row.markData) row.markData = {};
-      row.markData.audioBlob = base64Data; // simpan di markData
+// === [NOTE] tetap pakai optional chaining biar aman kalau elemen belum ada
+recordButton?.addEventListener("click", startRecording);
+stopButton?.addEventListener("click", stopRecording);
+
+function startRecording() {
+  navigator.mediaDevices.getUserMedia({ audio: true, video:false }).then(function(stream) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    gumStream = stream;
+    input = audioContext.createMediaStreamSource(stream);
+    encodingType = encodingTypeSelect?.options[encodingTypeSelect.selectedIndex].value || 'wav';
+    if (encodingTypeSelect) encodingTypeSelect.disabled = true;
+
+    recorder = new WebAudioRecorder(input, {
+      workerDir: "js/",
+      encoding: encodingType,
+      numChannels:2,
+      onEncoderLoading: () => {},
+      onEncoderLoaded: () => {}
+    });
+
+    recorder.onComplete = function(recorder, blob) {
+      const reader = new FileReader();
+      reader.onloadend = function() {
+        // Simpan audio base64 ke markData per siswa+tanggal
+        if (!markData._audio) markData._audio = {};
+        const key = getAudioKey();
+        markData._audio[key] = {
+          type: recorder.encoding,
+          data: reader.result
+        };
+        // === [ADD] preview + persist local
+        renderAudioPreview();
+        simpanKeStorage();
+      };
+      reader.readAsDataURL(blob);
+      if (encodingTypeSelect) encodingTypeSelect.disabled = false;
     };
-    reader.readAsDataURL(blob);
-  };
+
+    recorder.setOptions({
+      timeLimit:120,
+      encodeAfterRecord:encodeAfterRecord,
+      ogg: {quality: 0.5},
+      mp3: {bitRate: 160}
+    });
+
+    recorder.startRecording();
+  }).catch(function(err) {
+    console.error(err);
+    if (recordButton) recordButton.disabled = false;
+    if (stopButton) stopButton.disabled = true;
+  });
+
+  if (recordButton) recordButton.disabled = true;
+  if (stopButton) stopButton.disabled = false;
+}
+
+function stopRecording() {
+  try {
+    gumStream?.getAudioTracks?.()[0]?.stop();
+  } catch(e) {}
+  if (stopButton) stopButton.disabled = true;
+  if (recordButton) recordButton.disabled = false;
+  try {
+    recorder?.finishRecording();
+  } catch(e) {
+    console.error(e);
+  }
 }
 </script>
+
 
 
 
