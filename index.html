@@ -502,42 +502,19 @@ button.lihat-quran-btn:hover::after {
      z-index:10000; justify-content:center; align-items:center;">
   <div style="background:white; padding:20px; border-radius:8px;
        max-width:800px; max-height:80%; overflow:auto;">
-       
     <h3>Ayat Al-Qur'an</h3>
     <div id="quran-text" style="white-space:pre-wrap; line-height:2.2; direction:rtl; font-size:30px;"></div>
     <hr>
     <div>
       Nilai: <span id="nilai-akhir">100</span> — Predikat: <span id="predikat-akhir">MUMTAZ</span>
     </div>
-
-    <!-- Recorder Section -->
-    <hr>
-    <div style="margin-top:10px;">
-      <h4>Rekam Audio Penilaian</h4>
-      <p>Convert recorded audio to:</p>
-      <select id="encodingTypeSelect">
-        <option value="wav">Waveform Audio (.wav)</option>
-        <option value="mp3">MP3 (MPEG-1 Audio Layer III) (.mp3)</option>
-        <option value="ogg">Ogg Vorbis (.ogg)</option>
-      </select>
-      <div id="controls">
-        <button id="recordButton">Record</button>
-        <button id="stopButton" disabled>Stop</button>
-      </div>
-      <div id="formats"></div>
-      <audio id="audio-player" controls style="display:block; margin-top:8px;"></audio>
-    </div>
-
     <br>
     <button id="btn-nilai-100">Nilai 100</button>
-    <button id="save-btn-modal">Simpan Data Mutaba'ah</button>
+    <!-- <button id="btn-simpan-mark">Simpan</button> -->
+    <button id="save-btn-modal">Simpan Data Mutaba'ah</button> <!-- ID beda -->
     <button onclick="document.getElementById('overlay-quran').style.display='none'">Tutup</button>
   </div>
 </div>
-
-  <!-- inserting these scripts at the end to be able to use all the elements in the DOM -->
-	<script src="js/WebAudioRecorder.min.js"></script>
-	<script src="js/app.js"></script>
 
 
 
@@ -1886,6 +1863,54 @@ let ayahPageMap = {};
 let markData = {};
 let currentIdSiswa = null;
 
+
+let mediaRecorder;
+let audioChunks = [];
+
+async function mulaiRekamAudio() {
+  if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.start();
+    console.log("Rekaman dimulai...");
+  } catch (err) {
+    console.error("Gagal mulai rekaman:", err);
+    alert("Tidak bisa mengakses mikrofon.");
+  }
+}
+
+function berhentiRekamAudio() {
+  if (!mediaRecorder) return;
+  mediaRecorder.stop();
+  mediaRecorder.onstop = async () => {
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    const formData = new FormData();
+    formData.append('file', audioBlob, `${currentIdSiswa}_${Date.now()}.webm`);
+
+    try {
+      const res = await fetch('/.netlify/functions/simpan-audio', {
+        method: 'POST',
+        body: formData
+      });
+      const result = await res.json();
+      if (result.url) {
+        if (!markData.audio) markData.audio = {};
+        markData.audio.url = result.url;
+        markData.audio.tanggal = new Date().toISOString();
+        console.log("Audio URL tersimpan di markData:", result.url);
+        alert("Rekaman berhasil disimpan.");
+      } else {
+        throw new Error("URL audio tidak diterima dari server");
+      }
+    } catch (err) {
+      console.error("Gagal upload audio:", err);
+      alert("Gagal menyimpan audio ke server.");
+    }
+  };
+}
 // ======================
 // STORAGE
 // ======================
@@ -1934,7 +1959,6 @@ function hitungNilai() {
   let adaMark = false;
 
   for (let ayat in markData) {
-    if (ayat === "_audio") continue; // lewati data audio
     for (let idx in markData[ayat]) {
       adaMark = true;
       if (markData[ayat][idx] === "green") { totalMinus += 0.5; hijau++; }
@@ -2022,30 +2046,6 @@ let dataSiap = fetch('/.netlify/functions/get-quranDataMark')
   })
   .catch(err => console.error('Gagal memuat data:', err));
 
-// === [ADD] util key audio ===
-function getAudioKey() {
-  const kelas = document.getElementById('kelas')?.value || 'default';
-  const tanggal = document.getElementById('tanggal')?.value || 'default';
-  return `${kelas}_${tanggal}_${currentIdSiswa}`;
-}
-
-// === [ADD] render preview audio dari markData ke <ol id="recordingsList"> ===
-function renderAudioPreview() {
-  const list = document.getElementById('recordingsList');
-  if (!list) return;
-  list.innerHTML = '';
-  const key = getAudioKey();
-  const rec = markData?._audio?.[key];
-  if (rec?.data) {
-    const li = document.createElement('li');
-    const au = document.createElement('audio');
-    au.controls = true;
-    au.src = rec.data;
-    li.appendChild(au);
-    list.appendChild(li);
-  }
-}
-
 // ======================
 // EVENT CLICK TABEL
 // ======================
@@ -2114,9 +2114,6 @@ document.addEventListener('click', async function(e) {
 
     const hasil = hitungNilai();
     updateNilaiDiTabel(hasil);
-
-    // === [ADD] tampilkan audio jika sudah ada di markData ===
-    renderAudioPreview();
   }
 });
 
@@ -2134,91 +2131,18 @@ document.getElementById("btn-simpan-mark").onclick = function() {
 // ======================
 document.getElementById("btn-nilai-100").onclick = function() {
   if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
+
+  // Kosongkan semua mark agar tidak mengurangi nilai
   markData = {};
+  
+  // Set nilai langsung jadi 100
   document.getElementById("nilai-akhir").innerText = "100.0";
   document.getElementById("predikat-akhir").innerText = "MUMTAZ (A)";
+
+  // Update tabel
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
-
-// ======================
-// REKAMAN AUDIO (integrasi markData)
-// ======================
-var gumStream, recorder, input, encodingType, audioContext;
-var encodeAfterRecord = true;
-var encodingTypeSelect = document.getElementById("encodingTypeSelect");
-var recordButton = document.getElementById("recordButton");
-var stopButton = document.getElementById("stopButton");
-
-// === [NOTE] tetap pakai optional chaining biar aman kalau elemen belum ada
-recordButton?.addEventListener("click", startRecording);
-stopButton?.addEventListener("click", stopRecording);
-
-function startRecording() {
-  navigator.mediaDevices.getUserMedia({ audio: true, video:false }).then(function(stream) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    gumStream = stream;
-    input = audioContext.createMediaStreamSource(stream);
-    encodingType = encodingTypeSelect?.options[encodingTypeSelect.selectedIndex].value || 'wav';
-    if (encodingTypeSelect) encodingTypeSelect.disabled = true;
-
-    recorder = new WebAudioRecorder(input, {
-      workerDir: "js/",
-      encoding: encodingType,
-      numChannels:2,
-      onEncoderLoading: () => {},
-      onEncoderLoaded: () => {}
-    });
-
-    recorder.onComplete = function(recorder, blob) {
-      const reader = new FileReader();
-      reader.onloadend = function() {
-        // Simpan audio base64 ke markData per siswa+tanggal
-        if (!markData._audio) markData._audio = {};
-        const key = getAudioKey();
-        markData._audio[key] = {
-          type: recorder.encoding,
-          data: reader.result
-        };
-        // === [ADD] preview + persist local
-        renderAudioPreview();
-        simpanKeStorage();
-      };
-      reader.readAsDataURL(blob);
-      if (encodingTypeSelect) encodingTypeSelect.disabled = false;
-    };
-
-    recorder.setOptions({
-      timeLimit:120,
-      encodeAfterRecord:encodeAfterRecord,
-      ogg: {quality: 0.5},
-      mp3: {bitRate: 160}
-    });
-
-    recorder.startRecording();
-  }).catch(function(err) {
-    console.error(err);
-    if (recordButton) recordButton.disabled = false;
-    if (stopButton) stopButton.disabled = true;
-  });
-
-  if (recordButton) recordButton.disabled = true;
-  if (stopButton) stopButton.disabled = false;
-}
-
-function stopRecording() {
-  try {
-    gumStream?.getAudioTracks?.()[0]?.stop();
-  } catch(e) {}
-  if (stopButton) stopButton.disabled = true;
-  if (recordButton) recordButton.disabled = false;
-  try {
-    recorder?.finishRecording();
-  } catch(e) {
-    console.error(e);
-  }
-}
 </script>
-
 
 
 
