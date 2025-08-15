@@ -1885,55 +1885,10 @@ let quranData = {};
 let ayahPageMap = {};
 let markData = {};
 let currentIdSiswa = null;
-
-
 let mediaRecorder;
 let audioChunks = [];
 
-async function mulaiRekamAudio() {
-  if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    audioChunks = [];
-    mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-    mediaRecorder.start();
-    console.log("Rekaman dimulai...");
-  } catch (err) {
-    console.error("Gagal mulai rekaman:", err);
-    alert("Tidak bisa mengakses mikrofon.");
-  }
-}
 
-function berhentiRekamAudio() {
-  if (!mediaRecorder) return;
-  mediaRecorder.stop();
-  mediaRecorder.onstop = async () => {
-    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-    const formData = new FormData();
-    formData.append('file', audioBlob, `${currentIdSiswa}_${Date.now()}.webm`);
-
-    try {
-      const res = await fetch('/.netlify/functions/simpan-audio', {
-        method: 'POST',
-        body: formData
-      });
-      const result = await res.json();
-      if (result.url) {
-        if (!markData.audio) markData.audio = {};
-        markData.audio.url = result.url;
-        markData.audio.tanggal = new Date().toISOString();
-        console.log("Audio URL tersimpan di markData:", result.url);
-        alert("Rekaman berhasil disimpan.");
-      } else {
-        throw new Error("URL audio tidak diterima dari server");
-      }
-    } catch (err) {
-      console.error("Gagal upload audio:", err);
-      alert("Gagal menyimpan audio ke server.");
-    }
-  };
-}
 // ======================
 // STORAGE
 // ======================
@@ -2165,6 +2120,51 @@ document.getElementById("btn-nilai-100").onclick = function() {
   // Update tabel
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
+
+
+  async function mulaiRekamAudio() {
+  if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.start();
+    console.log("Rekaman dimulai...");
+  } catch (err) {
+    console.error("Gagal mulai rekaman:", err);
+    alert("Tidak bisa mengakses mikrofon.");
+  }
+}
+
+function berhentiRekamAudio() {
+  if (!mediaRecorder) return;
+  mediaRecorder.stop();
+  mediaRecorder.onstop = async () => {
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    const formData = new FormData();
+    formData.append('file', audioBlob, `${currentIdSiswa}_${Date.now()}.webm`);
+
+    try {
+      const res = await fetch('/.netlify/functions/simpan-audio', {
+        method: 'POST',
+        body: formData
+      });
+      const result = await res.json();
+      if (result.url) {
+        if (!markData.audio) markData.audio = {};
+        markData.audio.url = result.url;
+        markData.audio.tanggal = new Date().toISOString();
+        console.log("Audio URL tersimpan di markData:", result.url);
+        alert("Rekaman berhasil disimpan.");
+      } else {
+        throw new Error("URL audio tidak diterima dari server");
+      }
+    } catch (err) {
+      console.error("Gagal upload audio:", err);
+      alert("Gagal menyimpan audio ke server.");
+    }
+  };
 </script>
 
 
