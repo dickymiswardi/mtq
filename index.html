@@ -1863,6 +1863,28 @@ let ayahPageMap = {};
 let markData = {};
 let currentIdSiswa = null;
 
+
+  document.getElementById("save-btn-modal").onclick = async function() {
+    if (!currentIdSiswa) return alert("Klik 'Lembar Penilaian' dulu.");
+
+    const row = [...document.querySelectorAll("table tbody tr")]
+                .find(r => parseInt(r.cells[0].innerText) === currentIdSiswa);
+
+    const buttonCell = {
+        nilai: parseFloat(document.getElementById("nilai-akhir").innerText),
+        warna: row ? row.querySelector("div:nth-child(2)")?.innerText : ""
+    };
+
+    data.push({
+        id: currentIdSiswa,
+        nama: row.cells[1].innerText,
+        marks: markData,   // termasuk audio
+        buttonCell
+    });
+
+    // simpan ke server
+    await simpanKeServer();
+};
 // ======================
 // STORAGE
 // ======================
