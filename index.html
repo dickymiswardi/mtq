@@ -2133,6 +2133,23 @@ document.getElementById("btn-nilai-100").onclick = function() {
   // Update tabel
   updateNilaiDiTabel({ nilai: 100, predikat: "MUMTAZ (A)", hijau: 0, kuning: 0, merah: 0 });
 };
+
+  function stopRecordingAndSave(row) {
+  mediaRecorder.stop();
+  mediaRecorder.onstop = async () => {
+    const blob = new Blob(audioChunks, { type: 'audio/mp3' });
+    audioChunks = [];
+
+    // Convert blob ke base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64Data = reader.result; // format: data:audio/mp3;base64,....
+      if (!row.markData) row.markData = {};
+      row.markData.audioBlob = base64Data; // simpan di markData
+    };
+    reader.readAsDataURL(blob);
+  };
+}
 </script>
 
 
