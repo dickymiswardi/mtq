@@ -530,9 +530,9 @@ button.lihat-quran-btn:hover::after {
 </select>
 
 <!-- Kontrol record/stop -->
-	  <div id="controls" style="margin-top:10px;">
-  <button id="recordButton" class="rec-btn">● Record</button>
-<button id="stopButton" class="stop-btn" disabled>■ Stop</button>
+<div id="controls" style="margin-top:10px;">
+    <button id="recordButton" class="rec-btn">● Record</button>
+    <button id="stopButton" class="stop-btn" disabled>■ Stop</button>
 </div>
 
 <style>
@@ -550,7 +550,7 @@ button.lihat-quran-btn:hover::after {
     margin-right: 10px;
 }
 
-/* Efek denyut aktif */
+/* Efek denyut paksa */
 .rec-btn.pulsing {
     animation: pulse 1s infinite;
 }
@@ -580,21 +580,29 @@ button.lihat-quran-btn:hover::after {
 }
 </style>
 
-
 <script>
-const recBtn = document.getElementById('recBtn');
-const stopBtn = document.getElementById('stopBtn');
+const recBtn = document.getElementById('recordButton');
+const stopBtn = document.getElementById('stopButton');
 
-// Mulai denyut saat klik tombol rekam
+let recording = false;
+
+// Saat klik tombol rekam
 recBtn.addEventListener('click', () => {
-    recBtn.classList.add('pulsing');
+    recording = true;
+    recBtn.classList.add('pulsing'); // paksa efek denyut
+    recBtn.disabled = true;           // nonaktifkan tombol record saat rekaman
+    stopBtn.disabled = false;         // aktifkan tombol stop
 });
 
-// Hentikan denyut saat klik tombol stop
+// Saat klik tombol stop
 stopBtn.addEventListener('click', () => {
-    recBtn.classList.remove('pulsing');
+    recording = false;
+    recBtn.classList.remove('pulsing'); // hentikan denyut
+    recBtn.disabled = false;            // aktifkan tombol record lagi
+    stopBtn.disabled = true;            // nonaktifkan tombol stop
 });
 </script>
+
 
 
 <!-- Info format (opsional) -->
