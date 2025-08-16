@@ -2015,7 +2015,6 @@ function updateNilaiDiTabel({ nilai, predikat, hijau, kuning, merah }) {
       buttonCell.innerHTML = `
         <div><strong>${nilai.toFixed(1)}</strong> (${predikat})</div>
         <div>🟩${hijau} 🟨${kuning} 🟥${merah}</div>
-        <button class="lihat-quran-btn">Lembar Penilaian</button>
       `;
       row.markData = JSON.parse(JSON.stringify(markData));
     }
