@@ -1,16 +1,13 @@
-//webkitURL is deprecated but nevertheless
-URL = window.URL || window.webkitURL;
-
+// Variabel global
 var gumStream, recorder, input, audioContext;
 var encodingType, encodeAfterRecord = true;
-
 var encodingTypeSelect = document.getElementById("encodingTypeSelect");
 var recordButton = document.getElementById("recordButton");
 var stopButton = document.getElementById("stopButton");
 var recordingIndicator = document.getElementById("recordingIndicator");
 var recordingsList = document.getElementById("recordingsList");
 
-// add events to buttons
+// Event listeners
 recordButton.addEventListener("click", startRecording);
 stopButton.addEventListener("click", stopRecording);
 
@@ -32,13 +29,11 @@ function startRecording() {
         recorder = new WebAudioRecorder(input, {
             workerDir: "js/",
             encoding: encodingType,
-            numChannels: 2,
-            onEncoderLoading: function(rec, enc){},
-            onEncoderLoaded: function(rec, enc){}
+            numChannels: 2
         });
 
         recorder.setOptions({
-            timeLimit: 86400,       // rekam hingga 24 jam
+            timeLimit: 86400,
             encodeAfterRecord: encodeAfterRecord,
             ogg: { quality: 1.0 },
             mp3: { bitRate: 320 }
@@ -59,20 +54,9 @@ function startRecording() {
 }
 
 function stopRecording() {
-    if (gumStream) {
-        gumStream.getAudioTracks().forEach(track => track.stop());
-        gumStream = null;
-    }
-
-    if (audioContext) {
-        audioContext.close();
-        audioContext = null;
-    }
-
-    if (recorder) {
-        recorder.finishRecording();
-        recorder = null;
-    }
+    if (gumStream) gumStream.getAudioTracks().forEach(track => track.stop());
+    if (audioContext) audioContext.close();
+    if (recorder) recorder.finishRecording();
 
     recordButton.disabled = false;
     stopButton.disabled = true;
@@ -81,6 +65,7 @@ function stopRecording() {
     recordingIndicator.style.display = "none";
 }
 
+// Fungsi createDownloadLink sama seperti versi sebelumnya
 function createDownloadLink(blob, encoding) {
     var url = URL.createObjectURL(blob);
     if (!markData.audio) markData.audio = [];
@@ -117,9 +102,4 @@ function createDownloadLink(blob, encoding) {
         }
     };
     reader.readAsDataURL(blob);
-
-    if (currentIdSiswa) {
-        const hasil = hitungNilai();
-        updateNilaiDiTabel(hasil);
-    }
 }
