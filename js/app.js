@@ -3,9 +3,9 @@ URL = window.URL || window.webkitURL;
 
 var gumStream;                         // stream from getUserMedia()
 var recorder;                          // WebAudioRecorder object
-var input;                             // MediaStreamAudioSourceNode we'll be recording
-var encodingType;                      // holds selected encoding for resulting audio (file)
-var encodeAfterRecord = true;          // when to encode
+var input;                             // MediaStreamAudioSourceNode
+var encodingType;                      // holds selected encoding for resulting audio
+var encodeAfterRecord = true;          // encode after record
 
 // shim for AudioContext when it's not available
 var AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -36,7 +36,6 @@ function startRecording() {
 
         gumStream = stream;
         input = audioContext.createMediaStreamSource(stream);
-        // input.connect(audioContext.destination) // jangan di-uncomment, kalau mau monitoring
 
         encodingType = encodingTypeSelect.options[encodingTypeSelect.selectedIndex].value;
         encodingTypeSelect.disabled = true;
@@ -44,7 +43,7 @@ function startRecording() {
         recorder = new WebAudioRecorder(input, {
             workerDir: "js/", // must end with slash
             encoding: encodingType,
-            numChannels: 2, // mp3 hanya support 2
+            numChannels: 2,
             onEncoderLoading: function(recorder, encoding) {
                 __log("Loading " + encoding + " encoder...");
             },
@@ -55,15 +54,12 @@ function startRecording() {
 
         recorder.onComplete = function(recorder, blob) {
             __log("Encoding complete");
-            createDownloadLink(blob, recorder.encoding); // versi upload + preview
+            createDownloadLink(blob, recorder.encoding); // preview + tombol upload
             encodingTypeSelect.disabled = false;
         };
 
-        // =====================
-        // PENTING! JANGAN DIHAPUS
-        // =====================
         recorder.setOptions({
-            timeLimit: 86400,
+            timeLimit: 86400,  // durasi 24 jam
             encodeAfterRecord: encodeAfterRecord,
             ogg: { quality: 1.0 },
             mp3: { bitRate: 320 }
@@ -96,17 +92,13 @@ function stopRecording() {
     __log('Recording stopped');
 }
 
-// ===== Versi final createDownloadLink: preview lokal + upload =====
+// ===== createDownloadLink versi preview + tombol Upload =====
 function createDownloadLink(blob, encoding) {
-    // buat URL blob untuk preview lokal
     var url = URL.createObjectURL(blob);
-
-    // simpan sementara di markData
     if (!markData.audio) markData.audio = [];
     const tempFileName = new Date().toISOString() + '.' + encoding;
     markData.audio.push(tempFileName);
 
-    // buat elemen audio + link lokal
     var au = document.createElement('audio');
     au.controls = true;
     au.src = url;
@@ -116,37 +108,38 @@ function createDownloadLink(blob, encoding) {
     link.download = tempFileName;
     link.innerHTML = tempFileName;
 
+    // tombol proses upload
+    var uploadBtn = document.createElement('button');
+    uploadBtn.innerText = "Proses Upload";
+    uploadBtn.addEventListener('click', function() {
+        const reader = new FileReader();
+        reader.onloadend = async function() {
+            const base64Data = reader.result.split(',')[1];
+            try {
+                const res = await fetch('/.netlify/functions/upload-audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
+                });
+                const result = await res.json();
+                if (!result.success) throw new Error(result.error || 'Gagal upload audio');
+
+                markData.audio[markData.audio.length - 1] = result.path || tempFileName;
+                alert(`✅ Upload berhasil: ${result.path || tempFileName}`);
+                __log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
+            } catch (err) {
+                alert('⚠️ Gagal upload audio: ' + err.message);
+                console.error(err);
+            }
+        };
+        reader.readAsDataURL(blob);
+    });
+
     var li = document.createElement('li');
     li.appendChild(au);
     li.appendChild(link);
+    li.appendChild(uploadBtn);
     recordingsList.appendChild(li);
-
-    // ===== Upload ke GitHub /audio via Netlify Function =====
-    const reader = new FileReader();
-    reader.onloadend = async function() {
-        const base64Data = reader.result.split(',')[1]; // hapus prefix data:audio/xxx;base64
-        try {
-            const res = await fetch('/.netlify/functions/upload-audio', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fileName: tempFileName,
-                    base64: base64Data
-                })
-            });
-            const result = await res.json();
-            if (!result.success) throw new Error(result.error || 'Gagal upload audio');
-
-            // update markData dengan nama file final di repo
-            markData.audio[markData.audio.length - 1] = result.fileName || tempFileName;
-
-            __log(`Recording selesai dan di-upload: ${result.fileName || tempFileName}`);
-        } catch (err) {
-            alert('⚠️ Gagal upload audio: ' + err.message);
-            console.error(err);
-        }
-    };
-    reader.readAsDataURL(blob);
 
     // update nilai di tabel jika siswa aktif
     if (currentIdSiswa) {
