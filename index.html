@@ -532,29 +532,79 @@ button.lihat-quran-btn:hover::after {
 <!-- Kontrol record/stop -->
 	  <div id="controls" style="margin-top:10px;">
   <button id="recordButton" class="rec-btn">● Record</button>
-  <button id="stopButton" class="stop-btn" disabled>■ Stop</button>
-  <span id="recordingIndicator">● REC</span>
+<button id="stopButton" class="stop-btn" disabled>■ Stop</button>
 </div>
+
+
+	
+<style>
+.rec-btn {
+    background: linear-gradient(135deg, #ff4b5c, #ff0000);
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    border: none;
+    border-radius: 50px;
+    padding: 10px 25px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin-right: 10px;
+}
+
+.rec-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255,0,0,0.6);
+}
+
+.stop-btn {
+    background: linear-gradient(135deg, #555, #333);
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    border: none;
+    border-radius: 50px;
+    padding: 10px 25px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.stop-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+/* Animasi kedap-kedip */
+.blink {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0; }
+}
+</style>
 
 <script>
 const recordButton = document.getElementById("recordButton");
 const stopButton = document.getElementById("stopButton");
-const recordingIndicator = document.getElementById("recordingIndicator");
 
-// tampilkan indikator saat Record
 recordButton.addEventListener("click", () => {
-    recordingIndicator.style.display = "inline-block"; // tampilkan
+    recordButton.classList.add("blink");  // teks tombol kedip
     recordButton.disabled = true;
     stopButton.disabled = false;
+
+    // Mulai recording di sini
 });
 
-// sembunyikan indikator saat Stop
 stopButton.addEventListener("click", () => {
-    recordingIndicator.style.display = "none"; // sembunyikan
+    recordButton.classList.remove("blink"); // berhenti kedip
     recordButton.disabled = false;
     stopButton.disabled = true;
+
+    // Stop recording di sini
 });
 </script>
+
 
 <!-- Info format (opsional) -->
 <div id="formats" style="margin-top:10px;"></div>
