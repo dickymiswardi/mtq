@@ -62,7 +62,7 @@ function startRecording() {
             timeLimit: 86400,  // durasi 24 jam
             encodeAfterRecord: encodeAfterRecord,
             ogg: { quality: 1.0 },
-            mp3: { bitRate: 320 }
+            mp3: { bitRate: 128 }
         });
 
         recorder.startRecording();
