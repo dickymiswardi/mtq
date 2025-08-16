@@ -533,10 +533,9 @@ button.lihat-quran-btn:hover::after {
 	  <div id="controls" style="margin-top:10px;">
   <button id="recordButton" class="rec-btn">● Record</button>
 <button id="stopButton" class="stop-btn" disabled>■ Stop</button>
+<span id="recordingIndicator">● REC</span>
 </div>
 
-
-	
 <style>
 .rec-btn {
     background: linear-gradient(135deg, #ff4b5c, #ff0000);
@@ -583,27 +582,6 @@ button.lihat-quran-btn:hover::after {
     25%, 75% { opacity: 0; }
 }
 </style>
-
-<script>
-const recordButton = document.getElementById("recordButton");
-const stopButton = document.getElementById("stopButton");
-
-recordButton.addEventListener("click", () => {
-    recordButton.classList.add("blink");  // teks tombol kedip
-    recordButton.disabled = true;
-    stopButton.disabled = false;
-
-    // Mulai recording di sini
-});
-
-stopButton.addEventListener("click", () => {
-    recordButton.classList.remove("blink"); // berhenti kedip
-    recordButton.disabled = false;
-    stopButton.disabled = true;
-
-    // Stop recording di sini
-});
-</script>
 
 
 <!-- Info format (opsional) -->
