@@ -530,11 +530,31 @@ button.lihat-quran-btn:hover::after {
 </select>
 
 <!-- Kontrol record/stop -->
-<div id="controls" style="margin-top:10px;">
+	  <div id="controls" style="margin-top:10px;">
   <button id="recordButton" class="rec-btn">● Record</button>
   <button id="stopButton" class="stop-btn" disabled>■ Stop</button>
   <span id="recordingIndicator">● REC</span>
 </div>
+
+<script>
+const recordButton = document.getElementById("recordButton");
+const stopButton = document.getElementById("stopButton");
+const recordingIndicator = document.getElementById("recordingIndicator");
+
+// tampilkan indikator saat Record
+recordButton.addEventListener("click", () => {
+    recordingIndicator.style.display = "inline-block"; // tampilkan
+    recordButton.disabled = true;
+    stopButton.disabled = false;
+});
+
+// sembunyikan indikator saat Stop
+stopButton.addEventListener("click", () => {
+    recordingIndicator.style.display = "none"; // sembunyikan
+    recordButton.disabled = false;
+    stopButton.disabled = true;
+});
+</script>
 
 <!-- Info format (opsional) -->
 <div id="formats" style="margin-top:10px;"></div>
