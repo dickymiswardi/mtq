@@ -1,7 +1,6 @@
-//webkitURL is deprecated but nevertheless
 URL = window.URL || window.webkitURL;
 
-var gumStream, recorder, input, audioContext;
+var gumStream, recorderGlobal, input, audioContext;
 var encodingType, encodeAfterRecord = true;
 
 var encodingTypeSelect = document.getElementById("encodingTypeSelect");
@@ -10,31 +9,33 @@ var stopButton = document.getElementById("stopButton");
 var recordingIndicator = document.getElementById("recordingIndicator");
 var recordingsList = document.getElementById("recordingsList");
 
-// add events to buttons
+// tambahkan event listener
 recordButton.addEventListener("click", startRecording);
 stopButton.addEventListener("click", stopRecording);
 
 function startRecording() {
+    if (recorderGlobal) return; // jangan buat recorder baru jika sedang ada
+
     recordButton.disabled = true;
     stopButton.disabled = false;
-
-    // tampilkan indikator kedap-kedip
     recordingIndicator.style.display = "inline-block";
 
-    navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(stream => {
-        audioContext = new AudioContext();
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+    .then(stream => {
+        if (!audioContext) audioContext = new AudioContext();
+
         gumStream = stream;
         input = audioContext.createMediaStreamSource(stream);
 
         encodingType = encodingTypeSelect.value;
         encodingTypeSelect.disabled = true;
 
-        recorder = new WebAudioRecorder(input, {
+        let recorder = new WebAudioRecorder(input, {
             workerDir: "js/",
             encoding: encodingType,
             numChannels: 2,
-            onEncoderLoading: function(rec, enc){},
-            onEncoderLoaded: function(rec, enc){}
+            onEncoderLoading: () => {},
+            onEncoderLoaded: () => {}
         });
 
         recorder.setOptions({
@@ -47,14 +48,17 @@ function startRecording() {
         recorder.onComplete = function(rec, blob) {
             createDownloadLink(blob, rec.encoding);
             encodingTypeSelect.disabled = false;
+            recorderGlobal = null; // reset recorder global
         };
 
         recorder.startRecording();
-    }).catch(err => {
+        recorderGlobal = recorder; // simpan global untuk stop
+    })
+    .catch(err => {
         recordButton.disabled = false;
         stopButton.disabled = true;
-        alert("Gagal mengakses microphone: " + err.message);
         recordingIndicator.style.display = "none";
+        alert("Gagal mengakses microphone: " + err.message);
     });
 }
 
@@ -64,20 +68,13 @@ function stopRecording() {
         gumStream = null;
     }
 
-    if (audioContext) {
-        audioContext.close();
-        audioContext = null;
-    }
-
-    if (recorder) {
-        recorder.finishRecording();
-        recorder = null;
+    if (recorderGlobal) {
+        recorderGlobal.finishRecording();
+        recorderGlobal = null;
     }
 
     recordButton.disabled = false;
     stopButton.disabled = true;
-
-    // sembunyikan indikator
     recordingIndicator.style.display = "none";
 }
 
