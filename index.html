@@ -492,11 +492,11 @@ button.lihat-quran-btn:hover::after {
   <div style="background:#fff; width:350px; margin:100px auto; padding:20px; border-radius:10px;">
     <h2>Hapus Santri</h2>
     <label>Pilih Santri:</label>
-    <select id="pilihSantri" style="width:80%; margin-bottom:10px;"></select>
+    <select id="pilihSantri" style="width:100%; margin-bottom:10px;"></select>
 
     <div style="margin-top:10px; display:flex; justify-content:space-between;">
-      <button onclick="konfirmasiHapusSantri()">Hapus</button>
-      <button onclick="tutupModal('modalHapusSantri')">Close</button>
+      <button onclick="konfirmasiHapusSantri()">🗑️ Hapus</button>
+      <button onclick="tutupModal('modalHapusSantri')">❌ Batal</button>
     </div>
     <div id="loadingHapusSantri" style="display:none; margin-top:10px; color:red;">
       ⏳ Menghapus...
@@ -1826,72 +1826,78 @@ async function submitTambahKelasBaru() {
   }
 </script>
 
-
 <script>
   async function bukaModalHapusSantri() {
-  document.getElementById("modalHapusSantri").style.display = "block";
+    document.getElementById("modalHapusSantri").style.display = "block";
 
-  const kelas = document.getElementById("kelas").value;
-  const santriSelect = document.getElementById("pilihSantri");
-  santriSelect.innerHTML = "<option>Loading...</option>";
+    const kelas = document.getElementById("kelas").value;
+    const santriSelect = document.getElementById("pilihSantri");
+    santriSelect.innerHTML = "<option disabled selected>Loading...</option>";
 
-  try {
-    const res = await fetch(`/.netlify/functions/ambilDataSantri?kelas=${kelas}`);
-    if (!res.ok) throw new Error("Gagal ambil data santri");
-    const santriList = await res.json();
+    try {
+      const res = await fetch(`/.netlify/functions/ambilDataSantri?kelas=${kelas}`);
+      if (!res.ok) throw new Error("Gagal ambil data santri");
+      const santriList = await res.json();
 
-    santriSelect.innerHTML = "";
-    santriList.forEach(s => {
-      const opt = document.createElement("option");
-      opt.value = s.id;
-      opt.textContent = `${s.nama} (Semester ${s.semester})`;
-      santriSelect.appendChild(opt);
-    });
-  } catch (err) {
-    alert("Gagal mengambil daftar santri: " + err.message);
-  }
-}
+      santriSelect.innerHTML = "";
+      if (santriList.length === 0) {
+        santriSelect.innerHTML = "<option disabled selected>Tidak ada santri</option>";
+        return;
+      }
 
-function tutupModal(id) {
-  document.getElementById(id).style.display = "none";
-}
-
-async function konfirmasiHapusSantri() {
-  const idSantri = document.getElementById("pilihSantri").value;
-  const kelas = document.getElementById("kelas").value;
-
-  if (!idSantri) {
-    alert("Pilih santri yang ingin dihapus.");
-    return;
-  }
-
-  if (!confirm("Yakin ingin menghapus santri ini?")) return;
-
-  const loadingEl = document.getElementById("loadingHapusSantri");
-  loadingEl.style.display = "block";
-
-  try {
-    const res = await fetch("/.netlify/functions/hapusSantri", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: parseInt(idSantri), kelas })
-    });
-
-    const data = await res.json();
-    loadingEl.style.display = "none";
-
-    if (res.ok) {
-      alert("Santri berhasil dihapus!");
-      tutupModal("modalHapusSantri");
-      location.reload();
-    } else {
-      alert("Gagal menghapus: " + data.error);
+      santriList.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.id; // tetap pakai ID untuk konsistensi
+        opt.textContent = `${s.nis || s.id} - ${s.nama} (Semester ${s.semester})`;
+        santriSelect.appendChild(opt);
+      });
+    } catch (err) {
+      alert("Gagal mengambil daftar santri: " + err.message);
     }
-  } catch (err) {
-    loadingEl.style.display = "none";
-    alert("Terjadi kesalahan: " + err.message);
   }
-}
+
+  function tutupModal(id) {
+    document.getElementById(id).style.display = "none";
+    document.getElementById("pilihSantri").innerHTML = "";
+    document.getElementById("loadingHapusSantri").style.display = "none";
+  }
+
+  async function konfirmasiHapusSantri() {
+    const idSantri = document.getElementById("pilihSantri").value;
+    const kelas = document.getElementById("kelas").value;
+
+    if (!idSantri) {
+      alert("Pilih santri yang ingin dihapus.");
+      return;
+    }
+
+    if (!confirm("Yakin ingin menghapus santri ini?")) return;
+
+    const loadingEl = document.getElementById("loadingHapusSantri");
+    loadingEl.style.display = "block";
+
+    try {
+      const res = await fetch("/.netlify/functions/hapusSantri", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: parseInt(idSantri), kelas })
+      });
+
+      const data = await res.json();
+      loadingEl.style.display = "none";
+
+      if (res.ok) {
+        alert("✅ Santri berhasil dihapus!");
+        tutupModal("modalHapusSantri");
+        location.reload();
+      } else {
+        alert("❌ Gagal menghapus: " + data.error);
+      }
+    } catch (err) {
+      loadingEl.style.display = "none";
+      alert("Terjadi kesalahan: " + err.message);
+    }
+  }
 </script>
   
 
