@@ -455,12 +455,8 @@ button.lihat-quran-btn:hover::after {
   </div>
 
 
-  <!-- Modal Overlay -->
-<div id="modalSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
-     background:rgba(0,0,0,0.5); z-index:9999; display:flex; justify-content:center; align-items:center;">
-  
-  <!-- Container Modal -->
-  <div style="background:#fff; width:320px; padding:20px; border-radius:10px; position:relative;">
+  <div id="modalSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
+  <div style="background:#fff; width:320px; margin:100px auto; padding:20px; border-radius:10px;">
     <h2>Tambah Santri</h2>
 
     <label>Nama:</label><br>
@@ -479,27 +475,16 @@ button.lihat-quran-btn:hover::after {
       <option value="6">6</option>
     </select>
 
-    <label>Kelas:</label><br>
-    <select id="kelas" style="width:90%; margin-bottom:10px;">
-      <option value="1">Kelas 1</option>
-      <option value="2">Kelas 2</option>
-      <!-- Tambah kelas lain sesuai kebutuhan -->
-    </select>
-
-    <!-- Tombol Simpan & Close -->
     <div style="margin-top:10px; display:flex; justify-content:space-between;">
-      <button type="button" onclick="simpanSantriBaru()">Simpan</button>
-      <button type="button" onclick="tutupModal()">Close</button>
+      <button onclick="simpanSantriBaru()">Simpan</button>
+     <button onclick="tutupModal('modalSantri')">❌ Batal</button>
     </div>
 
-    <!-- Loading -->
     <div id="loadingTambahSantri" style="display:none; margin-top:10px; color:blue;">
       ⏳ Menyimpan...
     </div>
   </div>
 </div>
-
-
 
 
 
@@ -1892,14 +1877,11 @@ async function submitTambahKelasBaru() {
 }
 </script>
   
-  
-<script>
-  // Buka modal
+  <script>
   function bukaModalSantri() {
-    document.getElementById("modalSantri").style.display = "flex";
+    document.getElementById("modalSantri").style.display = "block";
   }
 
-  // Tutup modal
   function tutupModal() {
     document.getElementById("modalSantri").style.display = "none";
     document.getElementById("inputNama").value = "";
@@ -1908,15 +1890,20 @@ async function submitTambahKelasBaru() {
     document.getElementById("loadingTambahSantri").style.display = "none";
   }
 
-  // Simpan data santri
   async function simpanSantriBaru() {
     const nama = document.getElementById("inputNama").value.trim();
     const nis = document.getElementById("inputNis").value.trim();
     const semester = document.getElementById("inputSemester").value;
-    const kelas = document.getElementById("kelas").value;
+    const kelas = document.getElementById("kelas").value; // dropdown kelas yang sudah ada di halaman utama
 
-    if (!nama) { alert("Nama tidak boleh kosong."); return; }
-    if (!nis) { alert("NIS tidak boleh kosong."); return; }
+    if (!nama) {
+      alert("Nama tidak boleh kosong.");
+      return;
+    }
+    if (!nis) {
+      alert("NIS tidak boleh kosong.");
+      return;
+    }
 
     const loadingEl = document.getElementById("loadingTambahSantri");
     loadingEl.style.display = "block";
@@ -1943,13 +1930,6 @@ async function submitTambahKelasBaru() {
       alert("Terjadi kesalahan: " + err.message);
     }
   }
-
-  // Klik overlay menutup modal (hanya jika klik di background)
-  document.getElementById("modalSantri").addEventListener("click", (e) => {
-    if (e.target.id === "modalSantri") {
-      tutupModal();
-    }
-  });
 </script>
 
 <script>
