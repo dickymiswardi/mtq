@@ -531,16 +531,16 @@ button.lihat-quran-btn:hover::after {
 <div id="controls" style="margin-top:10px;">
     <button id="recordButton" class="rec-btn">● Record</button>
     <button id="stopButton" class="stop-btn" disabled>■ Stop</button>
+    <span id="recordDuration" style="margin-left:15px; font-weight:bold;">00:00</span>
 </div>
-
-<!-- Elemen durasi -->
-<div id="recordDuration" style="margin-top:5px; font-weight:bold;">Durasi: 00:00</div>
 
 <!-- Loading spinner -->
 <div id="loadingIndicator" style="display:none; margin-top:10px;">
   <div class="spinner"></div>
   <span style="margin-left:10px; font-style:italic; color:#007bff;">Membuat file audio...</span>
 </div>
+
+<ul id="recordingsList"></ul>
 
 <style>
 /* Spinner CSS */
@@ -554,102 +554,31 @@ button.lihat-quran-btn:hover::after {
   display: inline-block;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 /* Tombol Rekam */
-.rec-btn {
-    background: linear-gradient(135deg, #ff4b5c, #ff0000);
-    color: white;
-    font-weight: bold;
-    font-size: 16px;
-    border: none;
-    border-radius: 50px;
-    padding: 10px 25px;
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-    margin-right: 10px;
-}
-.rec-btn.pulsing {
-    animation: pulse 1s infinite;
-}
-@keyframes pulse {
-    0% { transform: scale(1); box-shadow: 0 0 15px rgba(255,0,0,0.6); }
-    50% { transform: scale(1.08); box-shadow: 0 0 25px rgba(255,0,0,0.8); }
-    100% { transform: scale(1); box-shadow: 0 0 15px rgba(255,0,0,0.6); }
-}
+.rec-btn { background: linear-gradient(135deg, #ff4b5c, #ff0000); color:white; font-weight:bold; font-size:16px; border:none; border-radius:50px; padding:10px 25px; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; margin-right:10px;}
+.rec-btn.pulsing { animation: pulse 1s infinite; }
+@keyframes pulse { 0% { transform: scale(1); box-shadow:0 0 15px rgba(255,0,0,0.6);} 50%{transform:scale(1.08); box-shadow:0 0 25px rgba(255,0,0,0.8);} 100%{transform:scale(1); box-shadow:0 0 15px rgba(255,0,0,0.6);}}
 
-/* Tombol Stop */
-.stop-btn {
-    background: linear-gradient(135deg, #555, #333);
-    color: white;
-    font-weight: bold;
-    font-size: 16px;
-    border: none;
-    border-radius: 50px;
-    padding: 10px 25px;
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-}
-.stop-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
+.stop-btn { background:linear-gradient(135deg,#555,#333); color:white; font-weight:bold; font-size:16px; border:none; border-radius:50px; padding:10px 25px; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; }
+.stop-btn:hover { transform:scale(1.05); box-shadow:0 0 10px rgba(0,0,0,0.5); }
 </style>
 
 <script>
 const recBtn = document.getElementById('recordButton');
 const stopBtn = document.getElementById('stopButton');
-const durationEl = document.getElementById('recordDuration');
+const loadingIndicator = document.getElementById('loadingIndicator');
+const durationSpan = document.getElementById('recordDuration');
 
 let recording = false;
-let startTime = 0;
-let durationTimer = null;
+let duration = 0;
+let durationInterval = null;
 
 // Fungsi format durasi mm:ss
-function formatTime(seconds) {
-    const m = String(Math.floor(seconds / 60)).padStart(2,'0');
-    const s = String(seconds % 60).padStart(2,'0');
+function formatTime(sec) {
+    const m = Math.floor(sec / 60).toString().padStart(2,'0');
+    const s = (sec % 60).toString().padStart(2,'0');
     return `${m}:${s}`;
 }
-
-// Saat klik tombol rekam
-recBtn.addEventListener('click', () => {
-    recording = true;
-    recBtn.classList.add('pulsing');
-    recBtn.disabled = true;
-    stopBtn.disabled = false;
-
-    // mulai durasi
-    startTime = Date.now();
-    durationTimer = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        durationEl.innerText = `Durasi: ${formatTime(elapsed)}`;
-    }, 500);
-});
-
-// Saat klik tombol stop
-stopBtn.addEventListener('click', () => {
-    recording = false;
-    recBtn.classList.remove('pulsing');
-    recBtn.disabled = false;
-    stopBtn.disabled = true;
-
-    // hentikan durasi
-    clearInterval(durationTimer);
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    durationEl.innerText = `Durasi: ${formatTime(elapsed)}`;
-});
-</script>
-
-<script>
-const recBtn = document.getElementById('recordButton');
-const stopBtn = document.getElementById('stopButton');
-const loadingIndicator = document.getElementById('loadingIndicator');
-
-let recording = false;
 
 // Tombol Record
 recBtn.addEventListener('click', () => {
@@ -657,6 +586,16 @@ recBtn.addEventListener('click', () => {
     recBtn.classList.add('pulsing');
     recBtn.disabled = true;
     stopBtn.disabled = false;
+
+    // reset durasi
+    duration = 0;
+    durationSpan.textContent = "00:00";
+
+    // start timer
+    durationInterval = setInterval(() => {
+        duration++;
+        durationSpan.textContent = formatTime(duration);
+    }, 1000);
 });
 
 // Tombol Stop
@@ -666,21 +605,23 @@ stopBtn.addEventListener('click', () => {
     recBtn.disabled = false;
     stopBtn.disabled = true;
 
+    // stop timer
+    clearInterval(durationInterval);
+
     // tampilkan spinner
     loadingIndicator.style.display = "flex";
     loadingIndicator.style.alignItems = "center";
 
     if (recorder) {
         recorder.onComplete = function(recorderInstance, blob) {
-            // hide spinner saat blob siap
             loadingIndicator.style.display = "none";
-            // panggil preview + upload
             createDownloadLink(blob, recorderInstance.encoding);
         };
         recorder.finishRecording();
     }
 });
 </script>
+
 
 
 
