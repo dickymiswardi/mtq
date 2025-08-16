@@ -14,13 +14,12 @@ stopButton.addEventListener("click", stopRecording);
 function startRecording() {
     recordButton.disabled = true;
     stopButton.disabled = false;
+    recordButton.classList.add("blink"); // tombol kedip
 
-    // tombol kedip sendiri
-    recordButton.classList.add("blink");
-
-    navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(stream => {
-        audioContext = new AudioContext();
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+    .then(stream => {
         gumStream = stream;
+        audioContext = new AudioContext();
         input = audioContext.createMediaStreamSource(stream);
 
         encodingType = encodingTypeSelect.value;
@@ -30,6 +29,8 @@ function startRecording() {
             workerDir: "js/",
             encoding: encodingType,
             numChannels: 2,
+            onEncoderLoading: function() {},
+            onEncoderLoaded: function() {}
         });
 
         recorder.setOptions({
@@ -45,7 +46,8 @@ function startRecording() {
         };
 
         recorder.startRecording();
-    }).catch(err => {
+    })
+    .catch(err => {
         alert("Gagal mengakses microphone: " + err.message);
         recordButton.disabled = false;
         stopButton.disabled = true;
@@ -56,25 +58,19 @@ function startRecording() {
 function stopRecording() {
     if (!gumStream || !recorder) return;
 
-    // hentikan aliran audio
+    // hentikan tracks mic
     gumStream.getAudioTracks().forEach(track => track.stop());
     gumStream = null;
 
-    // stop AudioContext
-    if (audioContext) {
-        audioContext.close();
-        audioContext = null;
-    }
-
     stopButton.disabled = true;
     recordButton.disabled = false;
+    recordButton.classList.remove("blink"); // hentikan kedip
 
-    // hentikan kedip tombol
-    recordButton.classList.remove("blink");
-
-    // finish recording, akan memicu onComplete
+    // finish recording (memicu onComplete)
     recorder.finishRecording();
     recorder = null;
+
+    // jangan close audioContext dulu, biarkan WebAudioRecorder yang handle
 }
 
 function createDownloadLink(blob, encoding) {
