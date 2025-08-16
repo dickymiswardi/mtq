@@ -93,61 +93,81 @@ function stopRecording() {
 }
 
 function createDownloadLink(blob, encoding) {
-    var url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     if (!markData.audio) markData.audio = [];
     const tempFileName = new Date().toISOString() + '.' + encoding;
     markData.audio.push(tempFileName);
 
-    // buat elemen preview audio
-    var au = document.createElement('audio');
+    // preview audio
+    const au = document.createElement('audio');
     au.controls = true;
     au.src = url;
 
     // link download lokal
-    var link = document.createElement('a');
+    const link = document.createElement('a');
     link.href = url;
     link.download = tempFileName;
-    link.innerHTML = tempFileName;
+    link.innerText = tempFileName;
 
-    // elemen status upload
-    var statusEl = document.createElement('span');
+    // status upload
+    const statusEl = document.createElement('span');
     statusEl.style.marginLeft = "10px";
     statusEl.style.fontStyle = "italic";
     statusEl.style.color = "#007bff";
     statusEl.innerText = "Uploading...";
 
-    var li = document.createElement('li');
+    // tombol Upload Ulang (sembunyi awalnya)
+    const retryBtn = document.createElement('button');
+    retryBtn.innerText = "Upload Ulang";
+    retryBtn.style.marginLeft = "10px";
+    retryBtn.style.display = "none";
+    retryBtn.className = "stop-btn";
+
+    const li = document.createElement('li');
     li.appendChild(au);
     li.appendChild(link);
     li.appendChild(statusEl);
+    li.appendChild(retryBtn);
     recordingsList.appendChild(li);
 
-    // fungsi upload langsung
-    const reader = new FileReader();
-    reader.onloadend = async function() {
-        const base64Data = reader.result.split(',')[1];
+    // fungsi upload
+    async function uploadAudio() {
+        statusEl.innerText = "Uploading...";
+        statusEl.style.color = "#007bff";
+        retryBtn.style.display = "none";
+
         try {
-            const res = await fetch('/.netlify/functions/upload-audio', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
-            });
-            const result = await res.json();
-            if (!result.success) throw new Error(result.error || 'Gagal upload audio');
+            const reader = new FileReader();
+            reader.onloadend = async function() {
+                const base64Data = reader.result.split(',')[1];
+                const res = await fetch('/.netlify/functions/upload-audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
+                });
+                const result = await res.json();
+                if (!result.success) throw new Error(result.error || 'Gagal upload audio');
 
-            markData.audio[markData.audio.length - 1] = result.path || tempFileName;
-            statusEl.innerText = "Upload ✅"; // update status
-            statusEl.style.color = "green";
-
-            __log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
-        } catch (err) {
+                markData.audio[markData.audio.length-1] = result.path || tempFileName;
+                statusEl.innerText = "Upload ✅";
+                statusEl.style.color = "green";
+                __log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
+            };
+            reader.readAsDataURL(blob);
+        } catch(err) {
+            console.error(err);
             statusEl.innerText = "Upload ❌";
             statusEl.style.color = "red";
+            retryBtn.style.display = "inline-block";
             alert('⚠️ Gagal upload audio: ' + err.message);
-            console.error(err);
         }
-    };
-    reader.readAsDataURL(blob);
+    }
+
+    // upload otomatis pertama kali
+    uploadAudio();
+
+    // tombol Upload Ulang
+    retryBtn.addEventListener('click', uploadAudio);
 
     // update nilai jika siswa aktif
     if (currentIdSiswa) {
