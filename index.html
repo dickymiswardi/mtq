@@ -522,23 +522,40 @@ button.lihat-quran-btn:hover::after {
 <!-- ===== AUDIO RECORDING ===== -->
 <h4>Rekam Audio</h4>
 
-<!-- Pilihan format -->
 <select id="encodingTypeSelect">
   <option value="wav">Waveform Audio (.wav)</option>
   <option value="mp3">MP3 (.mp3)</option>
   <option value="ogg">Ogg Vorbis (.ogg)</option>
 </select>
 
-<!-- Kontrol record/stop -->
 <div id="controls" style="margin-top:10px;">
     <button id="recordButton" class="rec-btn">● Record</button>
     <button id="stopButton" class="stop-btn" disabled>■ Stop</button>
 </div>
 
-<!-- Elemen durasi -->
-<div id="recordDuration" style="margin-top:5px; font-weight:bold;">Durasi: 00:00</div>
+<!-- Loading spinner -->
+<div id="loadingIndicator" style="display:none; margin-top:10px;">
+  <div class="spinner"></div>
+  <span style="margin-left:10px; font-style:italic; color:#007bff;">Membuat file audio...</span>
+</div>
 
 <style>
+/* Spinner CSS */
+.spinner {
+  border: 4px solid #f3f3f3; /* light grey */
+  border-top: 4px solid #007bff; /* blue */
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Tombol Rekam */
 .rec-btn {
     background: linear-gradient(135deg, #ff4b5c, #ff0000);
@@ -560,6 +577,7 @@ button.lihat-quran-btn:hover::after {
     50% { transform: scale(1.08); box-shadow: 0 0 25px rgba(255,0,0,0.8); }
     100% { transform: scale(1); box-shadow: 0 0 15px rgba(255,0,0,0.6); }
 }
+
 /* Tombol Stop */
 .stop-btn {
     background: linear-gradient(135deg, #555, #333);
@@ -581,47 +599,42 @@ button.lihat-quran-btn:hover::after {
 <script>
 const recBtn = document.getElementById('recordButton');
 const stopBtn = document.getElementById('stopButton');
-const durationEl = document.getElementById('recordDuration');
+const loadingIndicator = document.getElementById('loadingIndicator');
 
 let recording = false;
-let startTime = 0;
-let durationTimer = null;
 
-// Fungsi format durasi mm:ss
-function formatTime(seconds) {
-    const m = String(Math.floor(seconds / 60)).padStart(2,'0');
-    const s = String(seconds % 60).padStart(2,'0');
-    return `${m}:${s}`;
-}
-
-// Saat klik tombol rekam
+// Tombol Record
 recBtn.addEventListener('click', () => {
     recording = true;
     recBtn.classList.add('pulsing');
     recBtn.disabled = true;
     stopBtn.disabled = false;
-
-    // mulai durasi
-    startTime = Date.now();
-    durationTimer = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        durationEl.innerText = `Durasi: ${formatTime(elapsed)}`;
-    }, 500);
 });
 
-// Saat klik tombol stop
+// Tombol Stop
 stopBtn.addEventListener('click', () => {
     recording = false;
     recBtn.classList.remove('pulsing');
     recBtn.disabled = false;
     stopBtn.disabled = true;
 
-    // hentikan durasi
-    clearInterval(durationTimer);
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    durationEl.innerText = `Durasi: ${formatTime(elapsed)}`;
+    // tampilkan spinner
+    loadingIndicator.style.display = "flex";
+    loadingIndicator.style.alignItems = "center";
+
+    if (recorder) {
+        recorder.onComplete = function(recorderInstance, blob) {
+            // hide spinner saat blob siap
+            loadingIndicator.style.display = "none";
+            // panggil preview + upload
+            createDownloadLink(blob, recorderInstance.encoding);
+        };
+        recorder.finishRecording();
+    }
 });
 </script>
+
+
 
 
 
