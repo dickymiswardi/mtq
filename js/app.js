@@ -1,77 +1,112 @@
-// Variabel global
-var gumStream, recorder, input, audioContext;
-var encodingType, encodeAfterRecord = true;
+//webkitURL is deprecated but nevertheless
+URL = window.URL || window.webkitURL;
+
+var gumStream;                         // stream from getUserMedia()
+var recorder;                          // WebAudioRecorder object
+var input;                             // MediaStreamAudioSourceNode we'll be recording
+var encodingType;                      // holds selected encoding for resulting audio (file)
+var encodeAfterRecord = true;          // when to encode
+
+// shim for AudioContext when it's not available
+var AudioContext = window.AudioContext || window.webkitAudioContext;
+var audioContext;                      // new audio context to help us record
+
 var encodingTypeSelect = document.getElementById("encodingTypeSelect");
 var recordButton = document.getElementById("recordButton");
 var stopButton = document.getElementById("stopButton");
-var recordingIndicator = document.getElementById("recordingIndicator");
-var recordingsList = document.getElementById("recordingsList");
 
-// Event listeners
+// add events to buttons
 recordButton.addEventListener("click", startRecording);
 stopButton.addEventListener("click", stopRecording);
 
 function startRecording() {
-    recordButton.disabled = true;
-    stopButton.disabled = false;
+    console.log("startRecording() called");
 
-    // tampilkan indikator kedap-kedip
-    recordingIndicator.style.display = "inline-block";
+    var constraints = { audio: true, video: false };
 
-    navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(stream => {
+    navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+        __log("getUserMedia() success, stream created, initializing WebAudioRecorder...");
+
         audioContext = new AudioContext();
+
+        // update format info
+        document.getElementById("formats").innerHTML =
+            "Format: 2 channel " + encodingTypeSelect.options[encodingTypeSelect.selectedIndex].value +
+            " @ " + audioContext.sampleRate / 1000 + "kHz";
+
         gumStream = stream;
         input = audioContext.createMediaStreamSource(stream);
+        // input.connect(audioContext.destination) // jangan di-uncomment, kalau mau monitoring
 
-        encodingType = encodingTypeSelect.value;
+        encodingType = encodingTypeSelect.options[encodingTypeSelect.selectedIndex].value;
         encodingTypeSelect.disabled = true;
 
         recorder = new WebAudioRecorder(input, {
-            workerDir: "js/",
+            workerDir: "js/", // must end with slash
             encoding: encodingType,
-            numChannels: 2
+            numChannels: 2, // mp3 hanya support 2
+            onEncoderLoading: function(recorder, encoding) {
+                __log("Loading " + encoding + " encoder...");
+            },
+            onEncoderLoaded: function(recorder, encoding) {
+                __log(encoding + " encoder loaded");
+            }
         });
 
+        recorder.onComplete = function(recorder, blob) {
+            __log("Encoding complete");
+            createDownloadLink(blob, recorder.encoding); // versi upload + preview
+            encodingTypeSelect.disabled = false;
+        };
+
+        // =====================
+        // PENTING! JANGAN DIHAPUS
+        // =====================
         recorder.setOptions({
             timeLimit: 86400,
             encodeAfterRecord: encodeAfterRecord,
             ogg: { quality: 1.0 },
-            mp3: { bitRate: 320 }
+            mp3: { bitRate: 192 }
         });
 
-        recorder.onComplete = function(rec, blob) {
-            createDownloadLink(blob, rec.encoding);
-            encodingTypeSelect.disabled = false;
-        };
-
         recorder.startRecording();
-    }).catch(err => {
+        __log("Recording started");
+
+    }).catch(function(err) {
         recordButton.disabled = false;
         stopButton.disabled = true;
+        console.error(err);
         alert("Gagal mengakses microphone: " + err.message);
-        recordingIndicator.style.display = "none";
     });
+
+    recordButton.disabled = true;
+    stopButton.disabled = false;
 }
 
 function stopRecording() {
-    if (gumStream) gumStream.getAudioTracks().forEach(track => track.stop());
-    if (audioContext) audioContext.close();
-    if (recorder) recorder.finishRecording();
+    console.log("stopRecording() called");
 
-    recordButton.disabled = false;
+    gumStream.getAudioTracks()[0].stop();
+
     stopButton.disabled = true;
+    recordButton.disabled = false;
 
-    // sembunyikan indikator
-    recordingIndicator.style.display = "none";
+    recorder.finishRecording();
+
+    __log('Recording stopped');
 }
 
-// Fungsi createDownloadLink sama seperti versi sebelumnya
+// ===== Versi final createDownloadLink: preview lokal + upload =====
 function createDownloadLink(blob, encoding) {
+    // buat URL blob untuk preview lokal
     var url = URL.createObjectURL(blob);
+
+    // simpan sementara di markData
     if (!markData.audio) markData.audio = [];
     const tempFileName = new Date().toISOString() + '.' + encoding;
     markData.audio.push(tempFileName);
 
+    // buat elemen audio + link lokal
     var au = document.createElement('audio');
     au.controls = true;
     au.src = url;
@@ -86,20 +121,45 @@ function createDownloadLink(blob, encoding) {
     li.appendChild(link);
     recordingsList.appendChild(li);
 
+    // ===== Upload ke GitHub /audio via Netlify Function =====
     const reader = new FileReader();
     reader.onloadend = async function() {
-        const base64Data = reader.result.split(',')[1];
+        const base64Data = reader.result.split(',')[1]; // hapus prefix data:audio/xxx;base64
         try {
             const res = await fetch('/.netlify/functions/upload-audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
+                body: JSON.stringify({
+                    fileName: tempFileName,
+                    base64: base64Data
+                })
             });
             const result = await res.json();
-            markData.audio[markData.audio.length-1] = result.fileName || tempFileName;
-        } catch(err) {
+            if (!result.success) throw new Error(result.error || 'Gagal upload audio');
+
+            // update markData dengan nama file final di repo
+            markData.audio[markData.audio.length - 1] = result.fileName || tempFileName;
+
+            __log(`Recording selesai dan di-upload: ${result.fileName || tempFileName}`);
+        } catch (err) {
             alert('⚠️ Gagal upload audio: ' + err.message);
+            console.error(err);
         }
     };
     reader.readAsDataURL(blob);
+
+    // update nilai di tabel jika siswa aktif
+    if (currentIdSiswa) {
+        const hasil = hitungNilai();
+        updateNilaiDiTabel(hasil);
+    }
+
+    __log(`Recording selesai (preview lokal): ${tempFileName}`);
+}
+
+// ===== Helper log =====
+function __log(e, data) {
+    const logEl = document.getElementById('log');
+    if (!logEl) return;
+    logEl.innerHTML += "\n" + e + " " + (data || '');
 }
