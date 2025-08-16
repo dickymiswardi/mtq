@@ -12,58 +12,6 @@
       background: #f4f6f8;
     }
 
-/* Tombol Record */
-.rec-btn {
-    background: linear-gradient(135deg, #ff4b5c, #ff0000);
-    color: white;
-    font-weight: bold;
-    font-size: 16px;
-    border: none;
-    border-radius: 50px;
-    padding: 10px 25px;
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-    margin-right: 10px;
-}
-
-.rec-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(255,0,0,0.6);
-}
-
-/* Tombol Stop */
-.stop-btn {
-    background: linear-gradient(135deg, #555, #333);
-    color: white;
-    font-weight: bold;
-    font-size: 16px;
-    border: none;
-    border-radius: 50px;
-    padding: 10px 25px;
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-}
-
-.stop-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-
-/* Indikator REC */
-#recordingIndicator {
-    display: none;
-    color: red;
-    font-weight: bold;
-    margin-left: 15px;
-    animation: blink 1s infinite;
-}
-
-/* Animasi kedap-kedip */
-@keyframes blink {
-    0%, 50%, 100% { opacity: 1; }
-    25%, 75% { opacity: 0; }
-}
-
     button.lihat-quran-btn {
   all: unset; /* reset semua style bawaan */
   display: inline-block;
@@ -572,22 +520,84 @@ button.lihat-quran-btn:hover::after {
     <br>
 
 
-<!-- AUDIO RECORDING -->
-    <h4>Rekam Audio</h4>
-    <select id="encodingTypeSelect">
-      <option value="wav">Waveform Audio (.wav)</option>
-      <option value="mp3">MP3 (.mp3)</option>
-      <option value="ogg">Ogg Vorbis (.ogg)</option>
-    </select>
-    <div id="controls" style="margin-top:10px; position:relative; z-index:1;">
-      <button id="recordButton" class="rec-btn">● Record</button>
-      <button id="stopButton" class="stop-btn" disabled>■ Stop</button>
-      <span id="recordingIndicator" style="display:none; color:red; font-weight:bold; margin-left:10px;">● REC</span>
-    </div>
-    <div id="formats" style="margin-top:5px;"></div>
+<!-- ===== AUDIO RECORDING ===== -->
+<h4>Rekam Audio</h4>
 
-    <p>Recordings:</p>
-    <ol id="recordingsList"></ol>
+<!-- Pilihan format -->
+<select id="encodingTypeSelect">
+  <option value="wav">Waveform Audio (.wav)</option>
+  <option value="mp3">MP3 (.mp3)</option>
+  <option value="ogg">Ogg Vorbis (.ogg)</option>
+</select>
+
+<!-- Kontrol record/stop -->
+<div id="controls" style="margin-top:10px;">
+  <button id="recordButton" class="rec-btn">● Record</button>
+  <button id="stopButton" class="stop-btn" disabled>■ Stop</button>
+  <span id="recordingIndicator">● REC</span>
+</div>
+
+<!-- Info format (opsional) -->
+<div id="formats" style="margin-top:10px;"></div>
+
+<!-- Daftar recording -->
+<p>Recordings:</p>
+<ol id="recordingsList"></ol>
+
+<!-- ===== CSS Tombol + Indikator Kedap-kedip ===== -->
+<style>
+/* Tombol Record */
+.rec-btn {
+    background: linear-gradient(135deg, #ff4b5c, #ff0000);
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    border: none;
+    border-radius: 50px;
+    padding: 10px 25px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin-right: 10px;
+}
+
+.rec-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255,0,0,0.6);
+}
+
+/* Tombol Stop */
+.stop-btn {
+    background: linear-gradient(135deg, #555, #333);
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    border: none;
+    border-radius: 50px;
+    padding: 10px 25px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.stop-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+/* Indikator REC */
+#recordingIndicator {
+    display: none;
+    color: red;
+    font-weight: bold;
+    margin-left: 15px;
+    animation: blink 1s infinite;
+}
+
+/* Animasi kedap-kedip */
+@keyframes blink {
+    0%, 50%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0; }
+}
+</style>
 
 
     <!-- ===== BUTTON ===== -->
