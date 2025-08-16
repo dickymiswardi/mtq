@@ -533,7 +533,6 @@ button.lihat-quran-btn:hover::after {
 	  <div id="controls" style="margin-top:10px;">
   <button id="recordButton" class="rec-btn">● Record</button>
 <button id="stopButton" class="stop-btn" disabled>■ Stop</button>
-<span id="recordingIndicator">● REC</span>
 </div>
 
 <style>
@@ -579,16 +578,6 @@ button.lihat-quran-btn:hover::after {
 .stop-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-
-/* Animasi kedap-kedip (opsional untuk tombol rekam saat aktif) */
-.blink {
-    animation: blink 1s infinite;
-}
-
-@keyframes blink {
-    0%, 50%, 100% { opacity: 1; }
-    25%, 75% { opacity: 0; }
 }
 </style>
 
