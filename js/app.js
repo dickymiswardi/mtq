@@ -92,62 +92,70 @@ function stopRecording() {
     __log('Recording stopped');
 }
 
-// ===== createDownloadLink versi preview + tombol Upload =====
 function createDownloadLink(blob, encoding) {
     var url = URL.createObjectURL(blob);
     if (!markData.audio) markData.audio = [];
     const tempFileName = new Date().toISOString() + '.' + encoding;
     markData.audio.push(tempFileName);
 
+    // buat elemen preview audio
     var au = document.createElement('audio');
     au.controls = true;
     au.src = url;
 
+    // link download lokal
     var link = document.createElement('a');
     link.href = url;
     link.download = tempFileName;
     link.innerHTML = tempFileName;
 
-    // tombol proses upload
-    var uploadBtn = document.createElement('button');
-    uploadBtn.innerText = "Proses Upload";
-    uploadBtn.addEventListener('click', function() {
-        const reader = new FileReader();
-        reader.onloadend = async function() {
-            const base64Data = reader.result.split(',')[1];
-            try {
-                const res = await fetch('/.netlify/functions/upload-audio', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
-                });
-                const result = await res.json();
-                if (!result.success) throw new Error(result.error || 'Gagal upload audio');
-
-                markData.audio[markData.audio.length - 1] = result.path || tempFileName;
-                alert(`✅ Upload berhasil: ${result.path || tempFileName}`);
-                __log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
-            } catch (err) {
-                alert('⚠️ Gagal upload audio: ' + err.message);
-                console.error(err);
-            }
-        };
-        reader.readAsDataURL(blob);
-    });
+    // elemen status upload
+    var statusEl = document.createElement('span');
+    statusEl.style.marginLeft = "10px";
+    statusEl.style.fontStyle = "italic";
+    statusEl.style.color = "#007bff";
+    statusEl.innerText = "Uploading...";
 
     var li = document.createElement('li');
     li.appendChild(au);
     li.appendChild(link);
-    li.appendChild(uploadBtn);
+    li.appendChild(statusEl);
     recordingsList.appendChild(li);
 
-    // update nilai di tabel jika siswa aktif
+    // fungsi upload langsung
+    const reader = new FileReader();
+    reader.onloadend = async function() {
+        const base64Data = reader.result.split(',')[1];
+        try {
+            const res = await fetch('/.netlify/functions/upload-audio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
+            });
+            const result = await res.json();
+            if (!result.success) throw new Error(result.error || 'Gagal upload audio');
+
+            markData.audio[markData.audio.length - 1] = result.path || tempFileName;
+            statusEl.innerText = "Upload ✅"; // update status
+            statusEl.style.color = "green";
+
+            __log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
+        } catch (err) {
+            statusEl.innerText = "Upload ❌";
+            statusEl.style.color = "red";
+            alert('⚠️ Gagal upload audio: ' + err.message);
+            console.error(err);
+        }
+    };
+    reader.readAsDataURL(blob);
+
+    // update nilai jika siswa aktif
     if (currentIdSiswa) {
         const hasil = hitungNilai();
         updateNilaiDiTabel(hasil);
     }
 
-    __log(`Recording selesai (preview lokal): ${tempFileName}`);
+    __log(`Recording selesai (preview lokal & upload otomatis): ${tempFileName}`);
 }
 
 // ===== Helper log =====
