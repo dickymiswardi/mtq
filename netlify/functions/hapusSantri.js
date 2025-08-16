@@ -3,6 +3,14 @@ import { Buffer } from "buffer";
 
 export async function handler(event) {
   const token = process.env.MTQ_TOKEN;
+
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: "Method not allowed. Gunakan POST." }),
+    };
+  }
+
   const { id, kelas } = JSON.parse(event.body || "{}");
 
   if (!id || !kelas) {
@@ -12,7 +20,8 @@ export async function handler(event) {
     };
   }
 
-  const fileName = `${kelas}.json`; // kelas_1.json, kelas_2.json, dst
+  // Pastikan format nama file benar (kelas_1.json, kelas_2.json, dst)
+  const fileName = `kelas_${kelas}.json`;
   const githubApiUrl = `https://api.github.com/repos/dickymiswardi/usermtq/contents/${fileName}`;
 
   try {
@@ -31,19 +40,23 @@ export async function handler(event) {
     const contentDecoded = Buffer.from(fileData.content, "base64").toString("utf-8");
     let santriList = JSON.parse(contentDecoded);
 
-    // 2. Hapus santri sesuai ID
+    // 2. Hapus santri sesuai ID (handle tipe data number/string)
     const awalLength = santriList.length;
-    santriList = santriList.filter(s => s.id !== id);
+    santriList = santriList.filter(
+      (s) => String(s.id) !== String(id) && String(s.nis || "") !== String(id)
+    );
 
     if (santriList.length === awalLength) {
       return {
         statusCode: 404,
-        body: JSON.stringify({ error: "Santri tidak ditemukan." }),
+        body: JSON.stringify({ error: `Santri dengan ID ${id} tidak ditemukan.` }),
       };
     }
 
-    // 3. Encode dan kirim PUT ke GitHub
-    const updatedContent = Buffer.from(JSON.stringify(santriList, null, 2)).toString("base64");
+    // 3. Encode & update ke GitHub
+    const updatedContent = Buffer.from(
+      JSON.stringify(santriList, null, 2)
+    ).toString("base64");
 
     const putRes = await fetch(githubApiUrl, {
       method: "PUT",
@@ -66,9 +79,10 @@ export async function handler(event) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, message: "Santri berhasil dihapus" }),
+      body: JSON.stringify({ success: true, message: `Santri ID ${id} berhasil dihapus` }),
     };
   } catch (err) {
+    console.error("Error hapusSantri:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message }),
