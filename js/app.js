@@ -63,10 +63,10 @@ function startRecording() {
         // PENTING! JANGAN DIHAPUS
         // =====================
         recorder.setOptions({
-            timeLimit: 120,
+            timeLimit: 86400,
             encodeAfterRecord: encodeAfterRecord,
-            ogg: { quality: 0.5 },
-            mp3: { bitRate: 160 }
+            ogg: { quality: 1.0 },
+            mp3: { bitRate: 320 }
         });
 
         recorder.startRecording();
