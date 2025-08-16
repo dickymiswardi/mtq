@@ -456,17 +456,17 @@ button.lihat-quran-btn:hover::after {
 
 
   <div id="modalSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
-  <div style="background:#fff; width:300px; margin:100px auto; padding:20px; border-radius:10px;">
+  <div style="background:#fff; width:320px; margin:100px auto; padding:20px; border-radius:10px;">
     <h2>Tambah Santri</h2>
 
-    <label>ID:</label>
-    <input type="text" id="inputId" style="width:80%; margin-bottom:10px;" />
+    <label>Nama:</label><br>
+    <input type="text" id="inputNama" style="width:90%; margin-bottom:10px;" />
 
-    <label>Nama:</label>
-    <input type="text" id="inputNama" style="width:80%; margin-bottom:10px;" />
+    <label>NIS:</label><br>
+    <input type="text" id="inputNis" style="width:90%; margin-bottom:10px;" />
 
-    <label>Semester:</label>
-    <select id="inputSemester" style="width:80%;">
+    <label>Semester:</label><br>
+    <select id="inputSemester" style="width:90%; margin-bottom:10px;">
       <option value="1">1</option>
       <option value="2">2</option>
       <option value="3">3</option>
@@ -477,7 +477,7 @@ button.lihat-quran-btn:hover::after {
 
     <div style="margin-top:10px; display:flex; justify-content:space-between;">
       <button onclick="simpanSantriBaru()">Simpan</button>
-      <button onclick="tutupModal('modalSantri')">Close</button>
+      <button onclick="tutupModal()">Close</button>
     </div>
 
     <div id="loadingTambahSantri" style="display:none; margin-top:10px; color:blue;">
@@ -491,20 +491,18 @@ button.lihat-quran-btn:hover::after {
 <div id="modalHapusSantri" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
   <div style="background:#fff; width:350px; margin:100px auto; padding:20px; border-radius:10px;">
     <h2>Hapus Santri</h2>
-    <label>Pilih Santri (ID - Nama):</label>
+    <label>Pilih Santri:</label>
     <select id="pilihSantri" style="width:80%; margin-bottom:10px;"></select>
 
     <div style="margin-top:10px; display:flex; justify-content:space-between;">
       <button onclick="konfirmasiHapusSantri()">Hapus</button>
       <button onclick="tutupModal('modalHapusSantri')">Close</button>
     </div>
-
     <div id="loadingHapusSantri" style="display:none; margin-top:10px; color:red;">
       ⏳ Menghapus...
     </div>
   </div>
 </div>
-
   
   
   <div id="overlay-quran" style="display:none; position:fixed; top:0; left:0;
@@ -790,7 +788,7 @@ function aturDropdownKelas(user) {
 // const dataAbsensi = absensiData.find(a => a.id === santri.id) || {};
 
 row.innerHTML = `
-  <td>${santri.id}</td>
+  <td>${santri.nis || santri.id}</td>
   <td>${santri.nama}</td>
   <td>
     <select class="absensi">
@@ -1774,90 +1772,124 @@ async function submitTambahKelasBaru() {
 </script>
   
   <script>
+  function bukaModalSantri() {
+    document.getElementById("modalSantri").style.display = "block";
+  }
+
+  function tutupModal() {
+    document.getElementById("modalSantri").style.display = "none";
+    document.getElementById("inputNama").value = "";
+    document.getElementById("inputNis").value = "";
+    document.getElementById("inputSemester").value = "1";
+    document.getElementById("loadingTambahSantri").style.display = "none";
+  }
+
   async function simpanSantriBaru() {
-  const id = document.getElementById("inputId").value.trim();
-  const nama = document.getElementById("inputNama").value.trim();
-  const semester = document.getElementById("inputSemester").value;
+    const nama = document.getElementById("inputNama").value.trim();
+    const nis = document.getElementById("inputNis").value.trim();
+    const semester = document.getElementById("inputSemester").value;
+    const kelas = document.getElementById("kelas").value; // dropdown kelas yang sudah ada di halaman utama
 
-  if (!id || !nama) {
-    alert("ID dan Nama harus diisi!");
-    return;
-  }
-
-  document.getElementById("loadingTambahSantri").style.display = "block";
-
-  try {
-    const response = await fetch("/.netlify/functions/tambah-santri", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, nama, semester, kelas: kelasSelect.value }) // kelas dari dropdown utama
-    });
-
-    const result = await response.json();
-    document.getElementById("loadingTambahSantri").style.display = "none";
-
-    if (result.success) {
-      alert("Santri berhasil ditambahkan!");
-      tutupModal("modalSantri");
-      loadSantri(); // refresh tabel
-    } else {
-      alert("Gagal menambahkan santri: " + result.message);
+    if (!nama) {
+      alert("Nama tidak boleh kosong.");
+      return;
     }
-  } catch (err) {
-    console.error(err);
-    alert("Terjadi kesalahan saat menambah santri");
-    document.getElementById("loadingTambahSantri").style.display = "none";
+    if (!nis) {
+      alert("NIS tidak boleh kosong.");
+      return;
+    }
+
+    const loadingEl = document.getElementById("loadingTambahSantri");
+    loadingEl.style.display = "block";
+
+    try {
+      const res = await fetch("/.netlify/functions/tambahSantri", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nama, nis, semester, kelas })
+      });
+
+      const data = await res.json();
+      loadingEl.style.display = "none";
+
+      if (res.ok) {
+        alert("Santri berhasil ditambahkan!");
+        tutupModal();
+        location.reload();
+      } else {
+        alert("Gagal menambahkan: " + data.error);
+      }
+    } catch (err) {
+      loadingEl.style.display = "none";
+      alert("Terjadi kesalahan: " + err.message);
+    }
   }
-}
 </script>
 
 
 <script>
-  function isiDropdownHapusSantri(daftarSantri) {
-  const select = document.getElementById("pilihSantri");
-  select.innerHTML = "";
+  async function bukaModalHapusSantri() {
+  document.getElementById("modalHapusSantri").style.display = "block";
 
-  daftarSantri.forEach(santri => {
-    const option = document.createElement("option");
-    option.value = santri.id;
-    option.textContent = `${santri.id} - ${santri.nama}`;
-    select.appendChild(option);
-  });
+  const kelas = document.getElementById("kelas").value;
+  const santriSelect = document.getElementById("pilihSantri");
+  santriSelect.innerHTML = "<option>Loading...</option>";
+
+  try {
+    const res = await fetch(`/.netlify/functions/ambilDataSantri?kelas=${kelas}`);
+    if (!res.ok) throw new Error("Gagal ambil data santri");
+    const santriList = await res.json();
+
+    santriSelect.innerHTML = "";
+    santriList.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.nama} (Semester ${s.semester})`;
+      santriSelect.appendChild(opt);
+    });
+  } catch (err) {
+    alert("Gagal mengambil daftar santri: " + err.message);
+  }
 }
 
+function tutupModal(id) {
+  document.getElementById(id).style.display = "none";
+}
 
-	async function konfirmasiHapusSantri() {
-  const id = document.getElementById("pilihSantri").value;
-  if (!id) {
-    alert("Pilih santri terlebih dahulu!");
+async function konfirmasiHapusSantri() {
+  const idSantri = document.getElementById("pilihSantri").value;
+  const kelas = document.getElementById("kelas").value;
+
+  if (!idSantri) {
+    alert("Pilih santri yang ingin dihapus.");
     return;
   }
 
-  if (!confirm("Apakah Anda yakin ingin menghapus santri dengan ID " + id + "?")) return;
+  if (!confirm("Yakin ingin menghapus santri ini?")) return;
 
-  document.getElementById("loadingHapusSantri").style.display = "block";
+  const loadingEl = document.getElementById("loadingHapusSantri");
+  loadingEl.style.display = "block";
 
   try {
-    const response = await fetch("/.netlify/functions/hapus-santri", {
+    const res = await fetch("/.netlify/functions/hapusSantri", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, kelas: kelasSelect.value })
+      body: JSON.stringify({ id: parseInt(idSantri), kelas })
     });
 
-    const result = await response.json();
-    document.getElementById("loadingHapusSantri").style.display = "none";
+    const data = await res.json();
+    loadingEl.style.display = "none";
 
-    if (result.success) {
+    if (res.ok) {
       alert("Santri berhasil dihapus!");
       tutupModal("modalHapusSantri");
-      loadSantri(); // refresh tabel
+      location.reload();
     } else {
-      alert("Gagal menghapus santri: " + result.message);
+      alert("Gagal menghapus: " + data.error);
     }
   } catch (err) {
-    console.error(err);
-    alert("Terjadi kesalahan saat menghapus santri");
-    document.getElementById("loadingHapusSantri").style.display = "none";
+    loadingEl.style.display = "none";
+    alert("Terjadi kesalahan: " + err.message);
   }
 }
 </script>
