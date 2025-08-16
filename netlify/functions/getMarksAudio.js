@@ -6,10 +6,7 @@ export async function handler(event) {
   const { id, tanggal, kelas } = event.queryStringParameters || {};
 
   if (!id || !tanggal || !kelas) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Parameter id, tanggal, atau kelas tidak ada" })
-    };
+    return { statusCode: 400, body: JSON.stringify({ error: "Parameter id, tanggal, atau kelas tidak ada" }) };
   }
 
   try {
@@ -17,17 +14,11 @@ export async function handler(event) {
     const url = `https://api.github.com/repos/dickymiswardi/usermtq/contents/absensi/${fileName}`;
 
     const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github.v3+json"
-      }
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github.v3+json" }
     });
 
     if (!res.ok) {
-      return {
-        statusCode: res.status,
-        body: JSON.stringify({ error: "File tidak ditemukan" })
-      };
+      return { statusCode: res.status, body: JSON.stringify({ error: "File tidak ditemukan" }) };
     }
 
     const json = await res.json();
@@ -40,16 +31,14 @@ export async function handler(event) {
       return { statusCode: 404, body: JSON.stringify({ error: "Santri tidak ditemukan" }) };
     }
 
-    // Ambil marks, pastikan audio selalu ada
-    const marks = santri.marks || {};
-    if (!marks.audio) marks.audio = [];
+    // Ambil marks + audio
+    const marksAudio = santri.marks || {};
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        id: santri.id,
         nama: santri.nama,
-        marks
+        marks: marksAudio
       })
     };
   } catch (err) {
