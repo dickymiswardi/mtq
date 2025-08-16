@@ -599,6 +599,51 @@ button.lihat-quran-btn:hover::after {
 <script>
 const recBtn = document.getElementById('recordButton');
 const stopBtn = document.getElementById('stopButton');
+const durationEl = document.getElementById('recordDuration');
+
+let recording = false;
+let startTime = 0;
+let durationTimer = null;
+
+// Fungsi format durasi mm:ss
+function formatTime(seconds) {
+    const m = String(Math.floor(seconds / 60)).padStart(2,'0');
+    const s = String(seconds % 60).padStart(2,'0');
+    return `${m}:${s}`;
+}
+
+// Saat klik tombol rekam
+recBtn.addEventListener('click', () => {
+    recording = true;
+    recBtn.classList.add('pulsing');
+    recBtn.disabled = true;
+    stopBtn.disabled = false;
+
+    // mulai durasi
+    startTime = Date.now();
+    durationTimer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        durationEl.innerText = `Durasi: ${formatTime(elapsed)}`;
+    }, 500);
+});
+
+// Saat klik tombol stop
+stopBtn.addEventListener('click', () => {
+    recording = false;
+    recBtn.classList.remove('pulsing');
+    recBtn.disabled = false;
+    stopBtn.disabled = true;
+
+    // hentikan durasi
+    clearInterval(durationTimer);
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    durationEl.innerText = `Durasi: ${formatTime(elapsed)}`;
+});
+</script>
+
+<script>
+const recBtn = document.getElementById('recordButton');
+const stopBtn = document.getElementById('stopButton');
 const loadingIndicator = document.getElementById('loadingIndicator');
 
 let recording = false;
