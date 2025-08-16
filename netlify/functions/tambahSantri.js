@@ -3,12 +3,12 @@ import { Buffer } from "buffer";
 
 export async function handler(event) {
   const token = process.env.MTQ_TOKEN;
-  const { nama, semester, kelas } = JSON.parse(event.body || "{}");
+  const { nama, semester, kelas, nis } = JSON.parse(event.body || "{}");
 
-  if (!nama || !semester || !kelas) {
+  if (!nama || !semester || !kelas || !nis) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Parameter nama, semester, dan kelas wajib diisi." }),
+      body: JSON.stringify({ error: "Parameter nama, semester, kelas, dan nis wajib diisi." }),
     };
   }
 
@@ -35,7 +35,7 @@ export async function handler(event) {
 
     // 🔹 2. Buat ID baru dan tambahkan santri
     const nextId = santriList.reduce((max, s) => Math.max(max, s.id), 0) + 1;
-    santriList.push({ id: nextId, nama, semester });
+    santriList.push({ id: nextId, nis, nama, semester });
 
     // 🔹 3. Encode konten baru ke Base64
     const updatedContent = Buffer.from(JSON.stringify(santriList, null, 2)).toString("base64");
@@ -49,7 +49,7 @@ export async function handler(event) {
         Accept: "application/vnd.github.v3+json",
       },
       body: JSON.stringify({
-        message: `Menambahkan santri ${nama} ke ${fileName}`,
+        message: `Menambahkan santri ${nama} (NIS ${nis}) ke ${fileName}`,
         content: updatedContent,
         sha: fileData.sha,
       }),
