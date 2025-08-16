@@ -535,6 +535,9 @@ button.lihat-quran-btn:hover::after {
     <button id="stopButton" class="stop-btn" disabled>■ Stop</button>
 </div>
 
+<!-- Elemen durasi -->
+<div id="recordDuration" style="margin-top:5px; font-weight:bold;">Durasi: 00:00</div>
+
 <style>
 /* Tombol Rekam */
 .rec-btn {
@@ -549,18 +552,14 @@ button.lihat-quran-btn:hover::after {
     transition: transform 0.1s, box-shadow 0.1s;
     margin-right: 10px;
 }
-
-/* Efek denyut paksa */
 .rec-btn.pulsing {
     animation: pulse 1s infinite;
 }
-
 @keyframes pulse {
     0% { transform: scale(1); box-shadow: 0 0 15px rgba(255,0,0,0.6); }
     50% { transform: scale(1.08); box-shadow: 0 0 25px rgba(255,0,0,0.8); }
     100% { transform: scale(1); box-shadow: 0 0 15px rgba(255,0,0,0.6); }
 }
-
 /* Tombol Stop */
 .stop-btn {
     background: linear-gradient(135deg, #555, #333);
@@ -573,7 +572,6 @@ button.lihat-quran-btn:hover::after {
     cursor: pointer;
     transition: transform 0.1s, box-shadow 0.1s;
 }
-
 .stop-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -583,25 +581,48 @@ button.lihat-quran-btn:hover::after {
 <script>
 const recBtn = document.getElementById('recordButton');
 const stopBtn = document.getElementById('stopButton');
+const durationEl = document.getElementById('recordDuration');
 
 let recording = false;
+let startTime = 0;
+let durationTimer = null;
+
+// Fungsi format durasi mm:ss
+function formatTime(seconds) {
+    const m = String(Math.floor(seconds / 60)).padStart(2,'0');
+    const s = String(seconds % 60).padStart(2,'0');
+    return `${m}:${s}`;
+}
 
 // Saat klik tombol rekam
 recBtn.addEventListener('click', () => {
     recording = true;
-    recBtn.classList.add('pulsing'); // paksa efek denyut
-    recBtn.disabled = true;           // nonaktifkan tombol record saat rekaman
-    stopBtn.disabled = false;         // aktifkan tombol stop
+    recBtn.classList.add('pulsing');
+    recBtn.disabled = true;
+    stopBtn.disabled = false;
+
+    // mulai durasi
+    startTime = Date.now();
+    durationTimer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        durationEl.innerText = `Durasi: ${formatTime(elapsed)}`;
+    }, 500);
 });
 
 // Saat klik tombol stop
 stopBtn.addEventListener('click', () => {
     recording = false;
-    recBtn.classList.remove('pulsing'); // hentikan denyut
-    recBtn.disabled = false;            // aktifkan tombol record lagi
-    stopBtn.disabled = true;            // nonaktifkan tombol stop
+    recBtn.classList.remove('pulsing');
+    recBtn.disabled = false;
+    stopBtn.disabled = true;
+
+    // hentikan durasi
+    clearInterval(durationTimer);
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    durationEl.innerText = `Durasi: ${formatTime(elapsed)}`;
 });
 </script>
+
 
 
 
