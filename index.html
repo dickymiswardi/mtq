@@ -533,10 +533,10 @@ button.lihat-quran-btn:hover::after {
 	  <div id="controls" style="margin-top:10px;">
   <button id="recordButton" class="rec-btn">● Record</button>
 <button id="stopButton" class="stop-btn" disabled>■ Stop</button>
+<span id="recordingIndicator">● REC</span>
 </div>
 
 <style>
-/* Tombol Rekam */
 .rec-btn {
     background: linear-gradient(135deg, #ff4b5c, #ff0000);
     color: white;
@@ -550,18 +550,11 @@ button.lihat-quran-btn:hover::after {
     margin-right: 10px;
 }
 
-/* Hover dengan efek denyut */
 .rec-btn:hover {
-    animation: pulse 1s infinite;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255,0,0,0.6);
 }
 
-@keyframes pulse {
-    0% { transform: scale(1); box-shadow: 0 0 15px rgba(255,0,0,0.6); }
-    50% { transform: scale(1.08); box-shadow: 0 0 25px rgba(255,0,0,0.8); }
-    100% { transform: scale(1); box-shadow: 0 0 15px rgba(255,0,0,0.6); }
-}
-
-/* Tombol Stop */
 .stop-btn {
     background: linear-gradient(135deg, #555, #333);
     color: white;
@@ -574,13 +567,21 @@ button.lihat-quran-btn:hover::after {
     transition: transform 0.1s, box-shadow 0.1s;
 }
 
-/* Hover Stop tetap membesar ringan */
 .stop-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
-</style>
 
+/* Animasi kedap-kedip */
+.blink {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0; }
+}
+</style>
 
 
 <!-- Info format (opsional) -->
