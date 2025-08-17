@@ -103,20 +103,19 @@ function createDownloadLink(blob, encoding) {
     au.controls = true;
     au.src = url;
 
-    // link download lokal
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = tempFileName;
-    link.innerText = tempFileName;
-
-    // status upload
     const statusEl = document.createElement('span');
     statusEl.style.marginLeft = "10px";
     statusEl.style.fontStyle = "italic";
     statusEl.style.color = "#007bff";
     statusEl.innerText = "Uploading...";
 
-    // tombol Upload Ulang (sembunyi awalnya)
+    // progress bar
+    const progress = document.createElement('progress');
+    progress.max = 100;
+    progress.value = 0;
+    progress.style.marginLeft = "10px";
+
+    // tombol Upload Ulang
     const retryBtn = document.createElement('button');
     retryBtn.innerText = "Upload Ulang";
     retryBtn.style.marginLeft = "10px";
@@ -125,36 +124,46 @@ function createDownloadLink(blob, encoding) {
 
     const li = document.createElement('li');
     li.appendChild(au);
-    li.appendChild(link);
     li.appendChild(statusEl);
+    li.appendChild(progress);
     li.appendChild(retryBtn);
     recordingsList.appendChild(li);
 
-    // fungsi upload
+    // fungsi upload dengan chunk
     async function uploadAudio() {
         statusEl.innerText = "Uploading...";
         statusEl.style.color = "#007bff";
         retryBtn.style.display = "none";
+        progress.value = 0;
 
         try {
-            const reader = new FileReader();
-            reader.onloadend = async function() {
-                const base64Data = reader.result.split(',')[1];
+            const chunkSize = 5 * 1024 * 1024; // 5MB
+            const totalChunks = Math.ceil(blob.size / chunkSize);
+
+            for (let i = 0; i < totalChunks; i++) {
+                const chunk = blob.slice(i * chunkSize, (i + 1) * chunkSize);
+                const arrayBuffer = await chunk.arrayBuffer();
+                const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+
                 const res = await fetch('/.netlify/functions/upload-audio', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
+                    body: JSON.stringify({
+                        fileName: tempFileName,
+                        base64: base64Data,
+                        chunkIndex: i,
+                        totalChunks
+                    })
                 });
-                const result = await res.json();
-                if (!result.success) throw new Error(result.error || 'Gagal upload audio');
 
-                markData.audio[markData.audio.length-1] = result.path || tempFileName;
-                statusEl.innerText = "Upload ✅";
-                statusEl.style.color = "green";
-                __log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
-            };
-            reader.readAsDataURL(blob);
-        } catch(err) {
+                if (!res.ok) throw new Error(`Chunk ${i + 1} gagal dikirim`);
+                progress.value = ((i + 1) / totalChunks) * 100;
+            }
+
+            statusEl.innerText = "Upload ✅";
+            statusEl.style.color = "green";
+            __log(`Recording selesai dan di-upload: ${tempFileName}`);
+        } catch (err) {
             console.error(err);
             statusEl.innerText = "Upload ❌";
             statusEl.style.color = "red";
@@ -166,14 +175,8 @@ function createDownloadLink(blob, encoding) {
     // upload otomatis pertama kali
     uploadAudio();
 
-    // tombol Upload Ulang
+    // retry manual
     retryBtn.addEventListener('click', uploadAudio);
-
-    // update nilai jika siswa aktif
-    if (currentIdSiswa) {
-        const hasil = hitungNilai();
-        updateNilaiDiTabel(hasil);
-    }
 
     __log(`Recording selesai (preview lokal & upload otomatis): ${tempFileName}`);
 }
