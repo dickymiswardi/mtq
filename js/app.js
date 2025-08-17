@@ -119,25 +119,30 @@ function createDownloadLink(blob, encoding) {
         const base64Data = reader.result.split(',')[1];
         try {
             const res = await fetch('/.netlify/functions/upload-audio', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
-            });
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
+});
 
-            let result;
-            try { result = await res.json(); } 
-            catch { 
-                const text = await res.text();
-                throw new Error(`Server tidak merespon JSON: ${text}`);
-            }
+// baca respon hanya sekali
+const text = await res.text();
+let result;
+try {
+    result = JSON.parse(text);
+} catch {
+    throw new Error(`Server tidak mengirim JSON: ${text}`);
+}
 
-            if (!result.success) throw new Error(result.error || 'Gagal upload audio');
+if (!result.success) {
+    throw new Error(result.error || 'Gagal upload audio');
+}
 
-            markData.audio[markData.audio.length - 1] = result.path || tempFileName;
-            statusEl.innerText = "Upload ✅";
-            statusEl.style.color = "green";
+markData.audio[markData.audio.length - 1] = result.path || tempFileName;
+statusEl.innerText = "Upload ✅";
+statusEl.style.color = "green";
 
-            __log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
+__log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
+
         } catch (err) {
             statusEl.innerText = "Upload ❌";
             statusEl.style.color = "red";
