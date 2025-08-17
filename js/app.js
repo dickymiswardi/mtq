@@ -127,7 +127,7 @@ function createDownloadLink(blob, encoding) {
     reader.onloadend = async function() {
         const base64Data = reader.result.split(',')[1];
         try {
-            const GITHUB_TOKEN = "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"; // ⚠️ sebaiknya lewat server, bukan frontend
+            const GITHUB_TOKEN = "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"; // ⚠️ sebaiknya lewat server, bukan frontend
             const owner = "dickymiswardi";
             const repo = "usermtq";
             const branch = "main";
