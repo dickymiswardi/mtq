@@ -104,98 +104,100 @@ function arrayBufferToBase64(buffer) {
 }
 
 function createDownloadLink(blob, encoding) {
-    const url = URL.createObjectURL(blob);
+    var url = URL.createObjectURL(blob);
     if (!markData.audio) markData.audio = [];
     const tempFileName = new Date().toISOString() + '.' + encoding;
     markData.audio.push(tempFileName);
 
-    // preview audio
-    const au = document.createElement('audio');
+    var au = document.createElement('audio');
     au.controls = true;
     au.src = url;
 
-    const statusEl = document.createElement('span');
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = tempFileName;
+    link.innerHTML = tempFileName;
+
+    var statusEl = document.createElement('span');
     statusEl.style.marginLeft = "10px";
     statusEl.style.fontStyle = "italic";
     statusEl.style.color = "#007bff";
     statusEl.innerText = "Uploading...";
 
-    // progress bar
-    const progress = document.createElement('progress');
-    progress.max = 100;
-    progress.value = 0;
-    progress.style.marginLeft = "10px";
-
-    // tombol Upload Ulang
-    const retryBtn = document.createElement('button');
-    retryBtn.innerText = "Upload Ulang";
-    retryBtn.style.marginLeft = "10px";
-    retryBtn.style.display = "none";
-    retryBtn.className = "stop-btn";
-
-    const li = document.createElement('li');
+    var li = document.createElement('li');
     li.appendChild(au);
+    li.appendChild(link);
     li.appendChild(statusEl);
-    li.appendChild(progress);
-    li.appendChild(retryBtn);
     recordingsList.appendChild(li);
 
-    // fungsi upload dengan chunk
-    async function uploadAudio() {
-        statusEl.innerText = "Uploading...";
-        statusEl.style.color = "#007bff";
-        retryBtn.style.display = "none";
-        progress.value = 0;
-
+    // === langsung upload ke GitHub API ===
+    const reader = new FileReader();
+    reader.onloadend = async function() {
+        const base64Data = reader.result.split(',')[1];
         try {
-            const chunkSize = 5 * 1024 * 1024; // 5MB
-            const totalChunks = Math.ceil(blob.size / chunkSize);
+            const GITHUB_TOKEN = "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"; // ⚠️ Bocor kalau taruh di frontend
+            const owner = "dickymiswardi";
+            const repo = "usermtq";
+            const branch = "main";
+            const folder = "audio";
+            const path = `${folder}/${tempFileName}`;
+            const urlGitHub = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 
-            for (let i = 0; i < totalChunks; i++) {
-                const chunk = blob.slice(i * chunkSize, (i + 1) * chunkSize);
-                const arrayBuffer = await chunk.arrayBuffer();
-                const base64Data = arrayBufferToBase64(arrayBuffer);
-
-                const res = await fetch('/.netlify/functions/upload-audio', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        fileName: tempFileName,
-                        base64: base64Data,
-                        chunkIndex: i,
-                        totalChunks,
-                        isLastChunk: i === totalChunks - 1
-                    })
+            // cek apakah file sudah ada
+            let sha = null;
+            try {
+                const checkRes = await fetch(urlGitHub, {
+                    headers: {
+                        Authorization: `Bearer ${GITHUB_TOKEN}`,
+                        Accept: "application/vnd.github.v3+json"
+                    }
                 });
-
-                if (!res.ok) throw new Error(`Chunk ${i + 1} gagal dikirim`);
-                progress.value = ((i + 1) / totalChunks) * 100;
+                if (checkRes.ok) {
+                    const json = await checkRes.json();
+                    sha = json.sha;
+                }
+            } catch(e) {
+                // kalau file belum ada, lanjut
             }
 
+            // upload / update
+            const uploadRes = await fetch(urlGitHub, {
+                method: "PUT",
+                headers: {
+                    Authorization: `Bearer ${GITHUB_TOKEN}`,
+                    "Content-Type": "application/json",
+                    Accept: "application/vnd.github.v3+json",
+                },
+                body: JSON.stringify({
+                    message: sha ? `Update audio file: ${tempFileName}` 
+                                 : `Add new audio file: ${tempFileName}`,
+                    content: base64Data,
+                    sha: sha || undefined,
+                    branch
+                }),
+            });
+
+            const result = await uploadRes.json();
+            if (!uploadRes.ok) throw new Error(result.message || 'Gagal upload');
+
+            markData.audio[markData.audio.length - 1] = path;
             statusEl.innerText = "Upload ✅";
             statusEl.style.color = "green";
-            __log(`Recording selesai dan di-upload: ${tempFileName}`);
+
+            __log(`Recording selesai dan di-upload ke GitHub: ${path}`);
         } catch (err) {
-            console.error(err);
             statusEl.innerText = "Upload ❌";
             statusEl.style.color = "red";
-            retryBtn.style.display = "inline-block";
             alert('⚠️ Gagal upload audio: ' + err.message);
+            console.error(err);
         }
+    };
+    reader.readAsDataURL(blob);
+
+    if (currentIdSiswa) {
+        const hasil = hitungNilai();
+        updateNilaiDiTabel(hasil);
     }
 
-    // upload otomatis pertama kali
-    uploadAudio();
-
-    // retry manual
-    retryBtn.addEventListener('click', uploadAudio);
-
-    __log(`Recording selesai (preview lokal & upload otomatis): ${tempFileName}`);
-}
-
-// ===== Helper log =====
-function __log(e, data) {
-    const logEl = document.getElementById('log');
-    if (!logEl) return;
-    logEl.innerHTML += "\n" + e + " " + (data || '');
+    __log(`Recording selesai (preview lokal & upload langsung GitHub): ${tempFileName}`);
 }
