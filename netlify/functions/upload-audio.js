@@ -1,52 +1,72 @@
-// netlify/functions/upload-audio.js
 import fetch from "node-fetch";
 
 export async function handler(event) {
+  const token = process.env.MTQ_TOKEN; // GitHub Personal Access Token
+
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ success: false, error: "Method Not Allowed" })
+    };
+  }
+
   try {
-    if (event.httpMethod !== "POST") {
-      return { statusCode: 405, body: "Method Not Allowed" };
-    }
-
-    const { fileName, base64 } = JSON.parse(event.body);
+    const { fileName, base64, folder = "audio" } = JSON.parse(event.body);
     if (!fileName || !base64) {
-      return { statusCode: 400, body: "fileName dan base64 wajib ada" };
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ success: false, error: "fileName dan base64 wajib ada" })
+      };
     }
 
-    const token = process.env.MTQ_TOKEN; // simpan token GitHub di Netlify Environment
-    const repo = "dickymiswardi/usermtq";
-    const path = `audio/${fileName}`;
-    const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+    const cleanBase64 = base64.replace(/^data:.*;base64,/, "");
+    const path = `${folder}/${fileName}`;
+    const url = `https://api.github.com/repos/dickymiswardi/usermtq/contents/${path}`;
 
-    // cek apakah file sudah ada
+    // Cek apakah file sudah ada
     let sha = null;
-    const check = await fetch(url, { headers: { Authorization: `token ${token}` } });
-    if (check.ok) {
-      const json = await check.json();
-      sha = json.sha;
-    }
+    try {
+      const existing = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github.v3+json"
+        }
+      });
+      if (existing.ok) {
+        const json = await existing.json();
+        sha = json.sha;
+      }
+    } catch { /* file belum ada */ }
 
-    // upload file
-    const upload = await fetch(url, {
+    // Upload / update
+    const res = await fetch(url, {
       method: "PUT",
       headers: {
-        Authorization: `token ${token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        Accept: "application/vnd.github.v3+json",
       },
       body: JSON.stringify({
         message: sha ? `Update audio: ${fileName}` : `Add audio: ${fileName}`,
-        content: base64,
+        content: cleanBase64,
         sha: sha || undefined,
       }),
     });
 
-    if (!upload.ok) {
-      const text = await upload.text();
-      throw new Error(`GitHub upload error: ${text}`);
-    }
+    let jsonRes;
+    const textRes = await res.text();
+    try { jsonRes = JSON.parse(textRes); } 
+    catch { throw new Error(`GitHub respon bukan JSON: ${textRes}`); }
 
-    const resJson = await upload.json();
-    return { statusCode: 200, body: JSON.stringify({ success: true, path: path, url: resJson.content.download_url }) };
-  } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ success: false, error: err.message }) };
+    if (!res.ok) throw new Error(jsonRes.message || "Gagal upload audio");
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true, path, commit: jsonRes.commit?.sha || null })
+    };
+
+  } catch (error) {
+    console.error(error);
+    return { statusCode: 500, body: JSON.stringify({ success: false, error: error.message }) };
   }
 }
