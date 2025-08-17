@@ -5,15 +5,24 @@ export async function handler(event) {
   const token = process.env.MTQ_TOKEN; // GitHub Personal Access Token
 
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: JSON.stringify({ error: "Method Not Allowed" }) };
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: "Method Not Allowed" })
+    };
   }
 
   try {
     const { fileName, base64, folder = "audio" } = JSON.parse(event.body);
 
     if (!fileName || !base64) {
-      return { statusCode: 400, body: JSON.stringify({ error: "Data tidak lengkap" }) };
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "fileName dan base64 wajib ada" })
+      };
     }
+
+    // hapus prefix data:...;base64, jika ada
+    const cleanBase64 = base64.replace(/^data:.*;base64,/, "");
 
     const path = `${folder}/${fileName}`;
     const url = `https://api.github.com/repos/dickymiswardi/usermtq/contents/${path}`;
@@ -22,14 +31,17 @@ export async function handler(event) {
     let sha = null;
     try {
       const existing = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github.v3+json" }
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github.v3+json"
+        }
       });
       if (existing.ok) {
         const json = await existing.json();
         sha = json.sha;
       }
-    } catch (e) {
-      // kalau file belum ada, lanjut ke upload
+    } catch {
+      // kalau file belum ada, lanjut
     }
 
     // upload/update file
@@ -41,8 +53,10 @@ export async function handler(event) {
         Accept: "application/vnd.github.v3+json",
       },
       body: JSON.stringify({
-        message: sha ? `Update audio ${fileName}` : `Add audio ${fileName}`,
-        content: base64,
+        message: sha
+          ? `Update audio file: ${fileName}`
+          : `Add new audio file: ${fileName}`,
+        content: cleanBase64,
         sha: sha || undefined,
       }),
     });
@@ -55,14 +69,23 @@ export async function handler(event) {
       throw new Error(`Respon GitHub bukan JSON: ${resText}`);
     }
 
-    if (!res.ok) throw new Error(jsonRes.message || 'Gagal upload audio');
+    if (!res.ok) {
+      throw new Error(jsonRes.message || "Gagal upload audio");
+    }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, path: path })
+      body: JSON.stringify({
+        success: true,
+        path,
+        commit: jsonRes.commit?.sha || null
+      }),
     };
 
   } catch (error) {
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message }),
+    };
   }
 }
