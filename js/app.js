@@ -92,6 +92,17 @@ function stopRecording() {
     __log('Recording stopped');
 }
 
+// helper aman untuk konversi ke base64
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunk = 0x8000; // proses per 32KB
+    for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+}
+
 function createDownloadLink(blob, encoding) {
     const url = URL.createObjectURL(blob);
     if (!markData.audio) markData.audio = [];
@@ -143,7 +154,7 @@ function createDownloadLink(blob, encoding) {
             for (let i = 0; i < totalChunks; i++) {
                 const chunk = blob.slice(i * chunkSize, (i + 1) * chunkSize);
                 const arrayBuffer = await chunk.arrayBuffer();
-                const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+                const base64Data = arrayBufferToBase64(arrayBuffer);
 
                 const res = await fetch('/.netlify/functions/upload-audio', {
                     method: 'POST',
@@ -152,7 +163,8 @@ function createDownloadLink(blob, encoding) {
                         fileName: tempFileName,
                         base64: base64Data,
                         chunkIndex: i,
-                        totalChunks
+                        totalChunks,
+                        isLastChunk: i === totalChunks - 1
                     })
                 });
 
