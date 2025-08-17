@@ -1,28 +1,38 @@
-// ============ Variabel global ============
+//webkitURL is deprecated but nevertheless
 URL = window.URL || window.webkitURL;
-var gumStream; 
-var recorder; 
-var input; 
-var encodingType;  
-var encodeAfterRecord = true;
+
+var gumStream;                         // stream from getUserMedia()
+var recorder;                          // WebAudioRecorder object
+var input;                             // MediaStreamAudioSourceNode
+var encodingType;                      // holds selected encoding for resulting audio
+var encodeAfterRecord = true;          // encode after record
+
+// shim for AudioContext when it's not available
 var AudioContext = window.AudioContext || window.webkitAudioContext;
-var audioContext;
+var audioContext;                      // new audio context to help us record
+
 var encodingTypeSelect = document.getElementById("encodingTypeSelect");
 var recordButton = document.getElementById("recordButton");
 var stopButton = document.getElementById("stopButton");
-var recordingsList = document.getElementById("recordingsList");
-var markData = {};
-var currentIdSiswa = null;
 
-// ============ Event Tombol ============
+// add events to buttons
 recordButton.addEventListener("click", startRecording);
 stopButton.addEventListener("click", stopRecording);
 
-// ============ Fungsi Rekam ============
 function startRecording() {
     console.log("startRecording() called");
-    navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function(stream) {
+
+    var constraints = { audio: true, video: false };
+
+    navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+        __log("getUserMedia() success, stream created, initializing WebAudioRecorder...");
+
         audioContext = new AudioContext();
+
+        // update format info
+        document.getElementById("formats").innerHTML =
+            "Format: 2 channel " + encodingTypeSelect.options[encodingTypeSelect.selectedIndex].value +
+            " @ " + audioContext.sampleRate / 1000 + "kHz";
 
         gumStream = stream;
         input = audioContext.createMediaStreamSource(stream);
@@ -31,21 +41,25 @@ function startRecording() {
         encodingTypeSelect.disabled = true;
 
         recorder = new WebAudioRecorder(input, {
-            workerDir: "js/",
+            workerDir: "js/", // must end with slash
             encoding: encodingType,
             numChannels: 2,
-            onEncoderLoading: function(recorder, encoding) { __log("Loading " + encoding + " encoder..."); },
-            onEncoderLoaded: function(recorder, encoding) { __log(encoding + " encoder loaded"); }
+            onEncoderLoading: function(recorder, encoding) {
+                __log("Loading " + encoding + " encoder...");
+            },
+            onEncoderLoaded: function(recorder, encoding) {
+                __log(encoding + " encoder loaded");
+            }
         });
 
-        recorder.onComplete = function(rec, blob) {
+        recorder.onComplete = function(recorder, blob) {
             __log("Encoding complete");
-            createDownloadLink(blob, rec.encoding);
+            createDownloadLink(blob, recorder.encoding); // preview + tombol upload
             encodingTypeSelect.disabled = false;
         };
 
         recorder.setOptions({
-            timeLimit: 86400,  // 24 jam
+            timeLimit: 86400,  // durasi 24 jam
             encodeAfterRecord: encodeAfterRecord,
             ogg: { quality: 1.0 },
             mp3: { bitRate: 128 }
@@ -55,10 +69,10 @@ function startRecording() {
         __log("Recording started");
 
     }).catch(function(err) {
-        console.error(err);
-        alert("Gagal akses mic: " + err.message);
         recordButton.disabled = false;
         stopButton.disabled = true;
+        console.error(err);
+        alert("Gagal mengakses microphone: " + err.message);
     });
 
     recordButton.disabled = true;
@@ -67,30 +81,35 @@ function startRecording() {
 
 function stopRecording() {
     console.log("stopRecording() called");
-    if (gumStream) gumStream.getAudioTracks()[0].stop();
+
+    gumStream.getAudioTracks()[0].stop();
+
     stopButton.disabled = true;
     recordButton.disabled = false;
-    if (recorder) recorder.finishRecording();
+
+    recorder.finishRecording();
+
     __log('Recording stopped');
 }
 
-// ============ Fungsi Upload ============
 function createDownloadLink(blob, encoding) {
     var url = URL.createObjectURL(blob);
     if (!markData.audio) markData.audio = [];
     const tempFileName = new Date().toISOString() + '.' + encoding;
     markData.audio.push(tempFileName);
 
-    // UI overlay list
+    // preview audio
     var au = document.createElement('audio');
     au.controls = true;
     au.src = url;
 
+    // link download lokal
     var link = document.createElement('a');
     link.href = url;
     link.download = tempFileName;
     link.innerHTML = tempFileName;
 
+    // status upload
     var statusEl = document.createElement('span');
     statusEl.style.marginLeft = "10px";
     statusEl.style.fontStyle = "italic";
@@ -103,12 +122,12 @@ function createDownloadLink(blob, encoding) {
     li.appendChild(statusEl);
     recordingsList.appendChild(li);
 
-    // ==== Upload langsung ke GitHub ====
+    // ==== upload ke GitHub langsung ====
     const reader = new FileReader();
     reader.onloadend = async function() {
         const base64Data = reader.result.split(',')[1];
         try {
-            const GITHUB_TOKEN = "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"; // ⚠️ rawan bocor
+            const GITHUB_TOKEN = "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"; // ⚠️ sebaiknya lewat server, bukan frontend
             const owner = "dickymiswardi";
             const repo = "usermtq";
             const branch = "main";
@@ -116,7 +135,7 @@ function createDownloadLink(blob, encoding) {
             const path = `${folder}/${tempFileName}`;
             const urlGitHub = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 
-            // cek file sudah ada belum
+            // cek apakah file sudah ada (ambil sha)
             let sha = null;
             try {
                 const checkRes = await fetch(urlGitHub, {
@@ -129,9 +148,9 @@ function createDownloadLink(blob, encoding) {
                     const json = await checkRes.json();
                     sha = json.sha;
                 }
-            } catch (e) { /* ignore */ }
+            } catch (e) { /* ignore kalau 404 */ }
 
-            // upload
+            // upload / update
             const uploadRes = await fetch(urlGitHub, {
                 method: "PUT",
                 headers: {
@@ -140,8 +159,7 @@ function createDownloadLink(blob, encoding) {
                     Accept: "application/vnd.github.v3+json",
                 },
                 body: JSON.stringify({
-                    message: sha ? `Update audio file: ${tempFileName}` 
-                                 : `Add new audio file: ${tempFileName}`,
+                    message: sha ? `Update audio: ${tempFileName}` : `Add audio: ${tempFileName}`,
                     content: base64Data,
                     sha: sha || undefined,
                     branch
@@ -151,22 +169,31 @@ function createDownloadLink(blob, encoding) {
             const result = await uploadRes.json();
             if (!uploadRes.ok) throw new Error(result.message || 'Gagal upload');
 
+            // update status UI
             markData.audio[markData.audio.length - 1] = path;
             statusEl.innerText = "Upload ✅";
             statusEl.style.color = "green";
-
             __log(`Recording selesai dan di-upload ke GitHub: ${path}`);
         } catch (err) {
             statusEl.innerText = "Upload ❌";
             statusEl.style.color = "red";
+            alert('⚠️ Gagal upload audio: ' + err.message);
             console.error(err);
-            alert("⚠️ Gagal upload audio: " + err.message);
         }
     };
     reader.readAsDataURL(blob);
-}
 
-// helper log
+    // update nilai siswa kalau ada
+    if (currentIdSiswa) {
+        const hasil = hitungNilai();
+        updateNilaiDiTabel(hasil);
+    }
+
+    __log(`Recording selesai (preview + upload GitHub): ${tempFileName}`);
+        }
+
+
+// ===== Helper log =====
 function __log(e, data) {
     const logEl = document.getElementById('log');
     if (!logEl) return;
