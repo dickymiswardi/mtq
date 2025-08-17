@@ -122,75 +122,80 @@ function createDownloadLink(blob, encoding) {
     li.appendChild(statusEl);
     recordingsList.appendChild(li);
 
-    // ==== upload ke GitHub langsung ====
-    const reader = new FileReader();
-    reader.onloadend = async function() {
-        const base64Data = reader.result.split(',')[1];
+    // ==== upload ke GitHub langsung (token ambil dari token.json) ====
+const reader = new FileReader();
+reader.onloadend = async function () {
+    const base64Data = reader.result.split(",")[1];
+    try {
+        // ambil token dari file token.json
+        const tokenRes = await fetch("token.json");
+        const tokenJson = await tokenRes.json();
+        const GITHUB_TOKEN = tokenJson.GITHUB_TOKEN;
+
+        const owner = "dickymiswardi";
+        const repo = "usermtq";
+        const branch = "main";
+        const folder = "audio";
+        const path = `${folder}/${tempFileName}`;
+        const urlGitHub = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+
+        // cek apakah file sudah ada (ambil sha)
+        let sha = null;
         try {
-            const GITHUB_TOKEN = "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"; // ⚠️ sebaiknya lewat server, bukan frontend
-            const owner = "dickymiswardi";
-            const repo = "usermtq";
-            const branch = "main";
-            const folder = "audio";
-            const path = `${folder}/${tempFileName}`;
-            const urlGitHub = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-
-            // cek apakah file sudah ada (ambil sha)
-            let sha = null;
-            try {
-                const checkRes = await fetch(urlGitHub, {
-                    headers: {
-                        Authorization: `Bearer ${GITHUB_TOKEN}`,
-                        Accept: "application/vnd.github.v3+json"
-                    }
-                });
-                if (checkRes.ok) {
-                    const json = await checkRes.json();
-                    sha = json.sha;
-                }
-            } catch (e) { /* ignore kalau 404 */ }
-
-            // upload / update
-            const uploadRes = await fetch(urlGitHub, {
-                method: "PUT",
+            const checkRes = await fetch(urlGitHub, {
                 headers: {
                     Authorization: `Bearer ${GITHUB_TOKEN}`,
-                    "Content-Type": "application/json",
                     Accept: "application/vnd.github.v3+json",
                 },
-                body: JSON.stringify({
-                    message: sha ? `Update audio: ${tempFileName}` : `Add audio: ${tempFileName}`,
-                    content: base64Data,
-                    sha: sha || undefined,
-                    branch
-                }),
             });
-
-            const result = await uploadRes.json();
-            if (!uploadRes.ok) throw new Error(result.message || 'Gagal upload');
-
-            // update status UI
-            markData.audio[markData.audio.length - 1] = path;
-            statusEl.innerText = "Upload ✅";
-            statusEl.style.color = "green";
-            __log(`Recording selesai dan di-upload ke GitHub: ${path}`);
-        } catch (err) {
-            statusEl.innerText = "Upload ❌";
-            statusEl.style.color = "red";
-            alert('⚠️ Gagal upload audio: ' + err.message);
-            console.error(err);
+            if (checkRes.ok) {
+                const json = await checkRes.json();
+                sha = json.sha;
+            }
+        } catch (e) {
+            /* ignore kalau 404 */
         }
-    };
-    reader.readAsDataURL(blob);
 
-    // update nilai siswa kalau ada
-    if (currentIdSiswa) {
-        const hasil = hitungNilai();
-        updateNilaiDiTabel(hasil);
+        // upload / update
+        const uploadRes = await fetch(urlGitHub, {
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${GITHUB_TOKEN}`,
+                "Content-Type": "application/json",
+                Accept: "application/vnd.github.v3+json",
+            },
+            body: JSON.stringify({
+                message: sha ? `Update audio: ${tempFileName}` : `Add audio: ${tempFileName}`,
+                content: base64Data,
+                sha: sha || undefined,
+                branch,
+            }),
+        });
+
+        const result = await uploadRes.json();
+        if (!uploadRes.ok) throw new Error(result.message || "Gagal upload");
+
+        // update status UI
+        markData.audio[markData.audio.length - 1] = path;
+        statusEl.innerText = "Upload ✅";
+        statusEl.style.color = "green";
+        __log(`Recording selesai dan di-upload ke GitHub: ${path}`);
+    } catch (err) {
+        statusEl.innerText = "Upload ❌";
+        statusEl.style.color = "red";
+        alert("⚠️ Gagal upload audio: " + err.message);
+        console.error(err);
     }
+};
+reader.readAsDataURL(blob);
 
-    __log(`Recording selesai (preview + upload GitHub): ${tempFileName}`);
-        }
+// update nilai siswa kalau ada
+if (currentIdSiswa) {
+    const hasil = hitungNilai();
+    updateNilaiDiTabel(hasil);
+}
+
+__log(`Recording selesai (preview + upload GitHub): ${tempFileName}`);
 
 
 // ===== Helper log =====
