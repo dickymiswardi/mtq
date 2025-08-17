@@ -84,48 +84,54 @@ function stopRecording() {
 }
 
 function createDownloadLink(blob, encoding) {
-    const url = URL.createObjectURL(blob);
+    var url = URL.createObjectURL(blob);
     if (!markData.audio) markData.audio = [];
-
-    const tempFileName = `rec_${new Date().toISOString()}.${encoding}`;
+    const tempFileName = new Date().toISOString() + '.' + encoding;
     markData.audio.push(tempFileName);
 
     // preview audio
-    const au = document.createElement("audio");
+    var au = document.createElement('audio');
     au.controls = true;
     au.src = url;
 
     // link download lokal
-    const link = document.createElement("a");
+    var link = document.createElement('a');
     link.href = url;
     link.download = tempFileName;
-    link.innerText = tempFileName;
+    link.innerHTML = tempFileName;
 
     // status upload
-    const statusEl = document.createElement("span");
+    var statusEl = document.createElement('span');
     statusEl.style.marginLeft = "10px";
     statusEl.style.fontStyle = "italic";
     statusEl.style.color = "#007bff";
     statusEl.innerText = "Uploading...";
 
-    const li = document.createElement("li");
+    var li = document.createElement('li');
     li.appendChild(au);
     li.appendChild(link);
     li.appendChild(statusEl);
     recordingsList.appendChild(li);
 
-    // upload langsung ke GitHub
+    // Upload via Netlify Function
     const reader = new FileReader();
-    reader.onloadend = async () => {
-        const base64data = reader.result.split(",")[1];
+    reader.onloadend = async function() {
+        const base64Data = reader.result.split(',')[1];
         try {
-            const res = await fetch("/.netlify/functions/upload-audio", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ fileName: tempFileName, base64: base64data })
+            const res = await fetch('/.netlify/functions/upload-audio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
             });
-            const result = await res.json();
-            if (!result.success) throw new Error(result.error || "Gagal upload");
+
+            let result;
+            try { result = await res.json(); } 
+            catch { 
+                const text = await res.text();
+                throw new Error(`Server tidak merespon JSON: ${text}`);
+            }
+
+            if (!result.success) throw new Error(result.error || 'Gagal upload audio');
 
             markData.audio[markData.audio.length - 1] = result.path || tempFileName;
             statusEl.innerText = "Upload ✅";
@@ -135,20 +141,21 @@ function createDownloadLink(blob, encoding) {
         } catch (err) {
             statusEl.innerText = "Upload ❌";
             statusEl.style.color = "red";
-            alert("⚠️ Gagal upload audio: " + err.message);
+            alert('⚠️ Gagal upload audio: ' + err.message);
             console.error(err);
         }
     };
     reader.readAsDataURL(blob);
 
-    // update nilai siswa jika ada
+    // update nilai jika siswa aktif
     if (currentIdSiswa) {
         const hasil = hitungNilai();
         updateNilaiDiTabel(hasil);
     }
 
-    __log(`Recording selesai (preview + upload otomatis): ${tempFileName}`);
+    __log(`Recording selesai (preview lokal & upload otomatis): ${tempFileName}`);
 }
+
 
 // helper log
 function __log(e, data) {
