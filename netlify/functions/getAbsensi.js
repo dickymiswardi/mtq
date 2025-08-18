@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 
 export async function handler(event) {
-  const token = process.env.MTQ_TOKEN;
+  const token = process.env.MTQ2_TOKEN;
   const { kelas, tanggal } = event.queryStringParameters;
 
   if (!kelas || !tanggal) {
@@ -12,7 +12,7 @@ export async function handler(event) {
   }
 
   const fileName = `${kelas}_${tanggal}.json`;
-  const apiUrl = `https://api.github.com/repos/dickymiswardi/usermtq/contents/absensi/${fileName}`;
+  const apiUrl = `https://api.github.com/repos/digitalmtq/back/contents/absensi/${fileName}`;
 
   try {
     const response = await fetch(apiUrl, {
