@@ -73,17 +73,22 @@ function stopRecording() {
 function createDownloadLink(blob, encoding) {
     const url = URL.createObjectURL(blob);
     const tempFileName = new Date().toISOString() + '.' + encoding;
+
+    if (!markData.audio) markData.audio = [];
     markData.audio.push(tempFileName);
 
+    // preview audio
     const au = document.createElement('audio');
     au.controls = true;
     au.src = url;
 
+    // download lokal
     const link = document.createElement('a');
     link.href = url;
     link.download = tempFileName;
     link.innerHTML = tempFileName;
 
+    // status upload
     const statusEl = document.createElement('span');
     statusEl.style.marginLeft = "10px";
     statusEl.style.fontStyle = "italic";
@@ -96,24 +101,18 @@ function createDownloadLink(blob, encoding) {
     li.appendChild(statusEl);
     recordingsList.appendChild(li);
 
+    // FileReader → Base64
     const reader = new FileReader();
     reader.onloadend = function() {
         const base64Data = reader.result.split(',')[1];
-        uploadWithRetry(tempFileName, base64Data, statusEl, 2); // retry 2x jika gagal
+        // panggil upload dengan retry
+        uploadAudio(tempFileName, base64Data, statusEl, 2);
     };
     reader.readAsDataURL(blob);
-
-    // update nilai jika siswa aktif
-    if (currentIdSiswa) {
-        const hasil = hitungNilai();
-        updateNilaiDiTabel(hasil);
-    }
-
-    __log(`Recording selesai (preview lokal & upload otomatis): ${tempFileName}`);
 }
 
-// ===== Fungsi upload dengan retry =====
-async function uploadWithRetry(fileName, base64Data, statusEl, retries = 2) {
+// fungsi upload dengan retry
+async function uploadAudio(fileName, base64Data, statusEl, retries = 2) {
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
             const res = await fetch('/.netlify/functions/upload-audio', {
@@ -124,19 +123,20 @@ async function uploadWithRetry(fileName, base64Data, statusEl, retries = 2) {
             const result = await res.json();
             if (!result.success) throw new Error(result.error || 'Gagal upload audio');
 
+            // sukses
             markData.audio[markData.audio.length - 1] = result.path || fileName;
             statusEl.innerText = "Upload ✅";
             statusEl.style.color = "green";
-            __log(`Recording selesai dan di-upload: ${result.path || fileName}`);
+            __log(`Upload sukses: ${fileName}`);
             return;
         } catch (err) {
             __log(`Upload attempt ${attempt + 1} gagal: ${err.message}`);
             if (attempt === retries) {
                 statusEl.innerText = "Upload ❌";
                 statusEl.style.color = "red";
-                alert('⚠️ Gagal upload audio: ' + err.message);
+                alert(`⚠️ Gagal upload audio: ${err.message}`);
             } else {
-                await new Promise(r => setTimeout(r, 1500)); // delay sebelum retry
+                await new Promise(r => setTimeout(r, 1500));
             }
         }
     }
