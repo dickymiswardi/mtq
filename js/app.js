@@ -97,31 +97,52 @@ function createDownloadLink(blob, encoding) {
     recordingsList.appendChild(li);
 
     const reader = new FileReader();
-    reader.onloadend = async function() {
+    reader.onloadend = function() {
         const base64Data = reader.result.split(',')[1];
+        uploadWithRetry(tempFileName, base64Data, statusEl, 2); // retry 2x jika gagal
+    };
+    reader.readAsDataURL(blob);
+
+    // update nilai jika siswa aktif
+    if (currentIdSiswa) {
+        const hasil = hitungNilai();
+        updateNilaiDiTabel(hasil);
+    }
+
+    __log(`Recording selesai (preview lokal & upload otomatis): ${tempFileName}`);
+}
+
+// ===== Fungsi upload dengan retry =====
+async function uploadWithRetry(fileName, base64Data, statusEl, retries = 2) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
         try {
             const res = await fetch('/.netlify/functions/upload-audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
+                body: JSON.stringify({ fileName, base64: base64Data })
             });
             const result = await res.json();
             if (!result.success) throw new Error(result.error || 'Gagal upload audio');
 
-            markData.audio[markData.audio.length - 1] = result.path || tempFileName;
+            markData.audio[markData.audio.length - 1] = result.path || fileName;
             statusEl.innerText = "Upload ✅";
             statusEl.style.color = "green";
-            __log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
+            __log(`Recording selesai dan di-upload: ${result.path || fileName}`);
+            return;
         } catch (err) {
-            statusEl.innerText = "Upload ❌";
-            statusEl.style.color = "red";
-            alert('⚠️ Gagal upload audio: ' + err.message);
-            console.error(err);
+            __log(`Upload attempt ${attempt + 1} gagal: ${err.message}`);
+            if (attempt === retries) {
+                statusEl.innerText = "Upload ❌";
+                statusEl.style.color = "red";
+                alert('⚠️ Gagal upload audio: ' + err.message);
+            } else {
+                await new Promise(r => setTimeout(r, 1500)); // delay sebelum retry
+            }
         }
-    };
-    reader.readAsDataURL(blob);
+    }
 }
 
+// ===== Helper log =====
 function __log(msg, data) {
     const logEl = document.getElementById('log');
     if (!logEl) return;
