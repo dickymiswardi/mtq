@@ -534,15 +534,15 @@ button.lihat-quran-btn:hover::after {
     <span id="recordDuration" style="margin-left:15px; font-weight:bold;">00:00</span>
 </div>
 
-<!-- Loading indicator -->
+<ul id="recordingsList"></ul>
+
+<!-- Loading spinner -->
 <div id="loadingIndicator" style="display:none; margin-top:10px;">
   <div class="dot-spinner">
     <div></div><div></div><div></div>
   </div>
   <span style="margin-left:10px; font-style:italic; color:#007bff;">Membuat file audio...</span>
 </div>
-
-<ul id="recordingsList"></ul>
 
 <style>
 /* Dot bouncing spinner */
@@ -570,21 +570,11 @@ button.lihat-quran-btn:hover::after {
 }
 
 /* Tombol Rekam */
-.rec-btn { 
-    background: linear-gradient(135deg, #ff4b5c, #ff0000); 
-    color:white; font-weight:bold; font-size:16px; border:none; border-radius:50px; 
-    padding:10px 25px; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; margin-right:10px;
-}
+.rec-btn { background: linear-gradient(135deg, #ff4b5c, #ff0000); color:white; font-weight:bold; font-size:16px; border:none; border-radius:50px; padding:10px 25px; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; margin-right:10px;}
 .rec-btn.pulsing { animation: pulse 1s infinite; }
-@keyframes pulse { 
-    0% { transform: scale(1); box-shadow:0 0 15px rgba(255,0,0,0.6);} 
-    50%{transform:scale(1.08); box-shadow:0 0 25px rgba(255,0,0,0.8);} 
-    100%{transform:scale(1); box-shadow:0 0 15px rgba(255,0,0,0.6);}
-}
+@keyframes pulse { 0% { transform: scale(1); box-shadow:0 0 15px rgba(255,0,0,0.6);} 50%{transform:scale(1.08); box-shadow:0 0 25px rgba(255,0,0,0.8);} 100%{transform:scale(1); box-shadow:0 0 15px rgba(255,0,0,0.6);}}
 
-.stop-btn { 
-    background:linear-gradient(135deg,#555,#333); color:white; font-weight:bold; font-size:16px; border:none; border-radius:50px; padding:10px 25px; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; 
-}
+.stop-btn { background:linear-gradient(135deg,#555,#333); color:white; font-weight:bold; font-size:16px; border:none; border-radius:50px; padding:10px 25px; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; }
 .stop-btn:hover { transform:scale(1.05); box-shadow:0 0 10px rgba(0,0,0,0.5); }
 </style>
 
@@ -593,92 +583,59 @@ const recBtn = document.getElementById('recordButton');
 const stopBtn = document.getElementById('stopButton');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const durationSpan = document.getElementById('recordDuration');
-const recordingsList = document.getElementById('recordingsList');
-const encodingSelect = document.getElementById('encodingTypeSelect');
 
-let mediaRecorder;
-let audioChunks = [];
+let recording = false;
 let duration = 0;
 let durationInterval = null;
 
-// format durasi mm:ss
+// Fungsi format durasi mm:ss
 function formatTime(sec) {
     const m = Math.floor(sec / 60).toString().padStart(2,'0');
     const s = (sec % 60).toString().padStart(2,'0');
     return `${m}:${s}`;
 }
 
-// buat link audio playable
-function createDownloadLink(blob, encoding) {
-    const url = URL.createObjectURL(blob);
-    const li = document.createElement('li');
-    const au = document.createElement('audio');
-    au.controls = true;
-    au.src = url;
-
-    const link = document.createElement('a');
-    const filename = new Date().toISOString() + '.' + encoding;
-    link.href = url;
-    link.download = filename;
-    link.textContent = `Download ${filename}`;
-    link.style.marginLeft = "10px";
-
-    li.appendChild(au);
-    li.appendChild(link);
-    recordingsList.appendChild(li);
-}
-
 // Tombol Record
-recBtn.addEventListener('click', async () => {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
+recBtn.addEventListener('click', () => {
+    recording = true;
+    recBtn.classList.add('pulsing');
+    recBtn.disabled = true;
+    stopBtn.disabled = false;
 
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => {
-            loadingIndicator.style.display = "none";
-            const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-            // ambil ekstensi sesuai pilihan, fallback ke mime type
-            let selectedEncoding = encodingSelect.value || mediaRecorder.mimeType.split('/')[1] || 'wav';
-            createDownloadLink(blob, selectedEncoding);
-        };
+    // reset durasi
+    duration = 0;
+    durationSpan.textContent = "00:00";
 
-        mediaRecorder.start();
-        recBtn.classList.add('pulsing');
-        recBtn.disabled = true;
-        stopBtn.disabled = false;
-
-        // reset durasi
-        duration = 0;
-        durationSpan.textContent = "00:00";
-
-        // start timer
-        durationInterval = setInterval(() => {
-            duration++;
-            durationSpan.textContent = formatTime(duration);
-        }, 1000);
-    } catch (err) {
-        alert("Gagal mengakses microphone: " + err.message);
-    }
+    // start timer
+    durationInterval = setInterval(() => {
+        duration++;
+        durationSpan.textContent = formatTime(duration);
+    }, 1000);
 });
 
 // Tombol Stop
 stopBtn.addEventListener('click', () => {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-        loadingIndicator.style.display = "flex";
-        loadingIndicator.style.alignItems = "center";
-    }
-
+    recording = false;
     recBtn.classList.remove('pulsing');
     recBtn.disabled = false;
     stopBtn.disabled = true;
 
+    // stop timer
     clearInterval(durationInterval);
+
+    // tampilkan spinner
+    loadingIndicator.style.display = "flex";
+    loadingIndicator.style.alignItems = "center";
+
+    if (recorder) {
+        recorder.onComplete = function(recorderInstance, blob) {
+            loadingIndicator.style.display = "none";
+            createDownloadLink(blob, recorderInstance.encoding);
+        };
+        recorder.finishRecording();
+    }
 });
 </script>
-
 
 
 
