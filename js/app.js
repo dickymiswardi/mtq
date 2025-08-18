@@ -1,32 +1,33 @@
 URL = window.URL || window.webkitURL;
 
-let gumStream;
-let recorder;
-let input;
-let encodingType;
+let gumStream, recorder, input, encodingType;
 let encodeAfterRecord = true;
 let audioContext;
+let markData = { audio: [] };
+let currentIdSiswa = null;
 
 const encodingTypeSelect = document.getElementById("encodingTypeSelect");
 const recordButton = document.getElementById("recordButton");
 const stopButton = document.getElementById("stopButton");
+const recordingsList = document.getElementById("recordingsList");
 
 recordButton.addEventListener("click", startRecording);
 stopButton.addEventListener("click", stopRecording);
 
 function startRecording() {
-    console.log("startRecording() called");
+    recordButton.disabled = true;
+    stopButton.disabled = false;
 
     const constraints = { audio: true, video: false };
-
     navigator.mediaDevices.getUserMedia(constraints)
-        .then(function(stream) {
-            __log("getUserMedia() success, initializing recorder...");
-
+        .then(stream => {
             audioContext = new AudioContext();
+            document.getElementById("formats").innerHTML =
+                "Format: 2 channel " + encodingTypeSelect.value +
+                " @ " + (audioContext.sampleRate / 1000) + "kHz";
+
             gumStream = stream;
             input = audioContext.createMediaStreamSource(stream);
-
             encodingType = encodingTypeSelect.value;
             encodingTypeSelect.disabled = true;
 
@@ -34,17 +35,13 @@ function startRecording() {
                 workerDir: "js/",
                 encoding: encodingType,
                 numChannels: 2,
-                onEncoderLoading: function(rec, enc) {
-                    __log("Loading " + enc + " encoder...");
-                },
-                onEncoderLoaded: function(rec, enc) {
-                    __log(enc + " encoder loaded");
-                }
+                onEncoderLoading: (rec, enc) => __log("Loading " + enc + " encoder..."),
+                onEncoderLoaded: (rec, enc) => __log(enc + " encoder loaded")
             });
 
             recorder.onComplete = function(rec, blob) {
                 __log("Encoding complete");
-                createDownloadLink(blob, rec.encoding); // PRODUCE audio
+                createDownloadLink(blob, rec.encoding);
                 encodingTypeSelect.disabled = false;
             };
 
@@ -57,92 +54,64 @@ function startRecording() {
 
             recorder.startRecording();
             __log("Recording started");
-
-            recordButton.disabled = true;
-            stopButton.disabled = false;
         })
-        .catch(function(err) {
+        .catch(err => {
             recordButton.disabled = false;
             stopButton.disabled = true;
-            console.error(err);
             alert("Gagal mengakses microphone: " + err.message);
         });
 }
 
 function stopRecording() {
-    console.log("stopRecording() called");
-    if (!gumStream) return;
-
-    gumStream.getAudioTracks().forEach(track => track.stop());
+    gumStream.getAudioTracks()[0].stop();
     stopButton.disabled = true;
     recordButton.disabled = false;
-
-    if (recorder) {
-        recorder.finishRecording(); // akan memanggil onComplete secara async
-        __log("Recording stopped, encoding in progress...");
-    }
+    recorder.finishRecording();
+    __log('Recording stopped');
 }
 
 function createDownloadLink(blob, encoding) {
-    var url = URL.createObjectURL(blob);
-    if (!markData.audio) markData.audio = [];
+    const url = URL.createObjectURL(blob);
     const tempFileName = new Date().toISOString() + '.' + encoding;
     markData.audio.push(tempFileName);
 
-    // preview audio
-    var au = document.createElement('audio');
+    const au = document.createElement('audio');
     au.controls = true;
     au.src = url;
 
-    // link download lokal
-    var link = document.createElement('a');
+    const link = document.createElement('a');
     link.href = url;
     link.download = tempFileName;
     link.innerHTML = tempFileName;
 
-    // status upload
-    var statusEl = document.createElement('span');
+    const statusEl = document.createElement('span');
     statusEl.style.marginLeft = "10px";
     statusEl.style.fontStyle = "italic";
     statusEl.style.color = "#007bff";
     statusEl.innerText = "Uploading...";
 
-    var li = document.createElement('li');
+    const li = document.createElement('li');
     li.appendChild(au);
     li.appendChild(link);
     li.appendChild(statusEl);
     recordingsList.appendChild(li);
 
-    // Upload via Netlify Function
     const reader = new FileReader();
     reader.onloadend = async function() {
         const base64Data = reader.result.split(',')[1];
         try {
             const res = await fetch('/.netlify/functions/upload-audio', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
-});
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: tempFileName, base64: base64Data })
+            });
+            const result = await res.json();
+            if (!result.success) throw new Error(result.error || 'Gagal upload audio');
 
-// baca respon hanya sekali
-const text = await res.text();
-let result;
-try {
-    result = JSON.parse(text);
-} catch {
-    throw new Error(`Server tidak mengirim JSON: ${text}`);
-}
-
-if (!result.success) {
-    throw new Error(result.error || 'Gagal upload audio');
-}
-
-markData.audio[markData.audio.length - 1] = result.path || tempFileName;
-statusEl.innerText = "Upload ✅";
-statusEl.style.color = "green";
-
-__log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
-
+            markData.audio[markData.audio.length - 1] = result.path || tempFileName;
+            statusEl.innerText = "Upload ✅";
+            statusEl.style.color = "green";
+            __log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
         } catch (err) {
             statusEl.innerText = "Upload ❌";
             statusEl.style.color = "red";
@@ -151,20 +120,10 @@ __log(`Recording selesai dan di-upload: ${result.path || tempFileName}`);
         }
     };
     reader.readAsDataURL(blob);
-
-    // update nilai jika siswa aktif
-    if (currentIdSiswa) {
-        const hasil = hitungNilai();
-        updateNilaiDiTabel(hasil);
-    }
-
-    __log(`Recording selesai (preview lokal & upload otomatis): ${tempFileName}`);
 }
 
-
-// helper log
-function __log(e, data) {
-    const logEl = document.getElementById("log");
+function __log(msg, data) {
+    const logEl = document.getElementById('log');
     if (!logEl) return;
-    logEl.innerHTML += "\n" + e + " " + (data || "");
+    logEl.innerHTML += "\n" + msg + (data || '');
 }
