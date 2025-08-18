@@ -1,10 +1,10 @@
 import fetch from 'node-fetch';
 
-const GITHUB_REPO = 'dickymiswardi/usermtq';
+const GITHUB_REPO = 'digitalmtq/back';
 const FILE_PATH = 'autoUpdateAllJuz.json';
 const BRANCH = 'main';
 
-const TOKEN = process.env.MTQ_TOKEN;
+const TOKEN = process.env.MTQ2_TOKEN;
 
 export async function handler(event) {
   const headers = {
