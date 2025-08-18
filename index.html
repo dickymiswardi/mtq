@@ -2233,13 +2233,25 @@ function buatKataKlik(surah, ayat, teks) {
 // ======================
 // LOAD DATA QURAN
 // ======================
-let dataSiap = fetch('/.netlify/functions/get-symbol1DataMark')
-  .then(res => res.json())
-  .then(data => {
-    quranData = data.symbol;
-    ayahPageMap = data.ayahPageMap;
-  })
-  .catch(err => console.error('Gagal memuat data:', err));
+let dataSiap = Promise.all([
+  fetch('https://raw.githubusercontent.com/dickymiswardi/mtq/refs/heads/main/symbol1.json')
+    .then(res => {
+      if (!res.ok) throw new Error("Gagal fetch symbol1.json");
+      return res.json();
+    })
+    .then(data => { quranData = data; }),
+
+  fetch('https://raw.githubusercontent.com/dickymiswardi/tadabbur/refs/heads/main/ayah_page_map.json')
+    .then(res => {
+      if (!res.ok) throw new Error("Gagal fetch ayah_page_map.json");
+      return res.json();
+    })
+    .then(data => { ayahPageMap = data; })
+])
+.then(() => {
+  console.log("✅ Data Quran siap dipakai", quranData, ayahPageMap);
+})
+.catch(err => console.error('❌ Gagal memuat data Quran:', err));
 
 // ======================
 // EVENT CLICK "LEMBAR PENILAIAN"
