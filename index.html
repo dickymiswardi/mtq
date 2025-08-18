@@ -537,7 +537,7 @@ button.lihat-quran-btn:hover::after {
 <ul id="recordingsList"></ul>
 
 <!-- Loading spinner baru -->
-<div id="loadingIndicator" style="display:none; margin-top:10px; align-items:center; display:flex;">
+<div id="loadingIndicator" style="display:none; margin-top:10px; align-items:center;">
   <div class="dot-spinner">
     <div></div><div></div><div></div>
   </div>
@@ -569,7 +569,6 @@ button.lihat-quran-btn:hover::after {
   40% { transform: scale(1); }
 }
 
-
 /* Tombol Rekam */
 .rec-btn { background: linear-gradient(135deg, #ff4b5c, #ff0000); color:white; font-weight:bold; font-size:16px; border:none; border-radius:50px; padding:10px 25px; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; margin-right:10px;}
 .rec-btn.pulsing { animation: pulse 1s infinite; }
@@ -584,6 +583,7 @@ const recBtn = document.getElementById('recordButton');
 const stopBtn = document.getElementById('stopButton');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const durationSpan = document.getElementById('recordDuration');
+const recordingsList = document.getElementById('recordingsList');
 
 let recording = false;
 let duration = 0;
@@ -596,6 +596,26 @@ function formatTime(sec) {
     return `${m}:${s}`;
 }
 
+// Buat link audio playable
+function createDownloadLink(blob, encoding = 'wav') {
+    const url = URL.createObjectURL(blob);
+    const li = document.createElement('li');
+    const au = document.createElement('audio');
+    au.controls = true;
+    au.src = url;
+
+    const link = document.createElement('a');
+    const filename = new Date().toISOString() + '.' + encoding;
+    link.href = url;
+    link.download = filename;
+    link.textContent = `Download ${filename}`;
+    link.style.marginLeft = "10px";
+
+    li.appendChild(au);
+    li.appendChild(link);
+    recordingsList.appendChild(li);
+}
+
 // Tombol Record
 recBtn.addEventListener('click', () => {
     recording = true;
@@ -603,11 +623,9 @@ recBtn.addEventListener('click', () => {
     recBtn.disabled = true;
     stopBtn.disabled = false;
 
-    // reset durasi
     duration = 0;
     durationSpan.textContent = "00:00";
 
-    // start timer
     durationInterval = setInterval(() => {
         duration++;
         durationSpan.textContent = formatTime(duration);
@@ -621,22 +639,25 @@ stopBtn.addEventListener('click', () => {
     recBtn.disabled = false;
     stopBtn.disabled = true;
 
-    // stop timer
     clearInterval(durationInterval);
 
-    // tampilkan spinner
+    // tampilkan spinner saat render audio
     loadingIndicator.style.display = "flex";
-    loadingIndicator.style.alignItems = "center";
 
     if (recorder) {
         recorder.onComplete = function(recorderInstance, blob) {
+            // hilangkan spinner setelah audio selesai dibuat
             loadingIndicator.style.display = "none";
             createDownloadLink(blob, recorderInstance.encoding);
         };
         recorder.finishRecording();
+    } else {
+        // fallback jika recorder belum ada
+        setTimeout(() => loadingIndicator.style.display = "none", 2000);
     }
 });
 </script>
+
 
 
 
