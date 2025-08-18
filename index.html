@@ -2369,12 +2369,18 @@ document.getElementById("btn-nilai-100").onclick = function() {
 </script>
 
   <script>
- togglePasswordBtn.addEventListener("click", () => {
+  document.addEventListener("DOMContentLoaded", () => {
+    const passwordInput = document.getElementById("passwordInput");
+    const togglePasswordBtn = document.getElementById("togglePasswordBtn");
+
+    togglePasswordBtn.addEventListener("click", () => {
       const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
       passwordInput.setAttribute("type", type);
       togglePasswordBtn.textContent = type === "password" ? "👁" : "🙈";
     });
-  </script>
+  });
+</script>
+
 
 </body>
 </html>
