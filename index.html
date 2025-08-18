@@ -317,17 +317,11 @@ button.lihat-quran-btn:hover::after {
     <form id="login-form" onsubmit="event.preventDefault(); login();">
       <input type="text" id="username" placeholder="Username" required />
       <div class="password-group" style="display: flex; align-items: center;">
-        <div class="password-wrapper" style="position: relative;">
-          <input type="password" id="password" placeholder="Password" required />
-          <span class="toggle-password" onclick="togglePassword()" 
-                style="cursor: pointer; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);">
-            👁
-          </span>
-        </div>
-      </div>
-      <button type="submit">Login</button>
-    </form>
+   <div class="password-wrapper">
+    <input type="password" id="password" placeholder="Password" required />
+    <span class="toggle-password" onclick="togglePassword()">👁</span>
   </div>
+  <button type="submit">Login</button>
 </div>
 
 <script>
@@ -2384,6 +2378,16 @@ document.getElementById("btn-nilai-100").onclick = function() {
     modal.style.display = "none";
   }
 }
+</script>
+
+	  <script>
+document.getElementById("login-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+  console.log("Login:", username, password);
+  // proses login
+});
 </script>
 
 </body>
