@@ -534,32 +534,57 @@ button.lihat-quran-btn:hover::after {
     <span id="recordDuration" style="margin-left:15px; font-weight:bold;">00:00</span>
 </div>
 
-<!-- Loading spinner -->
+<!-- Loading indicator -->
 <div id="loadingIndicator" style="display:none; margin-top:10px;">
-  <div class="spinner"></div>
+  <div class="dot-spinner">
+    <div></div><div></div><div></div>
+  </div>
   <span style="margin-left:10px; font-style:italic; color:#007bff;">Membuat file audio...</span>
 </div>
 
 <ul id="recordingsList"></ul>
 
 <style>
-/* Spinner CSS */
-.spinner {
-  border: 4px solid #f3f3f3; /* light grey */
-  border-top: 4px solid #007bff; /* blue */
+/* Dot bouncing spinner */
+.dot-spinner {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.dot-spinner div {
+  width: 8px;
+  height: 8px;
+  background-color: #007bff;
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  animation: spin 1s linear infinite;
-  display: inline-block;
+  animation: bounce 1.2s infinite ease-in-out;
+}
+
+.dot-spinner div:nth-child(1) { animation-delay: 0s; }
+.dot-spinner div:nth-child(2) { animation-delay: 0.2s; }
+.dot-spinner div:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
 }
 
 /* Tombol Rekam */
-.rec-btn { background: linear-gradient(135deg, #ff4b5c, #ff0000); color:white; font-weight:bold; font-size:16px; border:none; border-radius:50px; padding:10px 25px; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; margin-right:10px;}
+.rec-btn { 
+    background: linear-gradient(135deg, #ff4b5c, #ff0000); 
+    color:white; font-weight:bold; font-size:16px; border:none; border-radius:50px; 
+    padding:10px 25px; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; margin-right:10px;
+}
 .rec-btn.pulsing { animation: pulse 1s infinite; }
-@keyframes pulse { 0% { transform: scale(1); box-shadow:0 0 15px rgba(255,0,0,0.6);} 50%{transform:scale(1.08); box-shadow:0 0 25px rgba(255,0,0,0.8);} 100%{transform:scale(1); box-shadow:0 0 15px rgba(255,0,0,0.6);}}
+@keyframes pulse { 
+    0% { transform: scale(1); box-shadow:0 0 15px rgba(255,0,0,0.6);} 
+    50%{transform:scale(1.08); box-shadow:0 0 25px rgba(255,0,0,0.8);} 
+    100%{transform:scale(1); box-shadow:0 0 15px rgba(255,0,0,0.6);}
+}
 
-.stop-btn { background:linear-gradient(135deg,#555,#333); color:white; font-weight:bold; font-size:16px; border:none; border-radius:50px; padding:10px 25px; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; }
+.stop-btn { 
+    background:linear-gradient(135deg,#555,#333); color:white; font-weight:bold; font-size:16px; border:none; border-radius:50px; padding:10px 25px; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; 
+}
 .stop-btn:hover { transform:scale(1.05); box-shadow:0 0 10px rgba(0,0,0,0.5); }
 </style>
 
@@ -568,59 +593,92 @@ const recBtn = document.getElementById('recordButton');
 const stopBtn = document.getElementById('stopButton');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const durationSpan = document.getElementById('recordDuration');
+const recordingsList = document.getElementById('recordingsList');
+const encodingSelect = document.getElementById('encodingTypeSelect');
 
-let recording = false;
+let mediaRecorder;
+let audioChunks = [];
 let duration = 0;
 let durationInterval = null;
 
-// Fungsi format durasi mm:ss
+// format durasi mm:ss
 function formatTime(sec) {
     const m = Math.floor(sec / 60).toString().padStart(2,'0');
     const s = (sec % 60).toString().padStart(2,'0');
     return `${m}:${s}`;
 }
 
+// buat link audio playable
+function createDownloadLink(blob, encoding) {
+    const url = URL.createObjectURL(blob);
+    const li = document.createElement('li');
+    const au = document.createElement('audio');
+    au.controls = true;
+    au.src = url;
+
+    const link = document.createElement('a');
+    const filename = new Date().toISOString() + '.' + encoding;
+    link.href = url;
+    link.download = filename;
+    link.textContent = `Download ${filename}`;
+    link.style.marginLeft = "10px";
+
+    li.appendChild(au);
+    li.appendChild(link);
+    recordingsList.appendChild(li);
+}
+
 // Tombol Record
-recBtn.addEventListener('click', () => {
-    recording = true;
-    recBtn.classList.add('pulsing');
-    recBtn.disabled = true;
-    stopBtn.disabled = false;
+recBtn.addEventListener('click', async () => {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
 
-    // reset durasi
-    duration = 0;
-    durationSpan.textContent = "00:00";
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+            loadingIndicator.style.display = "none";
+            const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+            // ambil ekstensi sesuai pilihan, fallback ke mime type
+            let selectedEncoding = encodingSelect.value || mediaRecorder.mimeType.split('/')[1] || 'wav';
+            createDownloadLink(blob, selectedEncoding);
+        };
 
-    // start timer
-    durationInterval = setInterval(() => {
-        duration++;
-        durationSpan.textContent = formatTime(duration);
-    }, 1000);
+        mediaRecorder.start();
+        recBtn.classList.add('pulsing');
+        recBtn.disabled = true;
+        stopBtn.disabled = false;
+
+        // reset durasi
+        duration = 0;
+        durationSpan.textContent = "00:00";
+
+        // start timer
+        durationInterval = setInterval(() => {
+            duration++;
+            durationSpan.textContent = formatTime(duration);
+        }, 1000);
+    } catch (err) {
+        alert("Gagal mengakses microphone: " + err.message);
+    }
 });
 
 // Tombol Stop
 stopBtn.addEventListener('click', () => {
-    recording = false;
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        loadingIndicator.style.display = "flex";
+        loadingIndicator.style.alignItems = "center";
+    }
+
     recBtn.classList.remove('pulsing');
     recBtn.disabled = false;
     stopBtn.disabled = true;
 
-    // stop timer
     clearInterval(durationInterval);
-
-    // tampilkan spinner
-    loadingIndicator.style.display = "flex";
-    loadingIndicator.style.alignItems = "center";
-
-    if (recorder) {
-        recorder.onComplete = function(recorderInstance, blob) {
-            loadingIndicator.style.display = "none";
-            createDownloadLink(blob, recorderInstance.encoding);
-        };
-        recorder.finishRecording();
-    }
 });
 </script>
+
 
 
 
