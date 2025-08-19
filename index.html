@@ -1132,28 +1132,47 @@ function updateTotalJuz(row) {
   }
 
 	// Hitung halaman Quran
-function compressPages(list) {
+function compressPagesWithProporsi(list) {
   if (!list || list.length === 0) return "-";
 
-  const unique = [...new Set(list)].sort((a, b) => a - b);
+  // Hitung jumlah ayat terbaca per halaman
+  const halamanCount = {};
+
+  for (let item of list) {
+    // item = { surah, ayat } atau bisa disesuaikan dengan list input
+    const key = `${item.surah}:${item.ayat}`;
+    const halaman = pagesMap[key];
+    if (!halaman) continue;
+
+    if (!halamanCount[halaman]) halamanCount[halaman] = 0;
+    halamanCount[halaman] += 1;
+  }
+
+  const uniqueHalaman = Object.keys(halamanCount).map(Number).sort((a, b) => a - b);
   const ranges = [];
   let totalHalaman = 0;
-  let start = unique[0], end = start;
+  let start = uniqueHalaman[0], end = start;
 
-  for (let i = 1; i < unique.length; i++) {
-    if (unique[i] === end + 1) {
-      end = unique[i];
-    } else {
-      ranges.push(start === end ? `${start}` : `${start}-${end}`);
-      totalHalaman += end - start + 1;
-      start = end = unique[i];
+  for (let i = 0; i < uniqueHalaman.length; i++) {
+    const h = uniqueHalaman[i];
+    const proporsi = (halamanCount[h] || 0) / (jumlahAyatPerHalaman[h] || 1);
+    totalHalaman += proporsi;
+
+    if (i > 0) {
+      if (h === end + 1) {
+        end = h;
+      } else {
+        ranges.push(start === end ? `${start}` : `${start}-${end}`);
+        start = end = h;
+      }
     }
   }
-  ranges.push(start === end ? `${start}` : `${start}-${end}`);
-  totalHalaman += end - start + 1;
 
-  return `${ranges.join(", ")} (${totalHalaman} halaman)`;
+  ranges.push(start === end ? `${start}` : `${start}-${end}`);
+
+  return `${ranges.join(", ")} (${totalHalaman.toFixed(2)} halaman)`;
 }
+
 
   const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
