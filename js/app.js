@@ -95,7 +95,7 @@ function stopRecording() {
 function createDownloadLink(blob, encoding) {
     var url = URL.createObjectURL(blob);
     if (!markData.audio) markData.audio = [];
-    const tempFileName = new Date().toISOString() + '.' + encoding;
+    const tempFileName = new Date().toISOString().replace(/:/g, '-') + '.' + encoding;
     markData.audio.push(tempFileName);
 
     // buat elemen preview audio
