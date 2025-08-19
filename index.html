@@ -1135,46 +1135,52 @@ function updateTotalJuz(row) {
 
 	// Hitung halaman Quran
 // Hitung halaman Quran proporsional
-function calculateHalamanTerbaca(halamanList) {
-  if (!halamanList || halamanList.length === 0) return "-";
-
-  const halamanCountMap = {}; // key: halaman, value: jumlah ayat terbaca
-  for (let h of halamanList) {
-    halamanCountMap[h] = (halamanCountMap[h] || 0) + 1;
-  }
-
-  const uniqueHalaman = Object.keys(halamanCountMap).map(Number).sort((a, b) => a - b);
-  const ranges = [];
-  let totalHalaman = 0;
-
-  let start = uniqueHalaman[0];
-  let end = start;
-
-  for (let i = 0; i < uniqueHalaman.length; i++) {
-    const h = uniqueHalaman[i];
-    const ayatTerbaca = halamanCountMap[h];
-    const ayatTotal = jumlahAyatPerHalaman[h] || 1;
-
-    // ⚠️ Tidak skip halaman 21, 602, 603, 604 → tetap dihitung di totalHalaman
-    const proporsi = ayatTerbaca / ayatTotal;
-    totalHalaman += proporsi;
-
-    if (i === 0) continue;
-
-    if (h === end + 1) {
-      end = h;
-    } else {
-      ranges.push(start === end ? `${start}` : `${start}-${end}`);
-      start = end = h;
+/**
+ * Hitung jumlah halaman yang terbaca dari halaman awal sampai akhir,
+ * dengan aturan khusus untuk halaman tertentu yang selalu dihitung penuh.
+ * 
+ * @param {number} halAwal - Halaman awal
+ * @param {number} halAkhir - Halaman akhir
+ * @returns {{ keterangan: string, totalHalaman: number }}
+ */
+function hitungHalamanTerbaca(halAwal, halAkhir) {
+    // validasi input
+    if (halAwal == null || halAkhir == null || isNaN(halAwal) || isNaN(halAkhir)) {
+        return { keterangan: "Input tidak valid", totalHalaman: 0 };
     }
-  }
-  ranges.push(start === end ? `${start}` : `${start}-${end}`);
 
-  return `${ranges.join(", ")} (${totalHalaman.toFixed(2)} halaman)`;
+    // daftar halaman khusus yang selalu dihitung penuh
+    const halamanKhusus = [21, 602, 603, 604];
+
+    // pastikan bilangan bulat
+    halAwal = parseInt(halAwal, 10);
+    halAkhir = parseInt(halAkhir, 10);
+
+    // tukar jika awal lebih besar dari akhir
+    if (halAwal > halAkhir) {
+        const tmp = halAwal;
+        halAwal = halAkhir;
+        halAkhir = tmp;
+    }
+
+    // hitung jumlah halaman normal
+    let totalHalaman = halAkhir - halAwal + 1;
+
+    // tambahkan halaman khusus yang dilewati
+    let tambahanKhusus = 0;
+    for (const h of halamanKhusus) {
+        if (halAwal <= h && h <= halAkhir) {
+            tambahanKhusus++;
+        }
+    }
+
+    totalHalaman += tambahanKhusus;
+
+    // susun keterangan
+    const keterangan = `Halaman ${halAwal}-${halAkhir} → ${totalHalaman} halaman (termasuk ${tambahanKhusus} halaman khusus)`;
+
+    return { keterangan, totalHalaman };
 }
-
-
-
 
 
  row.querySelector(".halaman-terbaca").textContent = calculateHalamanTerbaca(halamanValid);
