@@ -445,8 +445,8 @@ button.lihat-quran-btn:hover::after {
             <th>Absensi</th>
             <th>Setoran Dari</th>
             <th>Setoran Sampai</th>
-            <th>Terbaca</th>
 			<th>Halaman</th>
+			<th>Juz</th>
             <th>Total Juz</th>
             <th>Semester</th>
             <th>Nilai</th>
@@ -969,8 +969,8 @@ row.innerHTML = `
     <select class="surah-sampai">${surahOptions}</select>
     <select class="ayat-sampai"></select>
   </td>
-  <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
   <td class="halaman-terbaca">${dataAbsensi.halaman || '-'}</td>
+  <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
   <td class="total-juz">${dataAbsensi.totalJuz ?? 0}</td>
   <td>
             <select class="semester">
