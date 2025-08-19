@@ -1142,7 +1142,10 @@ function calculateHalamanTerbaca(halamanList) {
     halamanCountMap[h] = (halamanCountMap[h] || 0) + 1;
   }
 
-  const uniqueHalaman = Object.keys(halamanCountMap).map(Number).sort((a, b) => a - b);
+  const uniqueHalaman = Object.keys(halamanCountMap)
+    .map(Number)
+    .sort((a, b) => a - b);
+
   const ranges = [];
   let totalHalaman = 0;
 
@@ -1152,9 +1155,8 @@ function calculateHalamanTerbaca(halamanList) {
   for (let i = 0; i < uniqueHalaman.length; i++) {
     const h = uniqueHalaman[i];
     const ayatTerbaca = halamanCountMap[h];
-    const ayatTotal = jumlahAyatPerHalaman[h] || 1; // fallback 1 biar aman
+    const ayatTotal = jumlahAyatPerHalaman[h] !== undefined ? jumlahAyatPerHalaman[h] : 1;
     const proporsi = ayatTerbaca / ayatTotal;
-
     totalHalaman += proporsi;
 
     if (i === 0) continue;
