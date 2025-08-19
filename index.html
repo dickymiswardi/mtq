@@ -1154,8 +1154,7 @@ function compressPages(list) {
 
   const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
-  row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
-  // isi kolom halaman
+  row.querySelector(".halaman-terbaca").textContent = dataAbsensi.halaman || compressPages(halamanValid);
   row.querySelector(".halaman-terbaca").textContent = compressPages(halamanValid);
   row.querySelector(".total-juz").textContent = totalJuz;
 }
