@@ -1133,7 +1133,6 @@ function updateTotalJuz(row) {
 
 	const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
-	// Hitung halaman Quran
 // Hitung halaman Quran proporsional
 function calculateHalamanTerbaca(halamanList) {
   if (!halamanList || halamanList.length === 0) return "-";
@@ -1170,6 +1169,7 @@ function calculateHalamanTerbaca(halamanList) {
 
   return `${ranges.join(", ")} (${totalHalaman.toFixed(2)} halaman)`;
 }
+
 
   row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
   row.querySelector(".halaman-terbaca").textContent = calculateHalamanTerbaca(halamanValid);
