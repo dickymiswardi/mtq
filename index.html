@@ -1096,7 +1096,7 @@ function updateTotalJuz(row) {
 
   totalJuz = totalJuz.toFixed(2);
 
-  // Hilangkan halaman duplikat untuk perhitungan juz tercakup
+ // Hilangkan halaman duplikat untuk perhitungan juz tercakup
   const halamanUnik = [...new Set(halamanValid)].sort((a, b) => a - b);
 
   const juzTercakup = [];
@@ -1133,10 +1133,52 @@ function updateTotalJuz(row) {
 
 	const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
-  // Hitung halaman Quran proporsional
-  // Di updateTotalJuz ganti baris halaman-terbaca:
+	// Hitung halaman Quran
+function calculateHalamanTerbaca(halamanList) {
+  if (!halamanList || halamanList.length === 0) return "-";
+
+  const halamanCountMap = {}; // key: halaman, value: jumlah ayat terbaca
+  for (let h of halamanList) {
+    halamanCountMap[h] = (halamanCountMap[h] || 0) + 1;
+  }
+
+  // tambahkan halaman khusus agar tidak diskip
+  [21, 602, 603, 604].forEach(h => {
+    if (!(h in halamanCountMap)) halamanCountMap[h] = 0;
+  });
+
+  const uniqueHalaman = Object.keys(halamanCountMap).map(Number).sort((a, b) => a - b);
+  const ranges = [];
+  let totalHalaman = 0;
+
+  let start = uniqueHalaman[0];
+  let end = start;
+
+  for (let i = 0; i < uniqueHalaman.length; i++) {
+    const h = uniqueHalaman[i];
+    const ayatTerbaca = halamanCountMap[h];
+    const ayatTotal = jumlahAyatPerHalaman[h] || 1; // fallback 1 biar gak NaN
+
+    if (ayatTerbaca > 0) {
+      const proporsi = ayatTerbaca / ayatTotal;
+      totalHalaman += proporsi;
+    }
+
+    if (i === 0) continue;
+
+    if (h === end + 1) {
+      end = h;
+    } else {
+      ranges.push(start === end ? `${start}` : `${start}-${end}`);
+      start = end = h;
+    }
+  }
+  ranges.push(start === end ? `${start}` : `${start}-${end}`);
+
+  return `${ranges.join(", ")} (${totalHalaman.toFixed(2)} halaman)`;
+}
   row.querySelector(".halaman-terbaca").textContent = calculateHalamanTerbaca(halamanValid);
-	
+  
   row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
   row.querySelector(".total-juz").textContent = totalJuz;
 }
