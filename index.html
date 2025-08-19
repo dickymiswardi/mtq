@@ -1137,6 +1137,7 @@ function compressPages(list) {
 
   const unique = [...new Set(list)].sort((a, b) => a - b);
   const ranges = [];
+  let totalHalaman = 0;
   let start = unique[0], end = start;
 
   for (let i = 1; i < unique.length; i++) {
@@ -1144,12 +1145,14 @@ function compressPages(list) {
       end = unique[i];
     } else {
       ranges.push(start === end ? `${start}` : `${start}-${end}`);
+      totalHalaman += end - start + 1;
       start = end = unique[i];
     }
   }
   ranges.push(start === end ? `${start}` : `${start}-${end}`);
+  totalHalaman += end - start + 1;
 
-  return ranges.join(", ");
+  return `${ranges.join(", ")} (${totalHalaman} halaman)`;
 }
 
   const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
