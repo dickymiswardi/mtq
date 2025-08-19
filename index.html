@@ -1132,20 +1132,36 @@ function updateTotalJuz(row) {
   }
 
 	// Hitung halaman Quran
-function compressPagesWithProporsi(list) {
-  if (!list || list.length === 0) return "-";
-
-  // Hitung jumlah ayat terbaca per halaman
+function hitungHalamanProporsional(surahDari, ayatDari, surahSampai, ayatSampai) {
   const halamanCount = {};
+  
+  for (let s = Number(surahDari); s <= Number(surahSampai); s++) {
+    const surah = surahList.find(x => Number(x.id) === s);
+    if (!surah) continue;
+    const totalAyatSurah = surah.jumlah_ayat;
 
-  for (let item of list) {
-    // item = { surah, ayat } atau bisa disesuaikan dengan list input
-    const key = `${item.surah}:${item.ayat}`;
-    const halaman = pagesMap[key];
-    if (!halaman) continue;
+    const startAyat = s === Number(surahDari) ? ayatDari : 1;
+    const endAyat = s === Number(surahSampai) ? ayatSampai : totalAyatSurah;
 
-    if (!halamanCount[halaman]) halamanCount[halaman] = 0;
-    halamanCount[halaman] += 1;
+    // Tentukan halaman di surah ini
+    for (let a = startAyat; a <= endAyat;) {
+      const key = `${s}:${a}`;
+      const halaman = pagesMap[key];
+      if (!halaman) {
+        a++;
+        continue;
+      }
+
+      const ayatDiHalaman = jumlahAyatPerHalaman[halaman];
+      if (!halamanCount[halaman]) halamanCount[halaman] = 0;
+
+      // hitung jumlah ayat terbaca di halaman ini
+      let ayatSampaiHalaman = a + ayatDiHalaman - 1;
+      if (ayatSampaiHalaman > endAyat) ayatSampaiHalaman = endAyat;
+
+      halamanCount[halaman] += ayatSampaiHalaman - a + 1;
+      a = ayatSampaiHalaman + 1;
+    }
   }
 
   const uniqueHalaman = Object.keys(halamanCount).map(Number).sort((a, b) => a - b);
@@ -1172,7 +1188,6 @@ function compressPagesWithProporsi(list) {
 
   return `${ranges.join(", ")} (${totalHalaman.toFixed(2)} halaman)`;
 }
-
 
   const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
