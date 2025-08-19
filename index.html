@@ -1131,11 +1131,25 @@ function updateTotalJuz(row) {
     return ranges.join(", ");
   }
 
-	// di akhir function updateTotalJuz(row)
+	// Hitung halaman Quran
 function compressPages(list) {
   if (!list || list.length === 0) return "-";
-  const unique = [...new Set(list)].sort((a,b) => a-b);
-  return unique.join(", ");
+
+  const unique = [...new Set(list)].sort((a, b) => a - b);
+  const ranges = [];
+  let start = unique[0], end = start;
+
+  for (let i = 1; i < unique.length; i++) {
+    if (unique[i] === end + 1) {
+      end = unique[i];
+    } else {
+      ranges.push(start === end ? `${start}` : `${start}-${end}`);
+      start = end = unique[i];
+    }
+  }
+  ranges.push(start === end ? `${start}` : `${start}-${end}`);
+
+  return ranges.join(", ");
 }
 
   const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
