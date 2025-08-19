@@ -1134,7 +1134,6 @@ function updateTotalJuz(row) {
 	const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
 	// Hitung halaman Quran
-// ==== Khusus halaman anomali ====
 function calculateHalamanTerbaca(halamanList) {
   if (!halamanList || halamanList.length === 0) return "-";
 
@@ -1153,8 +1152,9 @@ function calculateHalamanTerbaca(halamanList) {
   for (let i = 0; i < uniqueHalaman.length; i++) {
     const h = uniqueHalaman[i];
     const ayatTerbaca = halamanCountMap[h];
-    const ayatTotal = jumlahAyatPerHalaman[h] || 1;
+    const ayatTotal = jumlahAyatPerHalaman[h] || 1; // fallback 1 biar aman
     const proporsi = ayatTerbaca / ayatTotal;
+
     totalHalaman += proporsi;
 
     if (i === 0) continue;
