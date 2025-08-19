@@ -1131,64 +1131,48 @@ function updateTotalJuz(row) {
     return ranges.join(", ");
   }
 
+	const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
+
 	// Hitung halaman Quran
-function hitungHalamanProporsional(surahDari, ayatDari, surahSampai, ayatSampai) {
-  const halamanCount = {};
+// Hitung halaman Quran proporsional
+function calculateHalamanTerbaca(halamanList) {
+  if (!halamanList || halamanList.length === 0) return "-";
 
-  for (let s = Number(surahDari); s <= Number(surahSampai); s++) {
-    const surah = surahList.find(x => Number(x.id) === s);
-    if (!surah) continue;
-    const totalAyatSurah = surah.jumlah_ayat;
-
-    const startAyat = s === Number(surahDari) ? ayatDari : 1;
-    const endAyat = s === Number(surahSampai) ? ayatSampai : totalAyatSurah;
-
-    let a = startAyat;
-    while (a <= endAyat) {
-      const key = `${s}:${a}`;
-      const halaman = pagesMap[key];
-      if (!halaman) { a++; continue; }
-
-      const ayatDiHalaman = jumlahAyatPerHalaman[halaman] || 1;
-      const ayatSampaiHalaman = Math.min(endAyat, a + ayatDiHalaman - 1);
-      const terbaca = ayatSampaiHalaman - a + 1;
-
-      if (!halamanCount[halaman]) halamanCount[halaman] = 0;
-      halamanCount[halaman] += terbaca / ayatDiHalaman;
-
-      a = ayatSampaiHalaman + 1;
-    }
+  const halamanCountMap = {}; // key: halaman, value: jumlah ayat terbaca
+  for (let h of halamanList) {
+    halamanCountMap[h] = (halamanCountMap[h] || 0) + 1;
   }
 
-  const uniqueHalaman = Object.keys(halamanCount).map(Number).sort((a, b) => a - b);
-  if (!uniqueHalaman.length) return "-";
-
-  let ranges = [];
+  const uniqueHalaman = Object.keys(halamanCountMap).map(Number).sort((a, b) => a - b);
+  const ranges = [];
   let totalHalaman = 0;
-  let start = uniqueHalaman[0], end = start;
+
+  let start = uniqueHalaman[0];
+  let end = start;
 
   for (let i = 0; i < uniqueHalaman.length; i++) {
     const h = uniqueHalaman[i];
-    totalHalaman += halamanCount[h];
+    const ayatTerbaca = halamanCountMap[h];
+    const ayatTotal = jumlahAyatPerHalaman[h] || 1;
+    const proporsi = ayatTerbaca / ayatTotal;
+    totalHalaman += proporsi;
 
-    if (i > 0) {
-      if (h === end + 1) {
-        end = h;
-      } else {
-        ranges.push(start === end ? `${start}` : `${start}-${end}`);
-        start = end = h;
-      }
+    if (i === 0) continue;
+
+    if (h === end + 1) {
+      end = h;
+    } else {
+      ranges.push(start === end ? `${start}` : `${start}-${end}`);
+      start = end = h;
     }
   }
   ranges.push(start === end ? `${start}` : `${start}-${end}`);
 
   return `${ranges.join(", ")} (${totalHalaman.toFixed(2)} halaman)`;
 }
-	
-  const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
   row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
-  row.querySelector(".halaman-terbaca").textContent = compressPages(halamanValid);
+  row.querySelector(".halaman-terbaca").textContent = calculateHalamanTerbaca(halamanValid);
   row.querySelector(".total-juz").textContent = totalJuz;
 }
 
