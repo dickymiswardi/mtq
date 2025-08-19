@@ -1134,59 +1134,73 @@ function updateTotalJuz(row) {
 	const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
 	// Hitung halaman Quran
-function calculateHalamanTerbaca(halamanList) {
-  if (!halamanList || halamanList.length === 0) return "-";
+// ==== Khusus halaman anomali ====
+const specialHalaman = {
+  21: [
+    { surah: 2, ayat: [135, 136, 137, 138, 139, 140, 141], jumlahAyat: 7 }
+  ],
+  602: [
+    { surah: 106, ayat: [1, 2, 3, 4], jumlahAyat: 4 },
+    { surah: 107, ayat: [1, 2, 3, 4, 5, 6, 7], jumlahAyat: 7 },
+    { surah: 108, ayat: [1, 2, 3], jumlahAyat: 3 }
+  ],
+  603: [
+    { surah: 109, ayat: [1, 2, 3, 4, 5, 6], jumlahAyat: 6 },
+    { surah: 110, ayat: [1, 2, 3], jumlahAyat: 3 },
+    { surah: 111, ayat: [1, 2, 3, 4, 5], jumlahAyat: 5 }
+  ],
+  604: [
+    { surah: 112, ayat: [1, 2, 3, 4], jumlahAyat: 4 },
+    { surah: 113, ayat: [1, 2, 3, 4, 5], jumlahAyat: 5 },
+    { surah: 114, ayat: [1, 2, 3, 4, 5, 6], jumlahAyat: 6 }
+  ]
+};
 
-  // mapping halaman khusus → jumlah ayat totalnya
-  const specialHalaman = {
-    21: 7,   // misal halaman 21 ada 5 ayat
-    602: 14  // ganti sesuai jumlah ayat di mushafmu
-    603: 14,
-    604: 15
+
+// ==== Fungsi utama ====
+function halamanTerbaca(startSurah, startAyat, endSurah, endAyat) {
+  let halamanValid = [];
+  let totalJuz = 0;
+
+  for (let s = startSurah; s <= endSurah; s++) {
+    const aStart = (s === startSurah) ? startAyat : 1;
+    const aEnd = (s === endSurah) ? endAyat : jumlahAyatPerSurah[s];
+
+    for (let a = aStart; a <= aEnd; a++) {
+      const key = `${s}:${a}`;
+      const halaman = pagesMap[key];
+
+      if (!halaman) continue;
+
+      // === cek halaman spesial dulu ===
+      if (specialHalaman[halaman]) {
+        const parts = specialHalaman[halaman];
+        for (const part of parts) {
+          if (part.surah === s && part.ayat.includes(a)) {
+            if (!halamanValid.includes(halaman)) {
+              halamanValid.push(halaman);
+            }
+            totalJuz += (0.05 / part.jumlahAyat);
+          }
+        }
+      } else {
+        // === halaman normal ===
+        if (!halamanValid.includes(halaman)) {
+          halamanValid.push(halaman);
+        }
+        const ayatDiHalaman = jumlahAyatPerHalaman[halaman];
+        if (!ayatDiHalaman) continue;
+        totalJuz += (0.05 / ayatDiHalaman);
+      }
+    }
+  }
+
+  return {
+    halamanValid: halamanValid.sort((a, b) => a - b),
+    totalJuz: totalJuz.toFixed(2)
   };
-
-  const halamanCountMap = {}; // key: halaman, value: jumlah ayat terbaca
-  for (let h of halamanList) {
-    halamanCountMap[h] = (halamanCountMap[h] || 0) + 1;
-  }
-
-  // tambahkan halaman khusus agar tetap muncul meskipun belum terbaca
-  Object.keys(specialHalaman).forEach(h => {
-    if (!(h in halamanCountMap)) halamanCountMap[h] = 0;
-  });
-
-  const uniqueHalaman = Object.keys(halamanCountMap).map(Number).sort((a, b) => a - b);
-  const ranges = [];
-  let totalHalaman = 0;
-
-  let start = uniqueHalaman[0];
-  let end = start;
-
-  for (let i = 0; i < uniqueHalaman.length; i++) {
-    const h = uniqueHalaman[i];
-    const ayatTerbaca = halamanCountMap[h];
-
-    // pakai mapping khusus jika ada, fallback ke jumlahAyatPerHalaman global
-    const ayatTotal = specialHalaman[h] || jumlahAyatPerHalaman[h] || 1;
-
-    if (ayatTerbaca > 0) {
-      const proporsi = ayatTerbaca / ayatTotal;
-      totalHalaman += proporsi;
-    }
-
-    if (i === 0) continue;
-
-    if (h === end + 1) {
-      end = h;
-    } else {
-      ranges.push(start === end ? `${start}` : `${start}-${end}`);
-      start = end = h;
-    }
-  }
-  ranges.push(start === end ? `${start}` : `${start}-${end}`);
-
-  return `${ranges.join(", ")} (${totalHalaman.toFixed(2)} halaman)`;
 }
+
 
   row.querySelector(".halaman-terbaca").textContent = calculateHalamanTerbaca(halamanValid);
   
