@@ -970,7 +970,7 @@ row.innerHTML = `
     <select class="ayat-sampai"></select>
   </td>
   <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
-  <td class="halaman-terbaca">-</td>
+  <td class="halaman-terbaca">${dataAbsensi.halaman || '-'}</td>
   <td class="total-juz">${dataAbsensi.totalJuz ?? 0}</td>
   <td>
             <select class="semester">
@@ -1131,30 +1131,17 @@ function updateTotalJuz(row) {
     return ranges.join(", ");
   }
 
-	// Penghitung halaman quran
+	// di akhir function updateTotalJuz(row)
 function compressPages(list) {
   if (!list || list.length === 0) return "-";
-
-  const unique = [...new Set(list)].sort((a, b) => a - b);
-  const ranges = [];
-  let start = unique[0], end = start;
-
-  for (let i = 1; i < unique.length; i++) {
-    if (unique[i] === end + 1) {
-      end = unique[i];
-    } else {
-      ranges.push(start === end ? `${start}` : `${start}-${end}`);
-      start = end = unique[i];
-    }
-  }
-  ranges.push(start === end ? `${start}` : `${start}-${end}`);
-
-  return ranges.join(", ");
+  const unique = [...new Set(list)].sort((a,b) => a-b);
+  return unique.join(", ");
 }
 
   const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
-  row.querySelector(".halaman-terbaca").textContent = dataAbsensi.halaman || compressPages(halamanValid);
+  row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
+  // isi kolom halaman
   row.querySelector(".halaman-terbaca").textContent = compressPages(halamanValid);
   row.querySelector(".total-juz").textContent = totalJuz;
 }
