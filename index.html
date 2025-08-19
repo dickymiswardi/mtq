@@ -1134,25 +1134,51 @@ function updateTotalJuz(row) {
 	const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
 	// Hitung halaman Quran
-function updateTotalJuz(santriData) {
-  let totalHalaman = 0;
+// Hitung halaman Quran proporsional
+function calculateHalamanTerbaca(halamanList) {
+  if (!halamanList || halamanList.length === 0) return "-";
 
-  for (const h of santriData.halaman || []) {
-    const ayatTerbaca = (santriData.ayatPerHalaman && santriData.ayatPerHalaman[h]) || 0;
-    const ayatTotal = jumlahAyatPerHalaman[h] || 1;
-
-    // skip halaman spesial untuk totalJuz
-    if ([21, 602, 603, 604].includes(Number(h))) continue;
-
-    totalHalaman += ayatTerbaca / ayatTotal;
+  const halamanCountMap = {}; // key: halaman, value: jumlah ayat terbaca
+  for (let h of halamanList) {
+    halamanCountMap[h] = (halamanCountMap[h] || 0) + 1;
   }
 
-  santriData.totalJuz = (totalHalaman / 20).toFixed(2); // 1 juz = 20 halaman
+  const uniqueHalaman = Object.keys(halamanCountMap).map(Number).sort((a, b) => a - b);
+  const ranges = [];
+  let totalHalaman = 0;
+
+  let start = uniqueHalaman[0];
+  let end = start;
+
+  for (let i = 0; i < uniqueHalaman.length; i++) {
+    const h = uniqueHalaman[i];
+    const ayatTerbaca = halamanCountMap[h];
+    const ayatTotal = jumlahAyatPerHalaman[h] || 1;
+
+    // ⚠️ Tidak skip halaman 21, 602, 603, 604 → tetap dihitung di totalHalaman
+    const proporsi = ayatTerbaca / ayatTotal;
+    totalHalaman += proporsi;
+
+    if (i === 0) continue;
+
+    if (h === end + 1) {
+      end = h;
+    } else {
+      ranges.push(start === end ? `${start}` : `${start}-${end}`);
+      start = end = h;
+    }
+  }
+  ranges.push(start === end ? `${start}` : `${start}-${end}`);
+
+  return `${ranges.join(", ")} (${totalHalaman.toFixed(2)} halaman)`;
 }
 
 
 
-  row.querySelector(".halaman-terbaca").textContent = calculateHalamanTerbaca(halamanValid);
+
+
+ row.querySelector(".halaman-terbaca").textContent = calculateHalamanTerbaca(halamanValid);
+
   
   row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
   row.querySelector(".total-juz").textContent = totalJuz;
