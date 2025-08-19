@@ -1137,9 +1137,17 @@ function updateTotalJuz(row) {
 function calculateHalamanTerbaca(halamanList) {
   if (!halamanList || halamanList.length === 0) return "-";
 
-  const halamanCountMap = {}; // key: halaman, value: jumlah ayat terbaca
+  const halamanCountMap = {};
   for (let h of halamanList) {
     halamanCountMap[h] = (halamanCountMap[h] || 0) + 1;
+  }
+
+  // pastikan halaman spesial masuk meski belum ada di halamanList
+  const halamanSpesial = [21, 602, 603, 604];
+  for (let h of halamanSpesial) {
+    if (!(h in halamanCountMap)) {
+      halamanCountMap[h] = 0; // belum terbaca satupun, tapi tetap ada
+    }
   }
 
   const uniqueHalaman = Object.keys(halamanCountMap)
@@ -1155,7 +1163,9 @@ function calculateHalamanTerbaca(halamanList) {
   for (let i = 0; i < uniqueHalaman.length; i++) {
     const h = uniqueHalaman[i];
     const ayatTerbaca = halamanCountMap[h];
-    const ayatTotal = jumlahAyatPerHalaman[h] !== undefined ? jumlahAyatPerHalaman[h] : 1;
+    const ayatTotal = jumlahAyatPerHalaman[h] || 1;
+
+    // perhitungan proporsi
     const proporsi = ayatTerbaca / ayatTotal;
     totalHalaman += proporsi;
 
