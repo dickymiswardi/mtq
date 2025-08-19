@@ -446,6 +446,7 @@ button.lihat-quran-btn:hover::after {
             <th>Setoran Dari</th>
             <th>Setoran Sampai</th>
             <th>Terbaca</th>
+			<th>Halaman</th>
             <th>Total Juz</th>
             <th>Semester</th>
             <th>Nilai</th>
@@ -969,6 +970,7 @@ row.innerHTML = `
     <select class="ayat-sampai"></select>
   </td>
   <td class="juz-terbaca">${dataAbsensi.juzTerbaca || '-'}</td>
+  <td class="halaman-terbaca">-</td>
   <td class="total-juz">${dataAbsensi.totalJuz ?? 0}</td>
   <td>
             <select class="semester">
@@ -1129,9 +1131,18 @@ function updateTotalJuz(row) {
     return ranges.join(", ");
   }
 
+	// di akhir function updateTotalJuz(row)
+function compressPages(list) {
+  if (!list || list.length === 0) return "-";
+  const unique = [...new Set(list)].sort((a,b) => a-b);
+  return unique.join(", ");
+}
+
   const juzTerbacaFormatted = compressJuzRanges(juzTercakup);
 
   row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
+  // isi kolom halaman
+  row.querySelector(".halaman-terbaca").textContent = compressPages(halamanValid);
   row.querySelector(".total-juz").textContent = totalJuz;
 }
 
@@ -1154,6 +1165,7 @@ function updateTotalJuz(row) {
     const surahSampai = row.querySelector(".surah-sampai").value;
     const ayatSampai = row.querySelector(".ayat-sampai").value;
     const totalJuz = row.querySelector(".total-juz").textContent;
+	const halaman = row.querySelector(".halaman-terbaca").textContent;
     const juzTerbaca = row.querySelector(".juz-terbaca").textContent;
 
     const nilaiCell = row.querySelector(".lihat-quran-btn").parentElement;
@@ -1171,6 +1183,7 @@ function updateTotalJuz(row) {
       dari: `${surahDari}:${ayatDari}`,
       sampai: `${surahSampai}:${ayatSampai}`,
       totalJuz,
+	  halaman, // <-- kolom baru
       juzTerbaca,
       buttonCell,
       marks
