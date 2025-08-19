@@ -1137,13 +1137,21 @@ function updateTotalJuz(row) {
 function calculateHalamanTerbaca(halamanList) {
   if (!halamanList || halamanList.length === 0) return "-";
 
+  // mapping halaman khusus → jumlah ayat totalnya
+  const specialHalaman = {
+    21: 7,   // misal halaman 21 ada 5 ayat
+    602: 14  // ganti sesuai jumlah ayat di mushafmu
+    603: 14,
+    604: 15
+  };
+
   const halamanCountMap = {}; // key: halaman, value: jumlah ayat terbaca
   for (let h of halamanList) {
     halamanCountMap[h] = (halamanCountMap[h] || 0) + 1;
   }
 
-  // tambahkan halaman khusus agar tidak diskip
-  [21, 602, 603, 604].forEach(h => {
+  // tambahkan halaman khusus agar tetap muncul meskipun belum terbaca
+  Object.keys(specialHalaman).forEach(h => {
     if (!(h in halamanCountMap)) halamanCountMap[h] = 0;
   });
 
@@ -1157,7 +1165,9 @@ function calculateHalamanTerbaca(halamanList) {
   for (let i = 0; i < uniqueHalaman.length; i++) {
     const h = uniqueHalaman[i];
     const ayatTerbaca = halamanCountMap[h];
-    const ayatTotal = jumlahAyatPerHalaman[h] || 1; // fallback 1 biar gak NaN
+
+    // pakai mapping khusus jika ada, fallback ke jumlahAyatPerHalaman global
+    const ayatTotal = specialHalaman[h] || jumlahAyatPerHalaman[h] || 1;
 
     if (ayatTerbaca > 0) {
       const proporsi = ayatTerbaca / ayatTotal;
@@ -1177,6 +1187,7 @@ function calculateHalamanTerbaca(halamanList) {
 
   return `${ranges.join(", ")} (${totalHalaman.toFixed(2)} halaman)`;
 }
+
   row.querySelector(".halaman-terbaca").textContent = calculateHalamanTerbaca(halamanValid);
   
   row.querySelector(".juz-terbaca").textContent = juzTerbacaFormatted;
